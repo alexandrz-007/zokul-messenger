@@ -18,7 +18,7 @@ describe('messageService', () => {
 
   it('should throw on empty message', async () => {
     await expect(messageService.createMessage('c1', 'u1'))
-      .rejects.toThrow('Message must have text or image');
+      .rejects.toThrow('Message must have text, image, or voice');
   });
 
   it('should get messages with pagination', async () => {

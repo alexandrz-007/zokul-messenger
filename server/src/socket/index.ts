@@ -59,16 +59,40 @@ export function setupSocket(httpServer: HTTPServer): Server {
       await presenceService.setOnline(userId);
     });
 
-    socket.on('message:send', async (data: { chatId: string; text?: string; imageUrl?: string }) => {
+    socket.on('message:send', async (data: { chatId: string; text?: string; imageUrl?: string; imageUrls?: string[]; voiceUrl?: string; voiceDuration?: number; replyToId?: string }) => {
       try {
         const message = await messageService.createMessage(
           data.chatId,
           userId,
           data.text,
-          data.imageUrl
+          data.imageUrl,
+          data.voiceUrl,
+          data.voiceDuration,
+          data.replyToId,
+          data.imageUrls
         );
         socket.to(`chat:${data.chatId}`).emit('message:new', message);
         socket.emit('message:new', message);
+      } catch (err: any) {
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    socket.on('message:edit', async (data: { messageId: string; text: string; chatId: string }) => {
+      try {
+        const message = await messageService.editMessage(data.messageId, data.text, userId);
+        socket.to(`chat:${data.chatId}`).emit('message:edited', message);
+        socket.emit('message:edited', message);
+      } catch (err: any) {
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    socket.on('message:delete', async (data: { messageId: string; chatId: string }) => {
+      try {
+        await messageService.deleteMessage(data.messageId, userId);
+        socket.to(`chat:${data.chatId}`).emit('message:deleted', { messageId: data.messageId, chatId: data.chatId });
+        socket.emit('message:deleted', { messageId: data.messageId, chatId: data.chatId });
       } catch (err: any) {
         socket.emit('error', { message: err.message });
       }

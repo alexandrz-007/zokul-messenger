@@ -17,7 +17,20 @@ export interface Message {
   senderId: string;
   text?: string;
   imageUrl?: string;
+  imageUrls?: string[];
+  voiceUrl?: string;
+  voiceDuration?: number;
+  replyTo?: ReplyPreview;
+  isEdited?: boolean;
   createdAt: string;
+}
+
+export interface ReplyPreview {
+  messageId: string;
+  senderId: string;
+  senderName: string;
+  text?: string;
+  imageUrl?: string;
 }
 
 export interface Chat {

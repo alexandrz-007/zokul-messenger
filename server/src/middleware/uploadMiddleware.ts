@@ -12,17 +12,24 @@ const storage = multer.diskStorage({
   },
 });
 
+const imageExts = /\.(jpg|jpeg|png|gif|webp)$/i;
+const audioExts = /\.(webm|ogg|wav|mp3|mp4|m4a|aac)$/i;
+const audioMimes = /^audio\//;
+
 const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowed = /\.(jpg|jpeg|png|gif|webp)$/i;
-  if (allowed.test(path.extname(file.originalname))) {
+  const ext = path.extname(file.originalname);
+  if (imageExts.test(ext) || audioExts.test(ext) || audioMimes.test(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed'));
+    cb(new Error('Only image and audio files are allowed'));
   }
 };
 
-export const uploadMiddleware = multer({
+const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 },
-}).single('file');
+  limits: { fileSize: 20 * 1024 * 1024 },
+});
+
+export const uploadMiddleware = upload.single('file');
+export const uploadImagesMiddleware = upload.array('files', 4);

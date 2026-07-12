@@ -1,70 +1,56 @@
-# Project Plan: Zokul — Универсальный мессенджер
+# Project Plan: Zokul — Universal Messenger
 
-## Описание
-Универсальный мессенджер для всех, как Telegram. PWA для iPhone (и других платформ).
-Реалтайм обмен сообщениями, отправка изображений, push-уведомления, статус онлайн, группы.
+## Description
+Universal messenger PWA for everyone. Real-time messaging, image/voice sharing, push notifications, online status, groups, dark theme, reply, edit/delete, pagination, profile editing.
 
-## Целевая аудитория
-Все пользователи, которым нужен быстрый и красивый мессенджер с установкой на iPhone через PWA.
+## Target Audience
+Anyone who needs a fast, beautiful messenger installable on iPhone via PWA.
 
-## Ключевые фичи (полный список)
-1. Регистрация / Логин (JWT)
-2. Личные чаты 1-на-1 (Socket.IO real-time)
-3. Отправка изображений
-4. Push-уведомления (Web Push API)
-5. Статус «онлайн» (Redis + Socket.IO)
-6. Групповые чаты
-7. Работа офлайн (IndexedDB)
-8. Голосовые сообщения
-9. E2E шифрование
+## Stack
 
-## Стек технологий
-| Компонент | Технология |
+| Component | Technology |
 |-----------|------------|
 | Frontend | React + TypeScript + Vite + Tailwind CSS |
-| PWA | vite-plugin-pwa + Service Worker + IndexedDB (Dexie) |
+| PWA | vite-plugin-pwa + Service Worker |
 | Backend | Node.js + TypeScript + Express |
 | Real-time | Socket.IO |
-| База данных | PostgreSQL |
-| Кэш / Online status | Redis |
-| Auth | JWT |
-| Изображения | Загрузка на сервер (Multer) / MinIO |
-| Инфраструктура | Docker + docker-compose |
+| Database | PostgreSQL |
+| Cache / Online status | Redis |
+| Auth | JWT + bcrypt |
+| File uploads | Multer (disk storage) |
+| Audio | MediaRecorder + Web Audio API |
+| Infrastructure | Docker + docker-compose |
+| SSL | Certbot + Let's Encrypt |
 
 ## Roadmap
 
-### Фаза 1: MVP
-- **Цель:** Минимально рабочая версия мессенджера
-- **Что входит:**
-  - Настройка проекта (Vite + Express + Docker)
-  - PWA (manifest, Service Worker, иконки)
-  - Регистрация / Логин (JWT)
-  - Личные чаты 1-на-1 (Socket.IO)
-  - Отправка изображений
-  - Базовая верстка UI (iOS-стиль)
-- **Что НЕ входит:**
-  - Push-уведомления
-  - Групповые чаты
-  - Статус онлайн
-  - Офлайн-режим
+### Phase 1: MVP ✅ CLOSED
+- Project setup (Vite + Express + Docker)
+- PWA (manifest, Service Worker, icons)
+- Register / Login (JWT)
+- 1-on-1 chats (Socket.IO)
+- Image uploads
+- iOS-style UI
 
-### Фаза 2: Core
-- **Цель:** Расширение функциональности
-- **Что входит:**
-  - Push-уведомления (Web Push API)
-  - Статус «онлайн» (Redis presence)
-  - Групповые чаты
-  - Улучшение UI/UX
-- **Зависит от:** Фаза 1
+### Phase 2: Core ✅ CLOSED
+- Push notifications (Web Push API)
+- Online status (Redis presence)
+- Group chats
+- Typing indicator, last message preview, rate limiting, member check
+- Docker production setup
+- Env validation
 
-### Фаза 3: Advanced
-- **Цель:** Продвинутые возможности
-- **Что входит:**
-  - Работа офлайн (IndexedDB кэш сообщений)
-  - Голосовые сообщения
-  - E2E шифрование
-- **Зависит от:** Фаза 2
+### Phase 3: Advanced ✅ CLOSED
+- Voice messages (MediaRecorder → upload → playback)
+- Reply to message (quote + send)
+- Dark theme (toggle + localStorage)
+- Edit/Delete messages (PATCH/DELETE + socket broadcast)
+- Pagination (scroll up → cursor-based offset)
+- Profile editing (name + avatar)
+- HTTPS nginx config (Certbot + auto-renew cron)
+- Message appear animation + notification sound + draft save
+- **31 bugfixes** across server, client, and infra
 
-## Ограничения
-- PWA должно корректно работать на iOS Safari
-- HTTPS обязателен для PWA и Service Worker
+## Constraints
+- PWA must work on iOS Safari
+- HTTPS required for PWA Service Worker and Push

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -10,10 +8,22 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zokul']
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   server:
     build:
@@ -21,16 +31,21 @@ services:
       dockerfile: Dockerfile
     environment:
       PORT: '3001'
+      NODE_ENV: production
       DATABASE_URL: postgresql://zokul:zokul@postgres:5432/zokul
       JWT_SECRET: ${JWT_SECRET}
-      CORS_ORIGIN: 'http://localhost'
+      CORS_ORIGIN: https://zokul.zhichkin.space
       REDIS_URL: redis://redis:6379
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - uploads:/app/uploads
 
   client:
     build:
@@ -38,9 +53,14 @@ services:
       dockerfile: Dockerfile
     ports:
       - '80:80'
+      - '443:443'
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - server
     restart: unless-stopped
 
 volumes:
   pgdata:
+  redisdata:
+  uploads:

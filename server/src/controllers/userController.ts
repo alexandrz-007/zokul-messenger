@@ -22,6 +22,24 @@ export async function getOnline(req: AuthRequest, res: Response, next: NextFunct
   }
 }
 
+export async function updateProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { name, avatarUrl } = req.body;
+    if (name !== undefined && (typeof name !== 'string' || name.length < 1 || name.length > 100)) {
+      res.status(400).json({ error: 'Name must be 1-100 characters' });
+      return;
+    }
+    const user = await UserModel.updateProfile(req.userId!, { name, avatarUrl });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const user = await UserModel.findById(req.params.id);

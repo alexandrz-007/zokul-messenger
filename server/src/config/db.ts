@@ -62,6 +62,13 @@ export async function migrate(): Promise<void> {
         UNIQUE (user_id, endpoint)
       );
     `);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to_id UUID REFERENCES messages(id) ON DELETE SET NULL`);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS voice_url VARCHAR(500)`);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS voice_duration NUMERIC(5,1)`);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_edited BOOLEAN DEFAULT false`);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_urls TEXT[] DEFAULT '{}'`);
     console.log('Migration completed successfully');
   } finally {
     client.release();

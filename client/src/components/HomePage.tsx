@@ -1,48 +1,97 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSocket } from '../contexts/SocketContext';
 import { useChats, useUnread, useMessages } from '../hooks/useChat';
+import { usePagination } from '../hooks/usePagination';
 import { useTyping } from '../hooks/useTyping';
 import { usePresence } from '../hooks/usePresence';
 import { usePushSubscription } from '../hooks/usePushSubscription';
+import { useDraft } from '../hooks/useDraft';
+import { ChatProvider } from '../contexts/ChatContext';
+import { playNotificationSound } from '../utils/audio';
 import AppLayout from './layout/AppLayout';
 import ChatList from './chat/ChatList';
 import ChatView from './chat/ChatView';
 import MessageInput from './chat/MessageInput';
 import CreateChatModal from './chat/CreateChatModal';
 import CreateGroupModal from './chat/CreateGroupModal';
+import ProfileEditor from './profile/ProfileEditor';
 import OnlineDot from './chat/OnlineDot';
 import Avatar from './common/Avatar';
 import { Chat } from '../types';
 
-export default function HomePage() {
+function HomePageInner() {
   const { user, logout } = useAuth();
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const { chats, loading: chatsLoading, error: chatsError, reload: reloadChats } = useChats();
-  const { messages, loading: msgsLoading, error: msgsError, sendMessage, sendImage } = useMessages(selectedChat?.id || null);
+  const { messages, loading: msgsLoading, error: msgsError, sendMessage, sendImage, sendImages, sendVoice, editMessage, deleteMessage, prependMessages } = useMessages(selectedChat?.id || null);
+  const { loadMore, loadingMore, hasMore, reset: resetPagination } = usePagination(selectedChat?.id || null);
   const { handleTyping } = useTyping(selectedChat?.id || null);
   const { isOnline } = usePresence(user?.id);
   const { count: unreadCount, markRead } = useUnread(selectedChat?.id || null);
+  const { socket } = useSocket();
   usePushSubscription();
+  const { draft, saveDraft, clearDraft } = useDraft(selectedChat?.id || null);
+  const prevChatRef = useRef(selectedChat?.id);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+    const older = await loadMore();
+    if (older.length > 0) prependMessages(older);
+  }, [hasMore, loadingMore, loadMore, prependMessages]);
 
   const handleSelectChat = useCallback((chat: Chat) => {
     setSelectedChat(chat);
     setShowSidebar(false);
     markRead(chat.id);
-  }, [markRead]);
+    resetPagination();
+  }, [markRead, resetPagination]);
 
   const handleChatCreated = useCallback((chat: Chat) => {
     setSelectedChat(chat);
     setShowSidebar(false);
     reloadChats();
-  }, [reloadChats]);
+    resetPagination();
+  }, [reloadChats, resetPagination]);
 
   const handleBack = useCallback(() => {
     setShowSidebar(true);
     setSelectedChat(null);
   }, []);
+
+  const handleMessageEdit = useCallback((messageId: string, text: string, chatId: string) => {
+    editMessage(messageId, text, chatId);
+  }, [editMessage]);
+
+  const handleMessageDelete = useCallback((messageId: string, chatId: string) => {
+    deleteMessage(messageId, chatId);
+  }, [deleteMessage]);
+
+  const handleEditSubmit = useCallback((messageId: string, text: string) => {
+    editMessage(messageId, text, selectedChat?.id || '');
+  }, [editMessage, selectedChat?.id]);
+
+  useEffect(() => {
+    if (prevChatRef.current !== selectedChat?.id) {
+      clearDraft();
+      prevChatRef.current = selectedChat?.id;
+    }
+  }, [selectedChat?.id, clearDraft]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (msg: any) => {
+      if (msg.chatId !== selectedChat?.id && msg.senderId !== user?.id && document.hidden) {
+        playNotificationSound();
+      }
+    };
+    socket.on('message:new', handler);
+    return () => { socket.off('message:new', handler); };
+  }, [socket, selectedChat?.id, user?.id]);
 
   const otherUser = selectedChat?.participants.find((p) => p.id !== user?.id);
   const otherOnline = isOnline(otherUser?.id || '');
@@ -52,7 +101,9 @@ export default function HomePage() {
       <div className="flex h-full">
         <aside className={`${showSidebar ? 'flex' : 'hidden'} md:flex w-full md:w-80 border-r border-gray-200 dark:border-gray-700 flex-col`}>
           <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h1 className="font-semibold text-sm truncate">{user?.name || 'Chats'}</h1>
+            <button onClick={() => setShowProfile(true)} className="font-semibold text-sm truncate hover:text-primary transition-colors">
+              {user?.name || 'Chats'}
+            </button>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowGroup(true)}
@@ -121,16 +172,30 @@ export default function HomePage() {
                   </div>
                   <div className="text-xs text-gray-400">{otherOnline ? 'Online' : 'Offline'}</div>
                 </div>
-
               </div>
               <ChatView
                 messages={messages}
                 currentUserId={user?.id || ''}
+                currentUserName={user?.name || ''}
+                participants={selectedChat.participants}
                 chatId={selectedChat.id}
                 loading={msgsLoading}
                 error={msgsError}
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+                onLoadMore={handleLoadMore}
+                onMessageEdit={handleMessageEdit}
+                onMessageDelete={handleMessageDelete}
               />
-              <MessageInput onSend={sendMessage} onSendImage={sendImage} onTyping={handleTyping} />
+              <MessageInput
+                onSend={sendMessage}
+                onEdit={handleEditSubmit}
+                onSendImage={sendImage}
+                onSendImages={sendImages}
+                onTyping={handleTyping}
+                draft={draft}
+                onDraftChange={saveDraft}
+              />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-400">
@@ -152,6 +217,18 @@ export default function HomePage() {
         onClose={() => setShowGroup(false)}
         onCreated={handleChatCreated}
       />
+      <ProfileEditor
+        open={showProfile}
+        onClose={() => setShowProfile(false)}
+      />
     </AppLayout>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <ChatProvider>
+      <HomePageInner />
+    </ChatProvider>
   );
 }

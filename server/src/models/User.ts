@@ -46,3 +46,27 @@ export async function create(email: string, passwordHash: string, name: string):
   );
   return toUser(result.rows[0]);
 }
+
+export async function updateProfile(
+  userId: string,
+  data: { name?: string; avatarUrl?: string }
+): Promise<User | null> {
+  const sets: string[] = [];
+  const params: any[] = [];
+  if (data.name !== undefined) {
+    sets.push('name = $' + (params.length + 1));
+    params.push(data.name);
+  }
+  if (data.avatarUrl !== undefined) {
+    sets.push('avatar_url = $' + (params.length + 1));
+    params.push(data.avatarUrl);
+  }
+  if (sets.length === 0) return findById(userId);
+  params.push(userId);
+  const result = await pool.query(
+    `UPDATE users SET ${sets.join(', ')} WHERE id = $${params.length}
+     RETURNING id, email, name, avatar_url, created_at`,
+    params
+  );
+  return result.rows[0] ? toUser(result.rows[0]) : null;
+}

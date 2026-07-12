@@ -10,6 +10,9 @@ export default {
           dark: '#0055CC',
         },
       },
+      animation: {
+        'message-appear': 'message-appear 0.3s ease-out',
+      },
     },
   },
   plugins: [],

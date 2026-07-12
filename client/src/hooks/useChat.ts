@@ -98,13 +98,29 @@ export function useMessages(chatId: string | null) {
 
   useEffect(() => {
     if (!socket || !chatId) return;
-    const handler = (message: Message) => {
+    const onNew = (message: Message) => {
       if (message.chatId === chatId) {
         setMessages((prev) => [message, ...prev]);
       }
     };
-    socket.on('message:new', handler);
-    return () => { socket.off('message:new', handler); };
+    const onEdited = (msg: Message) => {
+      if (msg.chatId === chatId) {
+        setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, text: msg.text, isEdited: true } : m));
+      }
+    };
+    const onDeleted = (data: { messageId: string; chatId: string }) => {
+      if (data.chatId === chatId) {
+        setMessages((prev) => prev.filter((m) => m.id !== data.messageId));
+      }
+    };
+    socket.on('message:new', onNew);
+    socket.on('message:edited', onEdited);
+    socket.on('message:deleted', onDeleted);
+    return () => {
+      socket.off('message:new', onNew);
+      socket.off('message:edited', onEdited);
+      socket.off('message:deleted', onDeleted);
+    };
   }, [socket, chatId]);
 
   const sendMessage = useCallback((text: string) => {
@@ -117,7 +133,31 @@ export function useMessages(chatId: string | null) {
     socket.emit('message:send', { chatId, imageUrl });
   }, [socket, chatId]);
 
-  return { messages, loading, error, sendMessage, sendImage };
+  const sendImages = useCallback((imageUrls: string[]) => {
+    if (!socket || !chatId) return;
+    socket.emit('message:send', { chatId, imageUrls });
+  }, [socket, chatId]);
+
+  const sendVoice = useCallback((voiceUrl: string, voiceDuration: number) => {
+    if (!socket || !chatId) return;
+    socket.emit('message:send', { chatId, voiceUrl, voiceDuration });
+  }, [socket, chatId]);
+
+  const editMessage = useCallback((messageId: string, text: string, chatId: string) => {
+    if (!socket) return;
+    socket.emit('message:edit', { messageId, text, chatId });
+  }, [socket]);
+
+  const deleteMessage = useCallback((messageId: string, chatId: string) => {
+    if (!socket) return;
+    socket.emit('message:delete', { messageId, chatId });
+  }, [socket]);
+
+  const prependMessages = useCallback((older: Message[]) => {
+    setMessages((prev) => [...older, ...prev]);
+  }, []);
+
+  return { messages, loading, error, sendMessage, sendImage, sendImages, sendVoice, editMessage, deleteMessage, prependMessages };
 }
 
 export function useSearchUsers() {
