@@ -8,7 +8,7 @@ export function connectSocket(token: string): Socket {
   }
   socket = io({
     auth: { token },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
   });
   return socket;
 }
