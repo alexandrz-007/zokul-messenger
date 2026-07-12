@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: zokul
+      POSTGRES_PASSWORD: zokul
+      POSTGRES_DB: zokul
+    ports:
+      - '5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zokul']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  server:
+    image: zokul-server-test
+    environment:
+      PORT: '3001'
+      NODE_ENV: production
+      DATABASE_URL: postgresql://zokul:zokul@postgres:5432/zokul
+      JWT_SECRET: local-dev-secret
+      CORS_ORIGIN: http://localhost
+      REDIS_URL: redis://redis:6379
+    ports:
+      - '3001:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  client:
+    image: zokul-client-test
+    ports:
+      - '80:80'
+    volumes:
+      - ./client/nginx.local.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - server
