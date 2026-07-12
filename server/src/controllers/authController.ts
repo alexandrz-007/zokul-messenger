@@ -16,20 +16,6 @@ export async function register(req: AuthRequest, res: Response, next: NextFuncti
   }
 }
 
-export async function invite(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const { code } = req.body;
-    if (!code) {
-      res.status(400).json({ error: 'Invite code is required' });
-      return;
-    }
-    const result = await authService.registerByInvite(code);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-}
-
 export async function login(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const { email, password } = req.body;

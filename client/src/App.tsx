@@ -2,13 +2,14 @@
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import InviteForm from './components/auth/InviteForm';
+import LoginForm from './components/auth/LoginForm';
+import RegisterForm from './components/auth/RegisterForm';
 import HomePage from './components/HomePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  if (!user) return <Navigate to="/invite" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -32,7 +33,8 @@ export default function App() {
       <AuthProvider>
         <ThemeProvider>
         <Routes>
-          <Route path="/invite" element={<PublicRoute><AuthLayout><InviteForm /></AuthLayout></PublicRoute>} />
+          <Route path="/login" element={<PublicRoute><AuthLayout><LoginForm /></AuthLayout></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><AuthLayout><RegisterForm /></AuthLayout></PublicRoute>} />
           <Route path="/*" element={
             <ProtectedRoute>
               <SocketProvider><HomePage /></SocketProvider>

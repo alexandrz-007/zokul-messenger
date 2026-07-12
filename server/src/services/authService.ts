@@ -38,19 +38,6 @@ export function generateToken(userId: string): string {
   return jwt.sign({ userId }, config.jwtSecret, { expiresIn: '24h' });
 }
 
-export async function registerByInvite(code: string): Promise<AuthResponse> {
-  if (code !== config.inviteCode) {
-    throw new Error('Invalid invite code');
-  }
-  const name = `User_${Math.random().toString(36).slice(2, 6)}`;
-  const email = `${name}@invite.local`;
-  const passwordHash = await bcrypt.hash(code, SALT_ROUNDS);
-  const user = await UserModel.create(email, passwordHash, name);
-  const token = generateToken(user.id);
-  logger(`User joined via invite: ${user.id}`);
-  return { token, user };
-}
-
 export function verifyToken(token: string): { userId: string } {
   return jwt.verify(token, config.jwtSecret) as { userId: string };
 }

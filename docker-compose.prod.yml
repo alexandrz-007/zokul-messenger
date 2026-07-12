@@ -38,7 +38,6 @@ services:
       REDIS_URL: redis://redis:6379
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
-      INVITE_CODE: ${INVITE_CODE}
     depends_on:
       postgres:
         condition: service_healthy

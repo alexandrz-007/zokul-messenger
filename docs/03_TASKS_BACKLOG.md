@@ -138,14 +138,6 @@
   - **DB:** `ALTER TABLE messages ADD COLUMN image_urls TEXT[] DEFAULT '{}'`
   - **Тесты:** server tsc ✅, client tsc ✅, build ✅, 10/10 tests ✅
 
-#### Invite Code Auth
-- [x] T8.1. Server config — добавить `INVITE_CODE` в config/app.ts + .env.example
-- [x] T8.2. Server: `registerByInvite` в authService + invite controller + route
-- [x] T8.3. Client: `joinByInvite` в AuthContext
-- [x] T8.4. Client: создать InviteForm, удалить LoginForm/RegisterForm
-- [x] T8.5. Client: App.tsx — /invite вместо /login+/register, api.ts — редирект на /invite
-- [x] T8.6. Build & verify — server tsc ✅, client tsc ✅, build ✅, 10/10 tests ✅
-
 ### Post-Release Fixes (v2)
 - [ ] P5.1. Доделать голосовые сообщения (заменить MediaRecorder на Web Audio API, фикс стриминга)
 - [ ] P5.2. Доделать тёмную тему (доделать тёмную тему + доработать стили)
