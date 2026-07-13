@@ -35,7 +35,7 @@ export async function getSubscriptions(userId: string): Promise<webpush.PushSubs
     'SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = $1',
     [userId]
   );
-  return result.rows.map((row: any) => ({
+  return result.rows.map((row: { endpoint: string; p256dh: string; auth: string }) => ({
     endpoint: row.endpoint,
     keys: { p256dh: row.p256dh, auth: row.auth },
   }));

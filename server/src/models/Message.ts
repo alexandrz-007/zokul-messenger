@@ -1,6 +1,17 @@
 import { pool } from '../config/db';
 import { Message, ReplyPreview } from '../types';
 
+interface MessageRow {
+  id: string; chat_id: string; sender_id: string;
+  text: string | null; image_url: string | null;
+  image_urls: string[] | null; voice_url: string | null;
+  voice_duration: number | null; is_edited: boolean;
+  created_at: string;
+  reply_id?: string; reply_sender_id?: string;
+  reply_sender_name?: string; reply_text?: string | null;
+  reply_image_url?: string | null;
+}
+
 export async function findByChatId(
   chatId: string,
   offset: number = 0,
@@ -87,7 +98,7 @@ async function getReplyPreview(messageId: string): Promise<ReplyPreview | undefi
     [messageId]
   );
   if (result.rows.length === 0) return undefined;
-  const row = result.rows[0];
+  const row = result.rows[0] as { id: string; sender_id: string; sender_name: string; text: string | null; image_url: string | null };
   return {
     messageId: row.id,
     senderId: row.sender_id,
@@ -97,7 +108,7 @@ async function getReplyPreview(messageId: string): Promise<ReplyPreview | undefi
   };
 }
 
-function mapMessage(row: any): Message {
+function mapMessage(row: MessageRow): Message {
   const msg: Message = {
     id: row.id,
     chatId: row.chat_id,
@@ -113,8 +124,8 @@ function mapMessage(row: any): Message {
   if (row.reply_id) {
     msg.replyTo = {
       messageId: row.reply_id,
-      senderId: row.reply_sender_id,
-      senderName: row.reply_sender_name,
+      senderId: row.reply_sender_id!,
+      senderName: row.reply_sender_name!,
       text: row.reply_text || undefined,
       imageUrl: row.reply_image_url || undefined,
     };

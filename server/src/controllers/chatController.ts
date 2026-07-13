@@ -42,17 +42,18 @@ export async function deleteChat(req: AuthRequest, res: Response, next: NextFunc
   try {
     await chatService.deleteChat(req.params.id, req.userId!);
     res.json({ success: true });
-  } catch (err: any) {
-    if (err.message === 'Chat not found') {
-      res.status(404).json({ error: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message === 'Chat not found') {
+      res.status(404).json({ error: message });
       return;
     }
-    if (err.message === 'Not a participant') {
-      res.status(403).json({ error: err.message });
+    if (message === 'Not a participant') {
+      res.status(403).json({ error: message });
       return;
     }
-    if (err.message === 'Only the group creator can delete this chat') {
-      res.status(403).json({ error: err.message });
+    if (message === 'Only the group creator can delete this chat') {
+      res.status(403).json({ error: message });
       return;
     }
     next(err);

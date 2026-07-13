@@ -56,7 +56,7 @@ export async function updateProfile(
   data: { name?: string; avatarUrl?: string }
 ): Promise<User | null> {
   const sets: string[] = [];
-  const params: any[] = [];
+  const params: string[] = [];
   if (data.name !== undefined) {
     sets.push('name = $' + (params.length + 1));
     params.push(data.name);

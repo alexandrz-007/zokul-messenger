@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import path from 'path';
@@ -16,6 +16,7 @@ import messageRoutes from './routes/messageRoutes';
 import userRoutes from './routes/userRoutes';
 import pushRoutes from './routes/pushRoutes';
 import { uploadMiddleware } from './middleware/uploadMiddleware';
+import { processImage } from './middleware/processImage';
 import { authMiddleware } from './middleware/authMiddleware';
 import { errorMiddleware } from './middleware/errorMiddleware';
 import { authLimiter, uploadLimiter } from './middleware/rateLimit';
@@ -31,9 +32,11 @@ app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
-app.use((err: any, _req: any, res: any, next: any) => {
-  if (err.type === 'entity.too.large') {
-    return res.status(413).json({ error: 'Payload too large' });
+app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+  const error = err as { type?: string; message?: string; status?: number };
+  if (error.type === 'entity.too.large') {
+    res.status(413).json({ error: 'Payload too large' });
+    return;
   }
   next(err);
 });
@@ -48,7 +51,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/push', pushRoutes);
 
 app.post('/api/upload', uploadLimiter, authMiddleware, (req, res, next) => {
-  uploadMiddleware(req, res, (err) => {
+  uploadMiddleware(req, res, async (err) => {
     if (err) {
       return next(err);
     }
@@ -56,7 +59,13 @@ app.post('/api/upload', uploadLimiter, authMiddleware, (req, res, next) => {
     if (!file) {
       return res.status(400).json({ error: 'No file provided' });
     }
-    res.json({ url: `/uploads/${file.filename}` });
+    await processImage(req, res, (processErr) => {
+      if (processErr) {
+        return next(processErr);
+      }
+      const processed = req.file!;
+      res.json({ url: `/uploads/${processed.filename}` });
+    });
   });
 });
 
@@ -72,8 +81,8 @@ async function start(): Promise<void> {
     httpServer.listen(config.port, () => {
       logger(`Server running on port ${config.port}`);
     });
-  } catch (err: any) {
-    logger(`Failed to start server: ${err.message}`, 'error');
+  } catch (err: unknown) {
+    logger(`Failed to start server: ${err instanceof Error ? err.message : String(err)}`, 'error');
     process.exit(1);
   }
 }

@@ -45,7 +45,7 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-- **Последнее действие:** Cycle #8: Prod-readiness — healthcheck, pino logger, CI pipeline
+- **Последнее действие:** Cycle #9: Perf + Code Quality — Redis adapter, sharp resize, any→unknown
 - **Текущая задача:** — (все диагностированные проблемы исправлены)
 - **Очередь:** Улучшения (админ панель, clean disk) — отложены
 
@@ -116,6 +116,17 @@
 | ~~3~~ | ~~Socket rate limiting (5/s)~~ | ✅ Fixed | 🟡 Major | Security |
 | ~~4~~ | ~~User search — hide email~~ | ✅ Fixed | 🟡 Major | Security |
 
+### Фикс-цикл #9 (3 улучшения + 3 теста)
+- 🟡 Perf: Redis adapter for Socket.IO + sharp image resize
+- 🟢 Code quality: all 'any' removed from server/src
+- `reports/fix/DIAGNOSTIC9.md` • `reports/fix/FIX_PLAN9.md` • `reports/fix/FIX_LOG9.md`
+
+| # | Задача | Статус | Severity | Тип |
+|---|--------|--------|----------|-----|
+| ~~1~~ | ~~Redis adapter (Socket.IO multi-instance)~~ | ✅ Fixed | 🟡 Major | Perf |
+| ~~2~~ | ~~Sharp — resize 1920px + webp~~ | ✅ Fixed | 🟡 Major | Perf |
+| ~~3~~ | ~~Code quality: any → unknown/typed~~ | ✅ Fixed | 🟢 Minor | Refactor |
+
 ### Фикс-цикл #8 (3 проблемы + 2 теста)
 - 🟡 Infra: 3/3 — healthcheck, pino logs, CI
 - `reports/fix/DIAGNOSTIC8.md` • `reports/fix/FIX_PLAN8.md` • `reports/fix/FIX_LOG8.md`
@@ -183,6 +194,10 @@
 | 2026-07-13 | **Cycle #8: Fix:** Pino structured logging | `utils/logger.ts` | ✅ |
 | 2026-07-13 | **Cycle #8: Fix:** GitHub Actions CI (server + client) | `.github/workflows/ci.yml` | ✅ |
 | 2026-07-13 | **Cycle #8: Tests:** health (2) | `__tests__/health.test.ts` | ✅ |
+| 2026-07-13 | **Cycle #9: Fix:** Redis adapter for Socket.IO | `config/redis.ts`, `socket/index.ts` | ✅ |
+| 2026-07-13 | **Cycle #9: Fix:** Sharp image resize (1920px, webp) | `middleware/processImage.ts`, `index.ts` | ✅ |
+| 2026-07-13 | **Cycle #9: Fix:** Code quality — any→unknown, AuthRequest, typed row/params | 8 files in server/src | ✅ |
+| 2026-07-13 | **Cycle #9: Tests:** processImage (3) | `__tests__/processImage.test.ts` | ✅ |
 
 ---
 
@@ -205,6 +220,7 @@
 15. requireEnv сломал все тесты — модули импортируют config на уровне модуля, а env vars ещё не установлены. Решение: jest.setup.ts с process.env=... загружается до всех тестов через setupFiles.
 16. VAPID ключи для тестов должны быть валидного формата (65 bytes base64), иначе web-push библиотека падает. Решение: использовать реальные ключи из docker-compose.local.yml.
 17. Docker healthcheck — curl не всегда доступен в alpine-образе. Решение: использовать `wget --spider` вместо curl.
+18. Windows EBUSY — sharp оставляет файл заблокированным после `toFile()`. Решение: не пытаться `fs.unlinkSync()` сразу, игнорировать ошибки cleanup в afterAll.
 
 ---
 

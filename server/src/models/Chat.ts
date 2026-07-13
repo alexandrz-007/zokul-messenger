@@ -45,7 +45,7 @@ const CHAT_QUERY = `
   ) lm ON true
 `;
 
-async function findChats(query: string, params: any[]): Promise<ChatWithUsers[]> {
+async function findChats(query: string, params: string[]): Promise<ChatWithUsers[]> {
   const result = await pool.query(query, params);
   const chatMap = new Map<string, ChatWithUsers>();
   for (const row of result.rows as ChatRow[]) {

@@ -37,8 +37,8 @@ export function startCleanupScheduler(): void {
     try {
       const count = cleanupOldFiles();
       if (count > 0) logger(`Cleanup: removed ${count} old file(s) from ${config.uploadDir}`);
-    } catch (err: any) {
-      logger(`Cleanup error: ${err.message}`, 'error');
+    } catch (err: unknown) {
+      logger(`Cleanup error: ${err instanceof Error ? err.message : String(err)}`, 'error');
     }
   };
   run();

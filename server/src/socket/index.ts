@@ -1,5 +1,6 @@
 import { Server as HTTPServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 import { verifyToken } from '../services/authService';
 import * as messageService from '../services/messageService';
 import * as chatService from '../services/chatService';
@@ -8,6 +9,7 @@ import * as UserModel from '../models/User';
 import * as presenceService from '../services/presenceService';
 import { logger } from '../utils/logger';
 import { config } from '../config/app';
+import { getRedisPubSub } from '../config/redis';
 
 const HEARTBEAT_TIMEOUT = 35000;
 const userSockets = new Map<string, Set<string>>();
@@ -31,9 +33,11 @@ interface AuthSocket extends Socket {
 }
 
 export function setupSocket(httpServer: HTTPServer): Server {
+  const { pubClient, subClient } = getRedisPubSub();
   const io = new Server(httpServer, {
     cors: { origin: config.corsOrigin, credentials: true },
     pingTimeout: HEARTBEAT_TIMEOUT,
+    adapter: createAdapter(pubClient, subClient),
   });
 
   io.use(async (socket: Socket, next) => {
@@ -131,8 +135,8 @@ export function setupSocket(httpServer: HTTPServer): Server {
         );
         socket.to(`chat:${data.chatId}`).emit('message:new', message);
         socket.emit('message:new', message);
-      } catch (err: any) {
-        socket.emit('error', { message: err.message });
+      } catch (err: unknown) {
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
       }
     });
 
@@ -150,8 +154,8 @@ export function setupSocket(httpServer: HTTPServer): Server {
         const message = await messageService.editMessage(data.messageId, data.text, userId);
         socket.to(`chat:${data.chatId}`).emit('message:edited', message);
         socket.emit('message:edited', message);
-      } catch (err: any) {
-        socket.emit('error', { message: err.message });
+      } catch (err: unknown) {
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
       }
     });
 
@@ -169,8 +173,8 @@ export function setupSocket(httpServer: HTTPServer): Server {
         await messageService.deleteMessage(data.messageId, userId);
         socket.to(`chat:${data.chatId}`).emit('message:deleted', { messageId: data.messageId, chatId: data.chatId });
         socket.emit('message:deleted', { messageId: data.messageId, chatId: data.chatId });
-      } catch (err: any) {
-        socket.emit('error', { message: err.message });
+      } catch (err: unknown) {
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
       }
     });
 
@@ -204,8 +208,8 @@ export function setupSocket(httpServer: HTTPServer): Server {
         socket.to(`chat:${data.chatId}`).emit('chat:deleted', { chatId: data.chatId });
         socket.emit('chat:deleted', { chatId: data.chatId });
         socket.leave(`chat:${data.chatId}`);
-      } catch (err: any) {
-        socket.emit('error', { message: err.message });
+      } catch (err: unknown) {
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
       }
     });
 
