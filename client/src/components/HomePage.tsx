@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
+import { Message } from '../types';
 import { useChats, useUnread, useMessages } from '../hooks/useChat';
 import { usePagination } from '../hooks/usePagination';
 import { useTyping } from '../hooks/useTyping';
@@ -95,7 +96,7 @@ function HomePageInner() {
 
   useEffect(() => {
     if (!socket) return;
-    const handler = (msg: any) => {
+    const handler = (msg: Message) => {
       if (msg.chatId !== selectedChat?.id && msg.senderId !== user?.id && document.hidden) {
         playNotificationSound();
       }

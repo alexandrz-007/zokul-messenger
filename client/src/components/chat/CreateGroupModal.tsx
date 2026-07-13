@@ -72,8 +72,9 @@ export default function CreateGroupModal({ open, onClose, onCreated, socket }: C
       socket?.emit('chat:created', { chatId: res.data.id, participantIds: selected.map((u) => u.id) });
       onCreated(res.data);
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create group');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setError(axiosErr.response?.data?.error || 'Failed to create group');
     } finally {
       setCreating(false);
     }

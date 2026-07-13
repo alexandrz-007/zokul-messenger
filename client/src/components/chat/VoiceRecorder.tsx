@@ -51,10 +51,11 @@ export default function VoiceRecorder({ onSend, onCancel }: VoiceRecorderProps) 
       timerRef.current = setInterval(() => {
         durationRef.current += 1;
       }, 1000);
-    } catch (err: any) {
-      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+    } catch (err: unknown) {
+      const domErr = err as { name?: string };
+      if (domErr.name === 'NotAllowedError' || domErr.name === 'PermissionDeniedError') {
         setError('Microphone access denied');
-      } else if (err?.name === 'NotSupportedError') {
+      } else if (domErr.name === 'NotSupportedError') {
         setError('Audio recording not supported in this browser');
       } else {
         setError('Failed to start recording');

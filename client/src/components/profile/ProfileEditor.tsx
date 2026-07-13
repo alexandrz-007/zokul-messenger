@@ -27,8 +27,9 @@ export default function ProfileEditor({ open, onClose }: ProfileEditorProps) {
       const res = await api.patch<User>('/users/profile', { name: name.trim() });
       updateUser(res.data);
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update profile');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setError(axiosErr.response?.data?.error || 'Failed to update profile');
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,7 @@
 export function playNotificationSound() {
   const audio = new Audio();
-  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const ctx = new AC();
   const oscillator = ctx.createOscillator();
   const gain = ctx.createGain();
   oscillator.connect(gain);

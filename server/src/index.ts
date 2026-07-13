@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
+import compression from 'compression';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -29,6 +30,7 @@ const httpServer = createServer(app);
 
 app.set('trust proxy', 1);
 app.use(helmet());
+app.use(compression());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));

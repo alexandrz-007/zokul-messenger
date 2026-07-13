@@ -45,7 +45,7 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-- **Последнее действие:** Cycle #9: Perf + Code Quality — Redis adapter, sharp resize, any→unknown
+- **Последнее действие:** Cycle #10: Client Hardening — compression, socket connect rate limit, client tests, any→typed
 - **Текущая задача:** — (все диагностированные проблемы исправлены)
 - **Очередь:** Улучшения (админ панель, clean disk) — отложены
 
@@ -116,18 +116,19 @@
 | ~~3~~ | ~~Socket rate limiting (5/s)~~ | ✅ Fixed | 🟡 Major | Security |
 | ~~4~~ | ~~User search — hide email~~ | ✅ Fixed | 🟡 Major | Security |
 
-### Фикс-цикл #9 (3 улучшения + 3 теста)
-- 🟡 Perf: Redis adapter for Socket.IO + sharp image resize
-- 🟢 Code quality: all 'any' removed from server/src
-- `reports/fix/DIAGNOSTIC9.md` • `reports/fix/FIX_PLAN9.md` • `reports/fix/FIX_LOG9.md`
+### Фикс-цикл #10 (4 улучшения + 4 теста)
+- 🟡 Compression middleware + socket connect rate limit
+- 🟢 Client tests (vitest, 4) + any→typed (8 мест в client/src)
+- `reports/fix/DIAGNOSTIC10.md` • `reports/fix/FIX_PLAN10.md` • `reports/fix/FIX_LOG10.md`
 
 | # | Задача | Статус | Severity | Тип |
 |---|--------|--------|----------|-----|
-| ~~1~~ | ~~Redis adapter (Socket.IO multi-instance)~~ | ✅ Fixed | 🟡 Major | Perf |
-| ~~2~~ | ~~Sharp — resize 1920px + webp~~ | ✅ Fixed | 🟡 Major | Perf |
-| ~~3~~ | ~~Code quality: any → unknown/typed~~ | ✅ Fixed | 🟢 Minor | Refactor |
+| ~~1~~ | ~~Compression middleware~~ | ✅ Fixed | 🟡 Major | Perf |
+| ~~2~~ | ~~Socket connect rate limit (3/s/IP)~~ | ✅ Fixed | 🟡 Major | Security |
+| ~~3~~ | ~~Client tests (vitest, 4)~~ | ✅ Fixed | 🟢 Minor | Quality |
+| ~~4~~ | ~~any → typed (client/src, 8 мест)~~ | ✅ Fixed | 🟢 Minor | Refactor |
 
-### Фикс-цикл #8 (3 проблемы + 2 теста)
+### Фикс-цикл #9 (3 улучшения + 3 теста)
 - 🟡 Infra: 3/3 — healthcheck, pino logs, CI
 - `reports/fix/DIAGNOSTIC8.md` • `reports/fix/FIX_PLAN8.md` • `reports/fix/FIX_LOG8.md`
 
@@ -198,6 +199,10 @@
 | 2026-07-13 | **Cycle #9: Fix:** Sharp image resize (1920px, webp) | `middleware/processImage.ts`, `index.ts` | ✅ |
 | 2026-07-13 | **Cycle #9: Fix:** Code quality — any→unknown, AuthRequest, typed row/params | 8 files in server/src | ✅ |
 | 2026-07-13 | **Cycle #9: Tests:** processImage (3) | `__tests__/processImage.test.ts` | ✅ |
+| 2026-07-13 | **Cycle #10: Fix:** Compression middleware | `server/src/index.ts`, `server/package.json` | ✅ |
+| 2026-07-13 | **Cycle #10: Fix:** Socket connect rate limit (3/s/IP) | `server/src/socket/index.ts` | ✅ |
+| 2026-07-13 | **Cycle #10: Fix:** Client tests (vitest, 4) | `client/__tests__/`, `client/vite.config.ts`, `client/src/test-setup.ts` | ✅ |
+| 2026-07-13 | **Cycle #10: Fix:** any→typed (client/src, 8 мест) | 7 files in client/src | ✅ |
 
 ---
 
@@ -221,6 +226,7 @@
 16. VAPID ключи для тестов должны быть валидного формата (65 bytes base64), иначе web-push библиотека падает. Решение: использовать реальные ключи из docker-compose.local.yml.
 17. Docker healthcheck — curl не всегда доступен в alpine-образе. Решение: использовать `wget --spider` вместо curl.
 18. Windows EBUSY — sharp оставляет файл заблокированным после `toFile()`. Решение: не пытаться `fs.unlinkSync()` сразу, игнорировать ошибки cleanup в afterAll.
+19. Vitest + AuthProvider — при рендере компонента с авторизацией нужно ждать, пока `api.get('/auth/me')` разрешится. Решение: `waitFor(() => expect(screen.queryByText('Signing in...')).not.toBeInTheDocument())`.
 
 ---
 

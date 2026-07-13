@@ -18,8 +18,9 @@ export default function RegisterForm() {
     }
     try {
       await register(email, password, name);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setError(axiosErr.response?.data?.error || 'Registration failed');
     }
   };
 

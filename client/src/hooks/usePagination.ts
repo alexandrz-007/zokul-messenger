@@ -13,7 +13,7 @@ export function usePagination(chatId: string | null) {
     loadingRef.current = true;
     setLoadingMore(true);
     try {
-      const params: any = { limit: 30 };
+      const params: Record<string, string | number> = { limit: 30 };
       if (offsetRef.current > 0) params.offset = offsetRef.current;
       const res = await api.get<Message[]>(`/chats/${chatId}/messages`, { params });
       const msgs = res.data;

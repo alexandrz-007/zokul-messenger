@@ -16,6 +16,9 @@ const userSockets = new Map<string, Set<string>>();
 const messageRateLimits = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW = 1000;
 const RATE_LIMIT_MAX = 5;
+const CONNECT_RATE_LIMIT_WINDOW = 1000;
+const CONNECT_RATE_LIMIT_MAX = 3;
+const connectRateLimits = new Map<string, number[]>();
 
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
@@ -38,6 +41,19 @@ export function setupSocket(httpServer: HTTPServer): Server {
     cors: { origin: config.corsOrigin, credentials: true },
     pingTimeout: HEARTBEAT_TIMEOUT,
     adapter: createAdapter(pubClient, subClient),
+  });
+
+  io.use((socket: Socket, next) => {
+    const ip = socket.handshake.address;
+    const now = Date.now();
+    const timestamps = connectRateLimits.get(ip) || [];
+    const recent = timestamps.filter((t) => now - t < CONNECT_RATE_LIMIT_WINDOW);
+    if (recent.length >= CONNECT_RATE_LIMIT_MAX) {
+      return next(new Error('Connection rate limit exceeded'));
+    }
+    recent.push(now);
+    connectRateLimits.set(ip, recent);
+    next();
   });
 
   io.use(async (socket: Socket, next) => {
