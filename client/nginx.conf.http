@@ -1,22 +1,9 @@
 events {}
-
 http {
   include /etc/nginx/mime.types;
 
   server {
     listen 80;
-    server_name zokul.zhichkin.space;
-    return 301 https://$host$request_uri;
-  }
-
-  server {
-    listen 443 ssl;
-    server_name zokul.zhichkin.space;
-
-    ssl_certificate /etc/nginx/ssl/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
 
     root /usr/share/nginx/html;
     index index.html;

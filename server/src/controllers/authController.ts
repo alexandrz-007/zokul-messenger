@@ -4,13 +4,15 @@ import * as authService from '../services/authService';
 import * as UserModel from '../models/User';
 import { config } from '../config/app';
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  sameSite: 'strict' as const,
-  secure: process.env.NODE_ENV === 'production',
-  maxAge: 24 * 60 * 60 * 1000,
-  path: '/',
-};
+function cookieOptions(req: AuthRequest) {
+  return {
+    httpOnly: true,
+    sameSite: 'strict' as const,
+    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
+  };
+}
 
 export async function register(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -20,7 +22,7 @@ export async function register(req: AuthRequest, res: Response, next: NextFuncti
       return;
     }
     const result = await authService.register(email, password, name);
-    res.cookie('token', result.token, COOKIE_OPTIONS);
+    res.cookie('token', result.token, cookieOptions(req));
     res.status(201).json({ user: result.user });
   } catch (err) {
     next(err);
@@ -35,7 +37,7 @@ export async function login(req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
     const result = await authService.login(email, password);
-    res.cookie('token', result.token, COOKIE_OPTIONS);
+    res.cookie('token', result.token, cookieOptions(req));
     res.json({ user: result.user });
   } catch (err) {
     next(err);
