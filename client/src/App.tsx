@@ -22,7 +22,14 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50 dark:bg-gray-950">
-      <div className="w-full max-w-sm">{children}</div>
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <span className="inline-block text-4xl font-extrabold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent animate-pulse-slow select-none">
+            @Zokul@
+          </span>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
