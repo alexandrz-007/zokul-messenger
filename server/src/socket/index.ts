@@ -11,6 +11,19 @@ import { config } from '../config/app';
 
 const HEARTBEAT_TIMEOUT = 35000;
 const userSockets = new Map<string, Set<string>>();
+const messageRateLimits = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW = 1000;
+const RATE_LIMIT_MAX = 5;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const timestamps = messageRateLimits.get(userId) || [];
+  const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW);
+  if (recent.length >= RATE_LIMIT_MAX) return false;
+  recent.push(now);
+  messageRateLimits.set(userId, recent);
+  return true;
+}
 
 interface AuthSocket extends Socket {
   userId: string;
@@ -24,7 +37,12 @@ export function setupSocket(httpServer: HTTPServer): Server {
   });
 
   io.use(async (socket: Socket, next) => {
-    const token = socket.handshake.auth?.token;
+    const cookieToken = socket.handshake.headers.cookie
+      ?.split(';')
+      .map((c) => c.trim())
+      .find((c) => c.startsWith('token='))
+      ?.split('=')[1];
+    const token = socket.handshake.auth?.token || cookieToken;
     if (!token) {
       return next(new Error('Authentication required'));
     }
@@ -91,6 +109,10 @@ export function setupSocket(httpServer: HTTPServer): Server {
 
     socket.on('message:send', async (data: { chatId: string; text?: string; imageUrl?: string; imageUrls?: string[]; voiceUrl?: string; voiceDuration?: number; replyToId?: string }) => {
       try {
+        if (!checkRateLimit(userId)) {
+          socket.emit('error', { message: 'Too many messages' });
+          return;
+        }
         const chat = await chatModel.findChatById(data.chatId);
         if (!chat || !chat.participantIds.includes(userId)) {
           socket.emit('error', { message: 'Forbidden' });
@@ -116,6 +138,10 @@ export function setupSocket(httpServer: HTTPServer): Server {
 
     socket.on('message:edit', async (data: { messageId: string; text: string; chatId: string }) => {
       try {
+        if (!checkRateLimit(userId)) {
+          socket.emit('error', { message: 'Too many messages' });
+          return;
+        }
         const chat = await chatModel.findChatById(data.chatId);
         if (!chat || !chat.participantIds.includes(userId)) {
           socket.emit('error', { message: 'Forbidden' });
@@ -131,6 +157,10 @@ export function setupSocket(httpServer: HTTPServer): Server {
 
     socket.on('message:delete', async (data: { messageId: string; chatId: string }) => {
       try {
+        if (!checkRateLimit(userId)) {
+          socket.emit('error', { message: 'Too many messages' });
+          return;
+        }
         const chat = await chatModel.findChatById(data.chatId);
         if (!chat || !chat.participantIds.includes(userId)) {
           socket.emit('error', { message: 'Forbidden' });

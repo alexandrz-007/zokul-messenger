@@ -1,6 +1,16 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import * as authService from '../services/authService';
+import * as UserModel from '../models/User';
+import { config } from '../config/app';
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 24 * 60 * 60 * 1000,
+  path: '/',
+};
 
 export async function register(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -10,7 +20,8 @@ export async function register(req: AuthRequest, res: Response, next: NextFuncti
       return;
     }
     const result = await authService.register(email, password, name);
-    res.status(201).json(result);
+    res.cookie('token', result.token, COOKIE_OPTIONS);
+    res.status(201).json({ user: result.user });
   } catch (err) {
     next(err);
   }
@@ -24,8 +35,27 @@ export async function login(req: AuthRequest, res: Response, next: NextFunction)
       return;
     }
     const result = await authService.login(email, password);
-    res.json(result);
+    res.cookie('token', result.token, COOKIE_OPTIONS);
+    res.json({ user: result.user });
   } catch (err) {
     next(err);
   }
+}
+
+export async function me(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const user = await UserModel.findById(req.userId!);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function logout(_req: AuthRequest, res: Response): Promise<void> {
+  res.clearCookie('token', { path: '/' });
+  res.json({ ok: true });
 }

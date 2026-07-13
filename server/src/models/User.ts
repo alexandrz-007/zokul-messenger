@@ -27,14 +27,18 @@ export async function findById(id: string): Promise<User | null> {
   return row ? toUser(row) : null;
 }
 
-export async function search(query: string, excludeUserId: string, limit: number = 10): Promise<User[]> {
+export async function search(query: string, excludeUserId: string, limit: number = 10): Promise<{ id: string; name: string; avatarUrl?: string }[]> {
   const result = await pool.query(
-    `SELECT id, email, name, avatar_url, created_at FROM users
+    `SELECT id, name, avatar_url FROM users
      WHERE (email ILIKE $1 OR name ILIKE $1) AND id != $2
      LIMIT $3`,
     [`%${query}%`, excludeUserId, limit]
   );
-  return result.rows.map(toUser);
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    avatarUrl: row.avatar_url || undefined,
+  }));
 }
 
 export async function create(email: string, passwordHash: string, name: string): Promise<User> {

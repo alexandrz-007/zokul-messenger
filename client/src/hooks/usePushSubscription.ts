@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function usePushSubscription() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const subscribed = useRef(false);
 
   useEffect(() => {
-    if (!token || !user || subscribed.current) return;
+    if (!user || subscribed.current) return;
     subscribed.current = true;
 
     async function subscribe() {
@@ -25,7 +25,8 @@ export function usePushSubscription() {
 
         await fetch('/api/push/subscribe', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ subscription: newSub.toJSON() }),
         });
       } catch {
@@ -34,5 +35,5 @@ export function usePushSubscription() {
     }
 
     subscribe();
-  }, [token, user]);
+  }, [user]);
 }

@@ -25,7 +25,6 @@ export default function ProfileEditor({ open, onClose }: ProfileEditorProps) {
     setError('');
     try {
       const res = await api.patch<User>('/users/profile', { name: name.trim() });
-      localStorage.setItem('user', JSON.stringify(res.data));
       updateUser(res.data);
       onClose();
     } catch (err: any) {

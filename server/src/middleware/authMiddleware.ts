@@ -7,12 +7,11 @@ export interface AuthRequest extends Request {
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction): void {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+  if (!token) {
     res.status(401).json({ error: 'No token provided' });
     return;
   }
-  const token = header.split(' ')[1];
   try {
     const decoded = verifyToken(token);
     req.userId = decoded.userId;

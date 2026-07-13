@@ -10,12 +10,12 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType>({ socket: null });
 
 export function SocketProvider({ children }: { children: ReactNode }) {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (token) {
-      const s = connectSocket(token);
+    if (user) {
+      const s = connectSocket();
       setSocket(s);
       const onConnect = () => {
         setSocket(s);
@@ -30,7 +30,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       disconnectSocket();
       setSocket(null);
     }
-  }, [token]);
+  }, [user]);
 
   return (
     <SocketContext.Provider value={{ socket }}>

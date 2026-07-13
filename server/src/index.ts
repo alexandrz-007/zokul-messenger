@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { config } from './config/app';
 import { migrate } from './config/db';
@@ -27,6 +28,7 @@ const httpServer = createServer(app);
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
+app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use((err: any, _req: any, res: any, next: any) => {
   if (err.type === 'entity.too.large') {

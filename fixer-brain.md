@@ -45,7 +45,7 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-- **Последнее действие:** Cycle #6: UI улучшение + 🔴 Socket security fix + Infra (SCAN, limit, shutdown) + 13 новых тестов
+- **Последнее действие:** Cycle #7: Security Hardening — httpOnly cookie, requireEnv, socket rate limit, hide email
 - **Текущая задача:** — (все диагностированные проблемы исправлены)
 - **Очередь:** Улучшения (админ панель, clean disk) — отложены
 
@@ -104,6 +104,18 @@
 | ~~5~~ | ~~Parallel image upload~~ | ✅ Fixed | 🟢 Minor | Performance |
 | ~~6~~ | ~~redis.keys() → SCAN~~ | ✅ Fixed | 🟡 Major | Performance |
 
+### Фикс-цикл #7 (4 проблемы + 5 тестов)
+- 🔴 Security: 2/2 — httpOnly cookie, requireEnv
+- 🟡 Security: 2/2 — socket rate limit, hide email
+- `reports/fix/DIAGNOSTIC7.md` • `reports/fix/FIX_PLAN7.md` • `reports/fix/FIX_LOG7.md`
+
+| # | Задача | Статус | Severity | Тип |
+|---|--------|--------|----------|-----|
+| ~~1~~ | ~~JWT httpOnly cookie~~ | ✅ Fixed | 🔴 Critical | Security |
+| ~~2~~ | ~~Fallback secrets → throw~~ | ✅ Fixed | 🔴 Critical | Security |
+| ~~3~~ | ~~Socket rate limiting (5/s)~~ | ✅ Fixed | 🟡 Major | Security |
+| ~~4~~ | ~~User search — hide email~~ | ✅ Fixed | 🟡 Major | Security |
+
 ---
 
 ## ИСТОРИЯ ИЗМЕНЕНИЙ
@@ -150,6 +162,12 @@
 | 2026-07-13 | **Cycle #6: Fix:** Sequential image upload → Promise.all | `MessageInput.tsx:68-73` | ✅ |
 | 2026-07-13 | **Cycle #6: Fix:** redis.keys() → SCAN | `presenceService.ts:33-43` | ✅ |
 | 2026-07-13 | **Cycle #6: Tests:** socket (3) + presenceService (8) + cleanup (2) | `__tests__/` | ✅ |
+| 2026-07-13 | **Cycle #7: 🔴 Fix:** JWT httpOnly cookie — сервер | `index.ts`, `authController.ts`, `authMiddleware.ts`, `socket/index.ts`, `authRoutes.ts` | ✅ |
+| 2026-07-13 | **Cycle #7: 🔴 Fix:** JWT httpOnly cookie — клиент | `api.ts`, `AuthContext.tsx`, `socket.ts`, `SocketContext.tsx`, `usePushSubscription.ts`, `ProfileEditor.tsx` | ✅ |
+| 2026-07-13 | **Cycle #7: 🔴 Fix:** requireEnv — throw если нет env | `app.ts` | ✅ |
+| 2026-07-13 | **Cycle #7: 🟡 Fix:** Socket rate limiting (5/s/user) | `socket/index.ts` | ✅ |
+| 2026-07-13 | **Cycle #7: 🟡 Fix:** User search — hide email | `models/User.ts` | ✅ |
+| 2026-07-13 | **Cycle #7: Tests:** authCookie (5), jest.setup | `__tests__/authCookie.test.ts`, `jest.setup.ts` | ✅ |
 
 ---
 
@@ -168,6 +186,9 @@
 11. Socket security — REST-маршруты (messageRoutes) используют `checkParticipant`, а socket-обработчики нет. Любой JWT может писать в любой чат. Решение: всегда дублировать проверку participant в socket handler'ах.
 12. redis.keys() — блокирует Redis на время выполнения (O(N)). При 1000+ онлайн — секундная задержка. Решение: заменить на SCAN с пагинацией.
 13. Graceful shutdown — setInterval не даёт процессу завершиться, пока не сработает. Решение: сохранять interval reference и чистить в shutdown.
+14. Переход с localStorage JWT на httpOnly cookie — сломал session restore. Старый клиент с токеном в localStorage не залогинится. Решение: authMiddleware поддерживает и cookie, и Bearer header для плавной миграции.
+15. requireEnv сломал все тесты — модули импортируют config на уровне модуля, а env vars ещё не установлены. Решение: jest.setup.ts с process.env=... загружается до всех тестов через setupFiles.
+16. VAPID ключи для тестов должны быть валидного формата (65 bytes base64), иначе web-push библиотека падает. Решение: использовать реальные ключи из docker-compose.local.yml.
 
 ---
 
