@@ -54,6 +54,7 @@ async function findChats(query: string, params: any[]): Promise<ChatWithUsers[]>
         id: row.id,
         name: row.name || undefined,
         isGroup: row.is_group || false,
+        creatorId: row.creator_id || undefined,
         participantIds: [],
         participants: [],
         createdAt: row.created_at,
@@ -121,4 +122,8 @@ export async function createChat(userId1: string, userId2: string): Promise<Chat
   } finally {
     client.release();
   }
+}
+
+export async function removeChat(chatId: string): Promise<void> {
+  await pool.query('DELETE FROM chats WHERE id = $1', [chatId]);
 }

@@ -68,6 +68,7 @@ export async function deleteMessage(
   const msg = await MessageModel.findById(messageId);
   if (!msg) throw new Error('Message not found');
   if (msg.senderId !== userId) throw new Error('Not authorized to delete this message');
-  await MessageModel.softDelete(messageId);
+  const deleted = await MessageModel.softDelete(messageId);
+  if (!deleted) throw new Error('Message not found');
   return { chatId: msg.chatId };
 }

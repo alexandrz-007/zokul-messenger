@@ -30,6 +30,7 @@ export async function migrate(): Promise<void> {
     await client.query(`ALTER TABLE chats ADD COLUMN IF NOT EXISTS name VARCHAR(100)`);
     await client.query(`ALTER TABLE chats ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)`);
     await client.query(`ALTER TABLE chats ADD COLUMN IF NOT EXISTS is_group BOOLEAN DEFAULT false`);
+    await client.query(`ALTER TABLE chats ADD COLUMN IF NOT EXISTS creator_id UUID REFERENCES users(id)`);
     await client.query(`
       CREATE TABLE IF NOT EXISTS chat_participants (
         chat_id UUID REFERENCES chats(id) ON DELETE CASCADE,

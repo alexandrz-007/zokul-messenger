@@ -37,3 +37,24 @@ export async function createChat(req: AuthRequest, res: Response, next: NextFunc
     next(err);
   }
 }
+
+export async function deleteChat(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await chatService.deleteChat(req.params.id, req.userId!);
+    res.json({ success: true });
+  } catch (err: any) {
+    if (err.message === 'Chat not found') {
+      res.status(404).json({ error: err.message });
+      return;
+    }
+    if (err.message === 'Not a participant') {
+      res.status(403).json({ error: err.message });
+      return;
+    }
+    if (err.message === 'Only the group creator can delete this chat') {
+      res.status(403).json({ error: err.message });
+      return;
+    }
+    next(err);
+  }
+}

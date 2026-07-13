@@ -35,6 +35,7 @@ export interface Chat {
   id: string;
   name?: string;
   isGroup?: boolean;
+  creatorId?: string;
   participantIds: string[];
   createdAt: string;
 }
@@ -48,6 +49,7 @@ export interface ChatRow {
   id: string;
   name: string | null;
   is_group: boolean;
+  creator_id: string | null;
   created_at: string;
   last_message_id?: string;
   last_message_text?: string;

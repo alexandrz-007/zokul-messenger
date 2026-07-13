@@ -6,6 +6,10 @@ import * as presenceService from '../services/presenceService';
 export async function search(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const q = (req.query.q as string) || '';
+    if (q.length < 2) {
+      res.json([]);
+      return;
+    }
     const users = await UserModel.search(q, req.userId!);
     res.json(users);
   } catch (err) {

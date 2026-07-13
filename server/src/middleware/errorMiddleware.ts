@@ -11,7 +11,7 @@ export function errorMiddleware(err: Error, _req: Request, res: Response, _next:
     res.status(401).json({ error: err.message });
     return;
   }
-  if (err.message === 'Cannot create chat with yourself' || err.message === 'Message must have text or image') {
+  if (err.message === 'Cannot create chat with yourself' || err.message === 'Message must have text, image, or voice') {
     res.status(400).json({ error: err.message });
     return;
   }

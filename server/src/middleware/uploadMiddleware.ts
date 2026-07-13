@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import { config } from '../config/app';
@@ -7,8 +8,7 @@ const storage = multer.diskStorage({
     cb(null, config.uploadDir);
   },
   filename: (_req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, unique + path.extname(file.originalname));
+    cb(null, randomUUID() + path.extname(file.originalname));
   },
 });
 
@@ -32,4 +32,3 @@ const upload = multer({
 });
 
 export const uploadMiddleware = upload.single('file');
-export const uploadImagesMiddleware = upload.array('files', 4);

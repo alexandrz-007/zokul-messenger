@@ -141,7 +141,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const hasContent = text.trim().length > 0 || replyTo || editingMessage || pendingImages.length > 0;
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-gray-200 dark:border-gray-700">
+    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-gray-200 dark:border-gray-700 safe-area-bottom">
       {replyTo && !editingMessage && (
         <div className="absolute bottom-full left-0 right-0 z-10 px-3">
           <ReplyQuote reply={replyTo} onCancel={() => setReplyTo(null)} />
@@ -150,7 +150,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
       {pendingImages.length > 0 && (
         <div className="flex gap-1.5 px-3 pt-2 pb-1 overflow-x-auto">
           {pendingImages.map((img, idx) => (
-            <div key={idx} className="relative shrink-0">
+            <div key={img.file.name + img.file.size} className="relative shrink-0">
               <img src={img.preview} alt="" className="w-16 h-16 rounded-lg object-cover" />
               <button
                 type="button"
@@ -171,6 +171,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
           className="w-9 h-9 mb-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center shrink-0"
+          aria-label="Attach file"
         >
           {uploading ? (
             <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -200,13 +201,14 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
                 value={text}
                 onChange={handleChange}
                 placeholder={editingMessage ? 'Edit message...' : replyTo ? 'Reply...' : pendingImages.length > 0 ? 'Add a caption...' : 'Message...'}
-                className="flex-1 bg-transparent focus:outline-none text-sm leading-5 py-0.5"
+                className="flex-1 bg-transparent focus:outline-none text-base leading-5 py-0.5"
                 autoFocus={!!editingMessage}
               />
               <button
                 type="button"
                 onClick={() => setShowEmoji((v) => !v)}
                 className="w-8 h-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center shrink-0"
+                aria-label="Toggle emoji picker"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5" strokeWidth={2}>
                   <circle cx="12" cy="12" r="10" />
@@ -219,6 +221,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
                 type="submit"
                 disabled={!hasContent && !text.trim()}
                 className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0"
+                aria-label="Send message"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                   <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />

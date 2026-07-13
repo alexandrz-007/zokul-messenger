@@ -3,20 +3,23 @@ import api from '../../services/api';
 import { useCreateChat } from '../../hooks/useChat';
 import Avatar from '../common/Avatar';
 import { Chat, User } from '../../types';
+import { Socket } from 'socket.io-client';
 
 interface CreateGroupModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (chat: Chat) => void;
+  socket?: Socket | null;
 }
 
-export default function CreateGroupModal({ open, onClose, onCreated }: CreateGroupModalProps) {
+export default function CreateGroupModal({ open, onClose, onCreated, socket }: CreateGroupModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<User[]>([]);
   const [selected, setSelected] = useState<User[]>([]);
   const [groupName, setGroupName] = useState('');
   const [searching, setSearching] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -25,8 +28,10 @@ export default function CreateGroupModal({ open, onClose, onCreated }: CreateGro
       setQuery('');
       setSelected([]);
       setGroupName('');
+      setResults([]);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+    return () => { clearTimeout(debounceRef.current); };
   }, [open]);
 
   const handleQuery = (value: string) => {
@@ -57,27 +62,30 @@ export default function CreateGroupModal({ open, onClose, onCreated }: CreateGro
   };
 
   const handleCreate = async () => {
-    if (selected.length < 2 || !groupName.trim()) return;
+    if (selected.length < 1 || !groupName.trim()) return;
     setCreating(true);
     try {
       const res = await api.post<Chat>('/chats/group', {
         name: groupName.trim(),
         participantIds: selected.map((u) => u.id),
       });
+      socket?.emit('chat:created', { chatId: res.data.id, participantIds: selected.map((u) => u.id) });
       onCreated(res.data);
       onClose();
-    } catch {
-      // silently fail
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create group');
     } finally {
       setCreating(false);
     }
   };
 
+  const canCreate = selected.length >= 1 && groupName.trim().length > 0;
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/40">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/40" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden" role="dialog" aria-modal="true" aria-label="Create group">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold">New Group</h2>
         </div>
@@ -137,6 +145,12 @@ export default function CreateGroupModal({ open, onClose, onCreated }: CreateGro
           ))}
         </div>
 
+        {error && (
+          <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-red-500 text-xs">{error}</p>
+          </div>
+        )}
+
         <div className="p-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <button
             onClick={onClose}
@@ -146,7 +160,7 @@ export default function CreateGroupModal({ open, onClose, onCreated }: CreateGro
           </button>
           <button
             onClick={handleCreate}
-            disabled={selected.length < 2 || !groupName.trim() || creating}
+            disabled={!canCreate || creating}
             className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
           >
             {creating ? 'Creating...' : `Create Group (${selected.length})`}

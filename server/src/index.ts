@@ -1,4 +1,5 @@
 import express from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
 import path from 'path';
 import { createServer } from 'http';
@@ -15,11 +16,13 @@ import { uploadMiddleware } from './middleware/uploadMiddleware';
 import { authMiddleware } from './middleware/authMiddleware';
 import { errorMiddleware } from './middleware/errorMiddleware';
 import { setupSocket } from './socket';
+import { closeRedis } from './config/redis';
 
 const app = express();
 const httpServer = createServer(app);
 
 app.set('trust proxy', 1);
+app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -61,5 +64,23 @@ async function start(): Promise<void> {
 }
 
 start();
+
+function gracefulShutdown(signal: string): void {
+  logger(`Received ${signal}, shutting down gracefully...`);
+  httpServer.close(() => {
+    logger('HTTP server closed');
+    closeRedis().then(() => {
+      logger('Redis connection closed');
+      process.exit(0);
+    });
+  });
+  setTimeout(() => {
+    logger('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000).unref();
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 export { app, httpServer, io };

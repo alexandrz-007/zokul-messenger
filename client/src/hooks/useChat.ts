@@ -88,12 +88,18 @@ export function useMessages(chatId: string | null) {
 
   useEffect(() => {
     if (!chatId) return;
+    const controller = new AbortController();
     setLoading(true);
     setError('');
-    api.get<Message[]>(`/chats/${chatId}/messages`)
+    api.get<Message[]>(`/chats/${chatId}/messages`, { signal: controller.signal })
       .then((res) => setMessages(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load messages'))
+      .catch((err) => {
+        if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+          setError(err.response?.data?.error || 'Failed to load messages');
+        }
+      })
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, [chatId]);
 
   useEffect(() => {

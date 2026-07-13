@@ -188,7 +188,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto lg:px-4">
         <div ref={sentinelRef} />
         {loadingMore && (
           <div className="text-center py-3">

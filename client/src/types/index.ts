@@ -42,3 +42,7 @@ export interface Chat {
   lastMessage?: Message;
   createdAt: string;
 }
+
+export interface ChatDeleted {
+  chatId: string;
+}

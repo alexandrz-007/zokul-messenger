@@ -12,8 +12,8 @@ export async function createGroup(
   try {
     await client.query('BEGIN');
     const chatResult = await client.query(
-      `INSERT INTO chats (name, is_group) VALUES ($1, true) RETURNING id, created_at`,
-      [name]
+      `INSERT INTO chats (name, is_group, creator_id) VALUES ($1, true, $2) RETURNING id, created_at`,
+      [name, creatorId]
     );
     const chatId = chatResult.rows[0].id;
     for (const userId of allIds) {

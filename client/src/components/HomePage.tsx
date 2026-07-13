@@ -44,19 +44,26 @@ function HomePageInner() {
     if (older.length > 0) prependMessages(older);
   }, [hasMore, loadingMore, loadMore, prependMessages]);
 
+  const prevChatRefForSocket = useRef<string | null>(null);
+
   const handleSelectChat = useCallback((chat: Chat) => {
+    if (prevChatRefForSocket.current && prevChatRefForSocket.current !== chat.id) {
+      socket?.emit('chat:leave', { chatId: prevChatRefForSocket.current });
+    }
+    prevChatRefForSocket.current = chat.id;
     setSelectedChat(chat);
     setShowSidebar(false);
     markRead(chat.id);
     resetPagination();
-  }, [markRead, resetPagination]);
+  }, [markRead, resetPagination, socket]);
 
   const handleChatCreated = useCallback((chat: Chat) => {
     setSelectedChat(chat);
     setShowSidebar(false);
     reloadChats();
     resetPagination();
-  }, [reloadChats, resetPagination]);
+    socket?.emit('chat:join', chat.id);
+  }, [reloadChats, resetPagination, socket]);
 
   const handleBack = useCallback(() => {
     setShowSidebar(true);
@@ -70,6 +77,10 @@ function HomePageInner() {
   const handleMessageDelete = useCallback((messageId: string, chatId: string) => {
     deleteMessage(messageId, chatId);
   }, [deleteMessage]);
+
+  const handleDeleteChat = useCallback((chatId: string) => {
+    socket?.emit('chat:delete', { chatId });
+  }, [socket]);
 
   const handleEditSubmit = useCallback((messageId: string, text: string) => {
     editMessage(messageId, text, selectedChat?.id || '');
@@ -93,6 +104,19 @@ function HomePageInner() {
     return () => { socket.off('message:new', handler); };
   }, [socket, selectedChat?.id, user?.id]);
 
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data: { chatId: string }) => {
+      if (selectedChat?.id === data.chatId) {
+        setSelectedChat(null);
+        setShowSidebar(true);
+      }
+      reloadChats();
+    };
+    socket.on('chat:deleted', handler);
+    return () => { socket.off('chat:deleted', handler); };
+  }, [socket, selectedChat?.id, reloadChats]);
+
   const otherUser = selectedChat?.participants.find((p) => p.id !== user?.id);
   const otherOnline = isOnline(otherUser?.id || '');
 
@@ -109,6 +133,7 @@ function HomePageInner() {
                 onClick={() => setShowGroup(true)}
                 className="w-8 h-8 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center justify-center transition-colors"
                 title="New Group"
+                aria-label="New Group"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -121,6 +146,7 @@ function HomePageInner() {
                 onClick={() => setShowCreate(true)}
                 className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary-dark transition-colors"
                 title="New Chat"
+                aria-label="New Chat"
               >
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                   <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
@@ -130,6 +156,7 @@ function HomePageInner() {
                 onClick={logout}
                 className="w-8 h-8 text-gray-400 hover:text-red-500 flex items-center justify-center transition-colors"
                 title="Log out"
+                aria-label="Log out"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -147,6 +174,7 @@ function HomePageInner() {
             loading={chatsLoading}
             error={chatsError}
             unreadCount={unreadCount}
+            onDelete={handleDeleteChat}
           />
         </aside>
         <section className={`${!showSidebar || selectedChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col`}>
@@ -216,6 +244,7 @@ function HomePageInner() {
         open={showGroup}
         onClose={() => setShowGroup(false)}
         onCreated={handleChatCreated}
+        socket={socket}
       />
       <ProfileEditor
         open={showProfile}

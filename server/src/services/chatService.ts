@@ -22,3 +22,13 @@ export async function createChat(userId: string, participantId: string): Promise
 export async function getChatById(chatId: string): Promise<ChatWithUsers | null> {
   return ChatModel.findChatById(chatId);
 }
+
+export async function deleteChat(chatId: string, userId: string): Promise<void> {
+  const chat = await ChatModel.findChatById(chatId);
+  if (!chat) throw new Error('Chat not found');
+  if (!chat.participantIds.includes(userId)) throw new Error('Not a participant');
+  if (chat.isGroup && chat.creatorId && chat.creatorId !== userId) {
+    throw new Error('Only the group creator can delete this chat');
+  }
+  await ChatModel.removeChat(chatId);
+}

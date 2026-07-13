@@ -305,6 +305,7 @@ interface Chat {
   id: string;
   name?: string;
   isGroup?: boolean;
+  creatorId?: string;    // UUID создателя (для групп)
   participantIds: string[];
   participants: User[];   // только на клиенте / ChatWithUsers на сервере
   lastMessage?: Message;
@@ -337,6 +338,7 @@ interface AuthResponse {
 | GET | `/api/chats` | Yes | — | `200 Chat[]` |
 | GET | `/api/chats/:id` | Yes + участник | — | `200 Chat` |
 | POST | `/api/chats` | Yes | `{ participantId }` | `201 Chat` (или existing) |
+| DELETE | `/api/chats/:id` | Yes + участник | — | `200 { success: true }` |
 | POST | `/api/chats/group` | Yes | `{ name, participantIds[] }` | `201 Chat` |
 | POST | `/api/chats/:id/members` | Yes + участник | `{ userId }` | `200 Chat` |
 | DELETE | `/api/chats/:id/members/:userId` | Yes + участник | — | `200 Chat` |
@@ -707,9 +709,28 @@ docker-compose -f docker-compose.prod.yml up -d
 8. **Web Audio API** для звука — без лишних mp3-файлов, просто и эффективно
 9. **Документация** — 7 файлов в docs/ с архитектурой, структурой, планом, прогрессом — редкая дисциплина
 
-### Что можно улучшить
+### Что уже исправлено (Fix Cycle #1 — 5 багов, 2026-07-13)
+1. ✅ Socket.IO — комнаты для новых чатов (`chat:join`, auto-join, `chat:created`)
+2. ✅ Групповые чаты — min 1 participant, catch(err), userSockets Map
+3. ✅ Вёрстка сообщений — `max-w-2xl` → `max-w-4xl`
+4. ✅ Удаление диалога — `DELETE /api/chats/:id`, socket `chat:deleted`
+5. ✅ iOS Safari — `text-base` 16px, `safe-area-bottom`
+
+### Что уже исправлено (Fix Cycle #2 — 20 проблем, 2026-07-13)
+1. ✅ Error middleware — совпадают строки ошибок (400 вместо 500)
+2. ✅ ErrorBoundary — защита от белого экрана
+3. ✅ Удаление группы — только создатель (`creator_id`)
+4. ✅ Race condition — AbortController для сообщений, debounce cleanup
+5. ✅ Socket — try/catch для presence + chat loading
+6. ✅ AuthSocket — вместо `(socket as any)`
+7. ✅ Graceful shutdown — SIGTERM/SIGINT
+8. ✅ Helmet + crypto.randomUUID + inline errors + a11y + focus trap + др.
+
+См. `reports/fix/` для деталей.
+
+### Что можно улучшить (актуально)
 1. **Типы дублированы** — `client/src/types/index.ts` и `server/src/types/index.ts` — синхронизируются вручную. При расширении можно забыть обновить один из них
-2. **Нет WebSocket комнат при создании чата** — если пользователь создаёт новый чат, старый Socket (который уже подписан на комнаты) не узнает о нём, пока не перезагрузит страницу
+2. ~~**Нет WebSocket комнат при создании чата**~~ — ✅ **Исправлено** (Cycle #1): добавлен `chat:join` handler + auto-join в `message:send` + `chat:created` для групп
 3. **Нет rate limiting на upload** — можно заспамить файлами (хотя Multer 20MB ограничивает размер)
 4. **Нет пагинации на списке чатов** — если у пользователя 1000 чатов, загрузятся все сразу. Offset не используется. Хотя в MVP это ок
 5. **Нет логгирования ошибок в файл/сервис** — только `console.log` через `logger.ts`. Для прода лучше добавить Sentry или подобное

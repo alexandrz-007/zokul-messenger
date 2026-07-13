@@ -21,6 +21,7 @@ export default function CreateChatModal({ open, onClose, onCreated }: CreateChat
       setQuery('');
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+    return () => { clearTimeout(debounceRef.current); };
   }, [open]);
 
   const handleQuery = (value: string) => {
@@ -40,8 +41,8 @@ export default function CreateChatModal({ open, onClose, onCreated }: CreateChat
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/40">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/40" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden" role="dialog" aria-modal="true" aria-label="New chat">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold">New Chat</h2>
         </div>
