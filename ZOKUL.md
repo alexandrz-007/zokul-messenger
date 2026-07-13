@@ -1,8 +1,8 @@
 # Zokul — Universal Messenger PWA
 
 > **URL:** https://zokul.zhichkin.space
-> **Статус:** Все фазы завершены, проект работает на продакшен-сервере
-> **Стек:** React + TypeScript + Vite + Tailwind CSS | Node.js + Express + Socket.IO | PostgreSQL + Redis | Docker + Nginx
+> **Статус:** Release v1.0 — проект готов к деплою, production-ветка залита на GitHub
+> **Стек:** React + TypeScript + Vite + Tailwind CSS | Node.js + Express + Socket.IO | PostgreSQL + Redis | Docker + Nginx | sharp
 
 ---
 
@@ -218,6 +218,7 @@ Nginx выступает как reverse proxy:
 | password_hash | VARCHAR(255) | NOT NULL |
 | name | VARCHAR(100) | NOT NULL |
 | avatar_url | VARCHAR(500) | NULL |
+| token_version | INTEGER | DEFAULT 0 (инкремент при смене пароля) |
 | created_at | TIMESTAMPTZ | DEFAULT NOW() |
 
 #### `chats`
@@ -331,6 +332,7 @@ interface AuthResponse {
 |-------|------|------|-----------|------|-------|
 | POST | `/api/auth/register` | No | 3/час | `{ email, password, name }` | `201 { token, user }` |
 | POST | `/api/auth/login` | No | 5/15мин | `{ email, password }` | `200 { token, user }` |
+| POST | `/api/auth/change-password` | Yes | 10/15мин | `{ oldPassword, newPassword }` | `200 { success }` + сброс токена |
 
 #### Чаты
 | Метод | Путь | Auth | Тело | Ответ |
@@ -491,7 +493,7 @@ Request → cors → express.json() → static /uploads → Routes → Controlle
 - **uploadMiddleware** — Multer: 20MB, MIME: `image/*` + `audio/*`
 - **checkParticipantMiddleware** — проверка, что пользователь в чате
 - **ownerMiddleware** — проверка, что пользователь — владелец сообщения
-- **rateLimitMiddleware** — 3/час register, 5/15мин login, 100/15мин общий
+- **rateLimitMiddleware** — 3/час register, 5/15мин login, 10/15мин API, 100/15мин upload
 - **errorMiddleware** — централизованный обработчик: `{ error: message }`
 
 ### 8.2 Route → Controller → Service → Model
@@ -565,22 +567,37 @@ npm run dev
 ### 10.2 Docker (локальный тестовый)
 
 ```bash
-docker build -t zokul-server ./server
-docker build -t zokul-client ./client
-docker-compose -f docker-compose.local.yml up -d
+docker compose -f docker-compose.local.yml up -d
+# 4 контейнера: postgres, redis, server, client
+# upload volume: uploads:/app/uploads
 ```
 
-### 10.3 Продакшен деплой
+### 10.3 Deploy-copy (чистая версия для продакшена)
+
+```bash
+# Создать чистую копию без docs/tests/node_modules
+powershell scripts/prepare-deploy.ps1
+
+# Deploy-копия в ../zokul-deploy (111 файлов, ~0.8 MB)
+# Проверка перед пушем:
+cd ../zokul-deploy
+docker compose -f docker-compose.prod.yml build
+```
+
+### 10.4 Продакшен деплой
 
 ```bash
 # Первичная настройка SSL (один раз)
 ./scripts/setup-ssl.sh zokul.zhichkin.space
 
 # Запуск
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 Продакшен композ запускает: postgres + redis (healthcheck) → server (wait) → client (nginx :80/:443)
+
+**Ветвление:** `master` — разработка, `production` — чистая deploy-копия.
+**Обновление:** `cd deploy && git pull && docker compose -f docker-compose.prod.yml up -d --build`
 
 ### 10.4 Команды
 
@@ -616,16 +633,20 @@ docker-compose -f docker-compose.prod.yml up -d
   - `authService.test.ts` — регистрация, логин, дубликат email
   - `chatService.test.ts` — создание чата, существующий чат, сам с собой
   - `messageService.test.ts` — создание, редактирование, удаление, owner check
-  - Результат: **10/10 тестов**
-- **Клиент:** Vitest (настроен, заглушки)
+   - Результат: **44/44 тестов**
+- **Клиент:** Vitest — **7/7 тестов** (AuthContext, LoginForm, Avatar)
 - **Проверка:** `tsc --noEmit` → clean, `npm run build` → success
 
 ---
 
 ## 12. ДЕПЛОЙ (PRODUCTION)
 
+- **Ветвление:** `master` — разработка, `production` — deploy-копия
+- **Скрипт:** `scripts/prepare-deploy.ps1` / `scripts/prepare-deploy.sh` — создаёт чистую копию (111 файлов, 0.8 MB)
+- **Порядок обновления:** `powershell scripts/prepare-deploy.ps1 → cd ../zokul-deploy → git push origin master:production --force`
+- **На сервере:** `cd /opt/zokul && git pull && docker compose -f docker-compose.prod.yml up -d --build`
 - **Домен:** `https://zokul.zhichkin.space`
-- **Инфраструктура:** Docker Swarm / single-host docker-compose
+- **Инфраструктура:** single-host docker-compose
 - **Nginx:** SSL termination (Let's Encrypt), reverse proxy на сервер
 - **SSL:** Certbot + cron auto-renew в `scripts/setup-ssl.sh`
 - **Healthchecks:** PostgreSQL (`pg_isready`), Redis (`redis-cli ping`), сервер ждёт их
@@ -691,8 +712,12 @@ docker-compose -f docker-compose.prod.yml up -d
 | P3 | Advanced | ✅ CLOSED | 15 |
 | Bugfix | 31 fixes | ✅ CLOSED | 31 |
 | P4 | Multi-Image | ✅ CLOSED | 1 |
+| P5 | Security Hardening #1 | ✅ CLOSED | 8 |
+| P6 | Performance & Polish | ✅ CLOSED | 6 |
+| P7 | Security Hardening #2 | ✅ CLOSED | 8 |
+| P8 | Avatar Fixes + UI Polish | ✅ CLOSED | 8 |
 
-**Метрики:** 10/10 тестов, tsc clean, build clean, все 3 фазы + багфикс-раунд + multi-image.
+**Метрики:** 44/44 server тестов, 7/7 client тестов, tsc clean, build clean, Docker build + compose ✅.
 
 ---
 
@@ -708,6 +733,9 @@ docker-compose -f docker-compose.prod.yml up -d
 7. **Docker healthchecks** — продакшен-решение, а не игрушка
 8. **Web Audio API** для звука — без лишних mp3-файлов, просто и эффективно
 9. **Документация** — 7 файлов в docs/ с архитектурой, структурой, планом, прогрессом — редкая дисциплина
+10. **Security** — SameSite Strict, rate limit (10/15мин), sharp MIME-валидация, JWT tokenVersion, helmet
+11. **Тесты клиента** — 7/7 тестов (AuthContext, LoginForm, Avatar с fallback onError)
+12. **Скрипт деплоя** — `prepare-deploy.ps1`/`.sh` — чистая копия без docs/tests/node_modules для продакшена
 
 ### Что уже исправлено (Fix Cycle #1 — 5 багов, 2026-07-13)
 1. ✅ Socket.IO — комнаты для новых чатов (`chat:join`, auto-join, `chat:created`)
@@ -726,18 +754,46 @@ docker-compose -f docker-compose.prod.yml up -d
 7. ✅ Graceful shutdown — SIGTERM/SIGINT
 8. ✅ Helmet + crypto.randomUUID + inline errors + a11y + focus trap + др.
 
-См. `reports/fix/` для деталей.
+### Что уже исправлено (Cycle #12 — Security Hardening #2, 2026-07-13)
+1. ✅ **SameSite Strict** — `SameSite='strict'` на JWT cookie
+2. ✅ **Auth rate limit** — 100 → 10/15мин для `/api/*` (общий лимит)
+3. ✅ **Sharp MIME-валидация** — проверка содержимого загружаемых изображений через `sharp.metadata()`
+4. ✅ **Change password** — `POST /api/auth/change-password` + инкремент `token_version`, старые токены недействительны
+5. ✅ **Redis retry** — бесконечные реконнекты с экспоненциальной задержкой (`maxRetriesPerRequest: null`)
+6. ✅ **Chat limit 500 / Group limit 100** — защита от создания тысяч чатов/групп
+7. ✅ **Scroll-to-bottom** — автоскролл после отправки сообщения
+
+### Что уже исправлено (Cycle #13 — Avatar Fixes + UI Polish, 2026-07-13)
+1. ✅ **Avatar onError fallback** — `imgError` состояние, показ инициалов при ошибке загрузки
+2. ✅ **Avatar key={url} reset** — сброс `imgError` при смене URL (переключаем чаты)
+3. ✅ **url пропущен во все модалки/компоненты** — ChatList, ChatView, HomePage, CreateChatModal, CreateGroupModal
+4. ✅ **Docker upload volume** — named volume `uploads:/app/uploads` + `UPLOAD_DIR` в `docker-compose.local.yml`
+5. ✅ **Group avatar — initials** — для групп показываются инициалы, а не фото первого участника
+6. ✅ **@Zokul@ heading** — `text-7xl text-primary` на страницах `/login` и `/register`
+7. ✅ **Emoji picker 800** — расширен с 48 до ~800 emojis, grid 8→10 cols, max-h 48→72
+8. ✅ **Avatar.test.tsx** — 3 теста (renders initials, renders image, fallback on error)
+
+### 16. ПЛАН РАЗВИТИЯ (FUTURE)
+
+См. `docs/FUTURE_PLAN.md` — 7 задач на после-релиз:
+- UI смены пароля
+- Поиск сообщений
+- UI аватара групп
+- E2E-тесты
+- Мониторинг
+- Админ-панель
+- Скрипт деплоя (prepare-deploy.sh/ps1)
 
 ### Что можно улучшить (актуально)
 1. **Типы дублированы** — `client/src/types/index.ts` и `server/src/types/index.ts` — синхронизируются вручную. При расширении можно забыть обновить один из них
-2. ~~**Нет WebSocket комнат при создании чата**~~ — ✅ **Исправлено** (Cycle #1): добавлен `chat:join` handler + auto-join в `message:send` + `chat:created` для групп
-3. **Нет rate limiting на upload** — можно заспамить файлами (хотя Multer 20MB ограничивает размер)
-4. **Нет пагинации на списке чатов** — если у пользователя 1000 чатов, загрузятся все сразу. Offset не используется. Хотя в MVP это ок
-5. **Нет логгирования ошибок в файл/сервис** — только `console.log` через `logger.ts`. Для прода лучше добавить Sentry или подобное
-6. **Нет миграций как отдельных SQL-файлов** — миграции выполняются в `config/db.ts` при старте через `CREATE TABLE IF NOT EXISTS`. Это не даёт откатывать миграции
-7. **Нет CORS на уровне Nginx для разработки** — Vite proxy решает для dev, но в prod CORS настроен через Express, не через Nginx (хотя с proxy это не проблема)
-8. **Нет тестов на клиенте** — настроен Vitest, но тесты не написаны
+2. ~~**Нет WebSocket комнат при создании чата**~~ — ✅ **Исправлено** (Cycle #1)
+3. ~~**Нет rate limiting на upload**~~ — ✅ **Добавлен** `uploadLimiter` (100/15мин) + sharp MIME-валидация
+4. **Нет пагинации на списке чатов** — если у пользователя 1000 чатов, загрузятся все сразу
+5. **Нет логгирования ошибок в файл/сервис** — только `console.log` через `logger.ts`
+6. **Нет миграций как отдельных SQL-файлов** — миграции выполняются в `config/db.ts` при старте
+7. **Нет CORS на уровне Nginx для разработки** — Vite proxy решает для dev
+8. ~~**Нет тестов на клиенте**~~ — ✅ **Исправлено**: 7/7 тестов (AuthContext, LoginForm, Avatar)
 9. **Offline-first** — PWA могла бы работать офлайн с IndexedDB для кэша сообщений
 
 ### Общая оценка
-Zokul — **зрелый, продуманный продукт**, а не pet project. Качество кода выше среднего. Архитектура позволяет легко добавлять фичи. Выдержан единый стиль и контракты. Единственное, чего не хватает до enterprise-уровня — это системное логгирование, нормальные миграции и тесты клиента. Но для корпоративного мессенджера, который уже работает в продакшене — это отличная кодовая база.
+Zokul — **зрелый, продуманный продукт**, а не pet project. Релиз v1.0 готов к деплою. Качество кода выше среднего. Архитектура позволяет легко добавлять фичи. Выдержан единый стиль и контракты.
