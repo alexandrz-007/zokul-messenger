@@ -30,3 +30,13 @@
 - **File:** `client/src/App.tsx` — `AuthLayout` содержит `text-7xl font-extrabold text-primary` с `animate-pulse-slow`
 - **File:** `client/src/components/animations.css` — `animate-pulse-slow` (3s pulse opacity)
 - Убран gradient, оставлен сплошной `primary` цвет (как буква Z)
+
+### 6. Group chat avatar — показывать инициалы, не фото участника
+- **File:** `client/src/components/chat/ChatList.tsx`
+- Для групп `url` передаётся как `undefined` → Avatar показывает инициалы названия группы
+- Раньше показывалось фото первого попавшегося участника (создателя)
+
+### 7. Расширение emoji picker
+- **File:** `client/src/components/chat/MessageInput.tsx`
+- `EMOJIS` массив расширен с 48 до ~800 символов
+- Сетка увеличена с `grid-cols-8` до `grid-cols-10`, высота с `max-h-48` до `max-h-72`

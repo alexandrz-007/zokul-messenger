@@ -81,7 +81,7 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
               }`}
             >
               <div className="relative shrink-0">
-                <Avatar name={displayName} size={48} url={other?.avatarUrl} />
+                <Avatar name={displayName} size={48} url={isGroup ? undefined : other?.avatarUrl} />
                 {!isGroup && count === 0 && <OnlineDot online={online} />}
               </div>
               <div className="flex-1 text-left min-w-0">
