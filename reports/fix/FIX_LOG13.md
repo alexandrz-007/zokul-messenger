@@ -26,6 +26,7 @@
 - `useEffect(() => setImgError(false), [url])` — сбрасывает ошибку при смене `url` (после загрузки нового avatar)
 - `key={url}` на `<img>` — создаёт свежий DOM-элемент при новом URL, избегая залипания onError
 
-### 5. @Zokul@ heading на странице входа/регистрации
-- **File:** `client/src/App.tsx` — `AuthLayout` содержит `text-7xl` gradient `from-primary to-blue-400/60` с `bg-clip-text text-transparent`
+### 5. Zokul heading на странице входа/регистрации
+- **File:** `client/src/App.tsx` — `AuthLayout` содержит `text-7xl font-extrabold text-primary` с `animate-pulse-slow`
 - **File:** `client/src/components/animations.css` — `animate-pulse-slow` (3s pulse opacity)
+- Убран gradient, оставлен сплошной `primary` цвет (как буква Z)

@@ -8,7 +8,7 @@
 | 2 | Show `url` in ChatList, ChatView, HomePage, modals | `ChatList.tsx`, `ChatView.tsx`, `HomePage.tsx`, `CreateChatModal.tsx`, `CreateGroupModal.tsx` | ✅ |
 | 3 | Uploads volume mount in docker-compose.local.yml | `docker-compose.local.yml` | ✅ |
 | 4 | `imgError` reset on `url` change (avatar vanished after upload) | `Avatar.tsx` | ✅ |
-| 5 | `@Zokul@` gradient heading on `/login` + `/register` | `App.tsx`, `animations.css` | ✅ |
+| 5 | `Zokul` heading (solid primary color) on `/login` + `/register` | `App.tsx`, `animations.css` | ✅ |
 
 ## Test results
 - Server: **44/44** (12 suites)

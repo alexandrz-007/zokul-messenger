@@ -24,7 +24,7 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <span className="inline-block text-7xl font-extrabold bg-gradient-to-r from-primary to-blue-400/60 bg-clip-text text-transparent animate-pulse-slow select-none leading-none">
+          <span className="inline-block text-7xl font-extrabold text-primary animate-pulse-slow select-none leading-none">
             Zokul
           </span>
         </div>
