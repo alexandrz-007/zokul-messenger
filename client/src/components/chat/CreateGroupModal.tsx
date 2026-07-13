@@ -137,7 +137,7 @@ export default function CreateGroupModal({ open, onClose, onCreated, socket }: C
               onClick={() => toggleUser(user)}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
-              <Avatar name={user.name} size={36} />
+              <Avatar name={user.name} size={36} url={user.avatarUrl} />
               <div className="text-left flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{user.name}</div>
                 <div className="text-xs text-gray-400 truncate">{user.email}</div>

@@ -32,10 +32,13 @@ services:
       JWT_SECRET: local-dev-secret
       CORS_ORIGIN: http://localhost
       REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /app/uploads
       VAPID_PUBLIC_KEY: your-vapid-public-key
       VAPID_PRIVATE_KEY: your-vapid-private-key
     ports:
       - '3001:3001'
+    volumes:
+      - uploads:/app/uploads
     healthcheck:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3001/api/health']
       interval: 10s
@@ -58,3 +61,6 @@ services:
       - ./client/nginx.local.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - server
+
+volumes:
+  uploads:

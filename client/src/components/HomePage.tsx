@@ -206,7 +206,7 @@ function HomePageInner() {
                   </svg>
                 </button>
                 <div className="relative shrink-0">
-                  <Avatar name={displayChatName} size={36} />
+                  <Avatar name={displayChatName} size={36} url={selectedChat && !selectedChat.isGroup ? selectedChat.participants.find((p) => p.id !== user?.id)?.avatarUrl : undefined} />
                   {!isGroupChat && <OnlineDot online={otherOnline} />}
                 </div>
                 <div className="flex-1 min-w-0">

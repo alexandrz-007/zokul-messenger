@@ -217,7 +217,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
               {(i === 0 || showDay) && <DaySeparator date={new Date(msg.createdAt)} />}
               <div className={`flex gap-2 ${isMine ? 'flex-row-reverse' : ''} ${showAvatar ? 'mt-3' : 'mt-0.5'}`}>
                 <div className={`w-8 shrink-0 ${isMine ? 'hidden' : ''}`}>
-                  {showAvatar && <Avatar name={participants.find((p) => p.id === msg.senderId)?.name || msg.senderId} size={32} />}
+                  {showAvatar && <Avatar name={participants.find((p) => p.id === msg.senderId)?.name || msg.senderId} size={32} url={participants.find((p) => p.id === msg.senderId)?.avatarUrl} />}
                 </div>
                 <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[75%]`}>
                   <div className="relative">
@@ -276,7 +276,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
         })}
         {typingNames.length > 0 && (
           <div className="flex items-center gap-2 mt-2">
-            <Avatar name={typingNames[0]} size={32} />
+            <Avatar name={typingNames[0]} size={32} url={participants.find((p) => p.name === typingNames[0])?.avatarUrl} />
             <TypingIndicator names={typingNames} />
           </div>
         )}
