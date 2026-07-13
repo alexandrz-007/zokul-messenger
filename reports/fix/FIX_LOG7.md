@@ -18,6 +18,12 @@
 - **Тесты:** ⏳ (ручная проверка)
 - **Заметки:** withCredentials + session restore + убран localStorage
 
+### Шаг 7: 🔴 Hotfix — 401 interceptor убивал session restore — ✅
+- **Файлы:** `client/src/services/api.ts`
+- **Типы:** ✅ tsc --noEmit clean
+- **Проблема:** api.ts interceptor: 401 → `window.location.href='/login'` → полный reload → рекурсия
+- **Фикс:** убран весь response interceptor. ProtectedRoute + AuthContext корректно обрабатывают 401 через React Router Navigate без full reload
+
 ### Шаг 3: 🔴 Fallback secrets — throw — ✅
 - **Файлы:** `server/src/config/app.ts`
 - **Типы:** ✅ tsc --noEmit clean
