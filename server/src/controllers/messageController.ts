@@ -36,6 +36,23 @@ export async function updateMessage(req: AuthRequest, res: Response, next: NextF
   }
 }
 
+export async function searchMessages(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { chatId } = req.params;
+    const q = (req.query.q as string) || '';
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+    if (!q.trim()) {
+      res.json([]);
+      return;
+    }
+    const messages = await messageService.searchMessages(chatId, q, limit, offset);
+    res.json(messages);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function removeMessage(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     const { messageId } = req.params;

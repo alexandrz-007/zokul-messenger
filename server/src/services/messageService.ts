@@ -61,6 +61,15 @@ export async function editMessage(
   return message;
 }
 
+export async function searchMessages(
+  chatId: string,
+  query: string,
+  limit?: number,
+  offset?: number
+): Promise<Message[]> {
+  return MessageModel.search(chatId, query, limit || 50, offset || 0);
+}
+
 export async function deleteMessage(
   messageId: string,
   userId: string

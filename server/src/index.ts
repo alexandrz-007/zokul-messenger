@@ -5,9 +5,11 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
+import { randomUUID } from 'crypto';
 import { createServer } from 'http';
 import { config } from './config/app';
 import { migrate } from './config/db';
+import * as UserModel from './models/User';
 import { logger } from './utils/logger';
 import healthRoutes from './routes/healthRoutes';
 import authRoutes from './routes/authRoutes';
@@ -17,8 +19,8 @@ import messageRoutes from './routes/messageRoutes';
 import userRoutes from './routes/userRoutes';
 import pushRoutes from './routes/pushRoutes';
 import { uploadMiddleware } from './middleware/uploadMiddleware';
-import { processImage } from './middleware/processImage';
-import { authMiddleware } from './middleware/authMiddleware';
+import { processImage, processAvatar } from './middleware/processImage';
+import { authMiddleware, AuthRequest } from './middleware/authMiddleware';
 import { errorMiddleware } from './middleware/errorMiddleware';
 import { authLimiter, uploadLimiter } from './middleware/rateLimit';
 import { startCleanupScheduler, stopCleanupScheduler } from './services/cleanupService';
@@ -29,6 +31,12 @@ const app = express();
 const httpServer = createServer(app);
 
 app.set('trust proxy', 1);
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+  res.setHeader('x-request-id', requestId);
+  (req as any).requestId = requestId;
+  next();
+});
 app.use(helmet());
 app.use(compression());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
@@ -67,6 +75,19 @@ app.post('/api/upload', uploadLimiter, authMiddleware, (req, res, next) => {
       }
       const processed = req.file!;
       res.json({ url: `/uploads/${processed.filename}` });
+    });
+  });
+});
+
+app.post('/api/upload/avatar', authMiddleware, (req: AuthRequest, res, next) => {
+  uploadMiddleware(req, res, async (err) => {
+    if (err) return next(err);
+    if (!req.file) return res.status(400).json({ error: 'No file provided' });
+    await processAvatar(req, res, async (processErr) => {
+      if (processErr) return next(processErr);
+      const url = `/uploads/${req.file!.filename}`;
+      await UserModel.updateProfile(req.userId!, { avatarUrl: url });
+      res.json({ url });
     });
   });
 });

@@ -71,6 +71,26 @@ export async function migrate(): Promise<void> {
     await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ`);
     await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
     await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_urls TEXT[] DEFAULT '{}'`);
+    await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS text_search_vector tsvector`);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_messages_text_search ON messages USING GIN(text_search_vector);
+    `);
+    await client.query(`
+      CREATE OR REPLACE FUNCTION messages_text_search_trigger() RETURNS trigger AS $$
+      BEGIN
+        NEW.text_search_vector := to_tsvector('english', COALESCE(NEW.text, ''));
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`
+      DO $$ BEGIN
+        CREATE TRIGGER trg_messages_text_search
+          BEFORE INSERT OR UPDATE OF text ON messages
+          FOR EACH ROW EXECUTE FUNCTION messages_text_search_trigger();
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+    `);
     console.log('Migration completed successfully');
   } finally {
     client.release();

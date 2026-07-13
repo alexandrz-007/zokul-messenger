@@ -45,7 +45,7 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-- **Последнее действие:** Cycle #10: Client Hardening — compression, socket connect rate limit, client tests, any→typed
+- **Последнее действие:** Cycle #11: Production Polish — message search, avatar upload, request tracing, backup scripts
 - **Текущая задача:** — (все диагностированные проблемы исправлены)
 - **Очередь:** Улучшения (админ панель, clean disk) — отложены
 
@@ -116,19 +116,19 @@
 | ~~3~~ | ~~Socket rate limiting (5/s)~~ | ✅ Fixed | 🟡 Major | Security |
 | ~~4~~ | ~~User search — hide email~~ | ✅ Fixed | 🟡 Major | Security |
 
-### Фикс-цикл #10 (4 улучшения + 4 теста)
-- 🟡 Compression middleware + socket connect rate limit
-- 🟢 Client tests (vitest, 4) + any→typed (8 мест в client/src)
-- `reports/fix/DIAGNOSTIC10.md` • `reports/fix/FIX_PLAN10.md` • `reports/fix/FIX_LOG10.md`
+### Фикс-цикл #11 (4 улучшения)
+- 🟡 Message search (pg full-text) + avatar upload + request tracing
+- 🟢 Backup scripts
+- `reports/fix/DIAGNOSTIC11.md` • `reports/fix/FIX_PLAN11.md` • `reports/fix/FIX_LOG11.md`
 
 | # | Задача | Статус | Severity | Тип |
 |---|--------|--------|----------|-----|
-| ~~1~~ | ~~Compression middleware~~ | ✅ Fixed | 🟡 Major | Perf |
-| ~~2~~ | ~~Socket connect rate limit (3/s/IP)~~ | ✅ Fixed | 🟡 Major | Security |
-| ~~3~~ | ~~Client tests (vitest, 4)~~ | ✅ Fixed | 🟢 Minor | Quality |
-| ~~4~~ | ~~any → typed (client/src, 8 мест)~~ | ✅ Fixed | 🟢 Minor | Refactor |
+| ~~1~~ | ~~Message search (tsvector + GIN + endpoint)~~ | ✅ Fixed | 🟡 Major | Feature |
+| ~~2~~ | ~~Avatar upload (server + client)~~ | ✅ Fixed | 🟡 Major | Feature |
+| ~~3~~ | ~~Request tracing (x-request-id)~~ | ✅ Fixed | 🟡 Major | Infra |
+| ~~4~~ | ~~Backup scripts (pg_dump + restore)~~ | ✅ Fixed | 🟢 Minor | Infra |
 
-### Фикс-цикл #9 (3 улучшения + 3 теста)
+### Фикс-цикл #10 (4 улучшения + 4 теста)
 - 🟡 Infra: 3/3 — healthcheck, pino logs, CI
 - `reports/fix/DIAGNOSTIC8.md` • `reports/fix/FIX_PLAN8.md` • `reports/fix/FIX_LOG8.md`
 
@@ -203,6 +203,10 @@
 | 2026-07-13 | **Cycle #10: Fix:** Socket connect rate limit (3/s/IP) | `server/src/socket/index.ts` | ✅ |
 | 2026-07-13 | **Cycle #10: Fix:** Client tests (vitest, 4) | `client/__tests__/`, `client/vite.config.ts`, `client/src/test-setup.ts` | ✅ |
 | 2026-07-13 | **Cycle #10: Fix:** any→typed (client/src, 8 мест) | 7 files in client/src | ✅ |
+| 2026-07-13 | **Cycle #11: Fix:** Message search (tsvector + GIN + endpoint) | `db.ts`, `Message.ts`, `messageService.ts`, `messageController.ts`, `messageRoutes.ts` | ✅ |
+| 2026-07-13 | **Cycle #11: Fix:** Avatar upload (server sharp 256x256 + client ProfileEditor) | `index.ts`, `processImage.ts`, `ProfileEditor.tsx` | ✅ |
+| 2026-07-13 | **Cycle #11: Fix:** Request tracing (x-request-id middleware + logger) | `index.ts`, `logger.ts` | ✅ |
+| 2026-07-13 | **Cycle #11: Fix:** Backup scripts (pg_dump + restore) | `scripts/backup-db.sh`, `scripts/restore-db.sh` | ✅ |
 
 ---
 

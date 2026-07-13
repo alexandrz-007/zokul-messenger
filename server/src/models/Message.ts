@@ -89,6 +89,33 @@ export async function findById(messageId: string): Promise<Message | null> {
   return mapMessage(result.rows[0]);
 }
 
+export async function search(
+  chatId: string,
+  query: string,
+  limit: number = 50,
+  offset: number = 0
+): Promise<Message[]> {
+  const escaped = query.replace(/[!&|():*]/g, ' ').trim();
+  if (!escaped) return [];
+  const tsquery = escaped.split(/\s+/).map(w => w + ':*').join(' & ');
+  const result = await pool.query(
+    `SELECT m.id, m.chat_id, m.sender_id, m.text, m.image_url, m.image_urls, m.voice_url, m.voice_duration,
+            m.is_edited, m.created_at,
+            rm.id as reply_id, rm.sender_id as reply_sender_id,
+            ru.name as reply_sender_name, rm.text as reply_text, rm.image_url as reply_image_url,
+            ts_rank(m.text_search_vector, to_tsquery('english', $2)) as rank
+     FROM messages m
+     LEFT JOIN messages rm ON rm.id = m.reply_to_id AND rm.deleted_at IS NULL
+     LEFT JOIN users ru ON ru.id = rm.sender_id
+     WHERE m.chat_id = $1 AND m.deleted_at IS NULL
+       AND m.text_search_vector @@ to_tsquery('english', $2)
+     ORDER BY rank DESC, m.created_at DESC
+     LIMIT $3 OFFSET $4`,
+    [chatId, tsquery, limit, offset]
+  );
+  return result.rows.map(mapMessage);
+}
+
 async function getReplyPreview(messageId: string): Promise<ReplyPreview | undefined> {
   const result = await pool.query(
     `SELECT m.id, m.sender_id, m.text, m.image_url, u.name as sender_name
