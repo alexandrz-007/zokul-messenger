@@ -71,6 +71,7 @@ export async function migrate(): Promise<void> {
     await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ`);
     await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
     await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_urls TEXT[] DEFAULT '{}'`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER DEFAULT 0`);
     await client.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS text_search_vector tsvector`);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_messages_text_search ON messages USING GIN(text_search_vector);

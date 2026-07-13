@@ -28,16 +28,27 @@ export async function login(email: string, password: string): Promise<AuthRespon
   if (!valid) {
     throw new Error('Invalid credentials');
   }
-  const token = generateToken(user.id);
+  const token = generateToken(user.id, user.tokenVersion);
   logger(`User logged in: ${user.email}`);
-  const { passwordHash: _, ...userWithoutPassword } = user;
+  const { passwordHash: _, tokenVersion: __, ...userWithoutPassword } = user;
   return { token, user: userWithoutPassword };
 }
 
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, config.jwtSecret, { expiresIn: '24h' });
+export function generateToken(userId: string, tokenVersion: number = 0): string {
+  return jwt.sign({ userId, tokenVersion }, config.jwtSecret, { expiresIn: '24h' });
 }
 
-export function verifyToken(token: string): { userId: string } {
-  return jwt.verify(token, config.jwtSecret) as { userId: string };
+export function verifyToken(token: string): { userId: string; tokenVersion: number } {
+  return jwt.verify(token, config.jwtSecret) as { userId: string; tokenVersion: number };
+}
+
+export async function changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+  const row = await UserModel.findByIdWithPassword(userId);
+  if (!row) throw new Error('User not found');
+  const valid = await bcrypt.compare(oldPassword, row.passwordHash);
+  if (!valid) throw new Error('Current password is incorrect');
+  if (newPassword.length < 6) throw new Error('New password must be at least 6 characters');
+  const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await UserModel.updatePassword(userId, hash);
+  logger(`Password changed for user ${userId}`);
 }

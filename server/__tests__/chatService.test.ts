@@ -9,6 +9,7 @@ describe('chatService', () => {
   });
 
   it('should create a chat', async () => {
+    (ChatModel.findChatsByUserId as jest.Mock).mockResolvedValue([]);
     (ChatModel.findExistingChat as jest.Mock).mockResolvedValue(null);
     (ChatModel.createChat as jest.Mock).mockResolvedValue({
       id: 'chat1',
@@ -23,6 +24,7 @@ describe('chatService', () => {
 
   it('should return existing chat instead of creating duplicate', async () => {
     const existing = { id: 'chat1', participantIds: ['user1', 'user2'], createdAt: '' };
+    (ChatModel.findChatsByUserId as jest.Mock).mockResolvedValue([]);
     (ChatModel.findExistingChat as jest.Mock).mockResolvedValue(existing);
 
     const chat = await chatService.createChat('user1', 'user2');

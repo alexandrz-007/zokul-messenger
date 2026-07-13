@@ -1,7 +1,9 @@
 import { authMiddleware } from '../src/middleware/authMiddleware';
 import * as authService from '../src/services/authService';
+import * as UserModel from '../src/models/User';
 
 jest.mock('../src/services/authService');
+jest.mock('../src/models/User');
 jest.mock('../src/utils/logger', () => ({ logger: jest.fn() }));
 
 function mockReqRes(cookieToken?: string, bearerToken?: string) {
@@ -20,45 +22,58 @@ function mockReqRes(cookieToken?: string, bearerToken?: string) {
 describe('authMiddleware cookie support', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (UserModel.getTokenVersion as jest.Mock).mockResolvedValue(0);
   });
 
-  it('should accept token from cookie', () => {
-    (authService.verifyToken as jest.Mock).mockReturnValue({ userId: 'user1' });
+  it('should accept token from cookie', async () => {
+    (authService.verifyToken as jest.Mock).mockReturnValue({ userId: 'user1', tokenVersion: 0 });
 
     const { req, res, next } = mockReqRes('cookie-jwt');
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
     expect(req.userId).toBe('user1');
     expect(next).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('should accept token from Bearer header as fallback', () => {
-    (authService.verifyToken as jest.Mock).mockReturnValue({ userId: 'user2' });
+  it('should accept token from Bearer header as fallback', async () => {
+    (authService.verifyToken as jest.Mock).mockReturnValue({ userId: 'user2', tokenVersion: 0 });
 
     const { req, res, next } = mockReqRes(undefined, 'header-jwt');
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
     expect(req.userId).toBe('user2');
     expect(next).toHaveBeenCalled();
   });
 
-  it('should reject request without token', () => {
+  it('should reject revoked token', async () => {
+    (authService.verifyToken as jest.Mock).mockReturnValue({ userId: 'user1', tokenVersion: 0 });
+    (UserModel.getTokenVersion as jest.Mock).mockResolvedValue(1);
+
+    const { req, res, next } = mockReqRes('old-token');
+    await authMiddleware(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Token revoked' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('should reject request without token', async () => {
     const { req, res, next } = mockReqRes();
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({ error: 'No token provided' });
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should reject invalid token', () => {
+  it('should reject invalid token', async () => {
     (authService.verifyToken as jest.Mock).mockImplementation(() => {
       throw new Error('jwt malformed');
     });
 
     const { req, res, next } = mockReqRes('bad-token');
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({ error: 'Invalid token' });

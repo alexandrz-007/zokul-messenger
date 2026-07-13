@@ -13,6 +13,7 @@ export interface UserRow {
   password_hash: string;
   avatar_url: string | null;
   created_at: string;
+  token_version: number;
 }
 
 export interface AuthResponse {

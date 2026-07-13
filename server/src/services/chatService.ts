@@ -14,6 +14,10 @@ export async function createChat(userId: string, participantId: string): Promise
   if (existing) {
     return existing;
   }
+  const userChats = await ChatModel.findChatsByUserId(userId);
+  if (userChats.length >= 500) {
+    throw new Error('Chat limit reached (max 500)');
+  }
   const chat = await ChatModel.createChat(userId, participantId);
   logger(`Chat created: ${chat.id}`);
   return chat;

@@ -12,6 +12,12 @@ export async function processAvatar(req: Request, _res: Response, next: NextFunc
   }
 
   try {
+    const metadata = await sharp(file.path).metadata();
+    if (!metadata.format) {
+      fs.unlinkSync(file.path);
+      return next(new Error('Invalid image file'));
+    }
+
     const ext = path.extname(file.path);
     const webpPath = file.path.replace(ext, '.webp');
     const webpFilename = file.filename.replace(ext, '.webp');
@@ -41,6 +47,12 @@ export async function processImage(req: Request, _res: Response, next: NextFunct
   }
 
   try {
+    const metadata = await sharp(file.path).metadata();
+    if (!metadata.format) {
+      fs.unlinkSync(file.path);
+      return next(new Error('Invalid image file'));
+    }
+
     const ext = path.extname(file.path);
     const webpPath = file.path.replace(ext, '.webp');
     const webpFilename = file.filename.replace(ext, '.webp');

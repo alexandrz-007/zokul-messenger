@@ -6,7 +6,7 @@ import { config } from '../config/app';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const,
   secure: process.env.NODE_ENV === 'production',
   maxAge: 24 * 60 * 60 * 1000,
   path: '/',
@@ -50,6 +50,21 @@ export async function me(req: AuthRequest, res: Response, next: NextFunction): P
       return;
     }
     res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function changePassword(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      res.status(400).json({ error: 'Old password and new password are required' });
+      return;
+    }
+    await authService.changePassword(req.userId!, oldPassword, newPassword);
+    res.clearCookie('token', { path: '/' });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

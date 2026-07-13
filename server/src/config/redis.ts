@@ -8,13 +8,11 @@ let subClient: Redis | null = null;
 
 function createClient(name: string): Redis {
   const c = new Redis(config.redisUrl, {
-    maxRetriesPerRequest: 3,
+    maxRetriesPerRequest: null,
     retryStrategy(times) {
-      if (times > 3) {
-        logger(`Redis connection failed after 3 retries (${name})`, 'error');
-        return null;
-      }
-      return Math.min(times * 200, 2000);
+      const delay = Math.min(Math.exp(times) * 100, 30000);
+      logger(`Redis ${name} reconnecting (attempt ${times}, delay ${Math.round(delay)}ms)`, 'warn');
+      return delay;
     },
   });
   c.on('error', (err) => {

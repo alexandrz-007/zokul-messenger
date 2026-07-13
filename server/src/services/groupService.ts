@@ -2,12 +2,17 @@ import { pool } from '../config/db';
 import { ChatWithUsers } from '../types';
 import * as chatModel from '../models/Chat';
 
+const MAX_GROUP_SIZE = 100;
+
 export async function createGroup(
   creatorId: string,
   name: string,
   participantIds: string[]
 ): Promise<ChatWithUsers> {
   const allIds = [creatorId, ...participantIds.filter((id) => id !== creatorId)];
+  if (allIds.length > MAX_GROUP_SIZE) {
+    throw new Error(`Group size cannot exceed ${MAX_GROUP_SIZE} participants`);
+  }
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

@@ -53,17 +53,26 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
   const bottomRef = useRef<HTMLDivElement>(null);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const prevCountRef = useRef(messages.length);
+  const chatIdRef = useRef(chatId);
 
   useEffect(() => {
+    if (chatIdRef.current !== chatId) {
+      chatIdRef.current = chatId;
+      prevCountRef.current = 0;
+    }
     if (messages.length > prevCountRef.current && messages.length > 0) {
-      const newest = messages[0];
-      const isRecent = Date.now() - new Date(newest.createdAt).getTime() < 2000;
-      if (isRecent) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      if (prevCountRef.current === 0) {
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50);
+      } else {
+        const newest = messages[0];
+        const isRecent = Date.now() - new Date(newest.createdAt).getTime() < 2000;
+        if (isRecent) {
+          bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
       }
     }
     prevCountRef.current = messages.length;
-  }, [messages]);
+  }, [messages, chatId]);
 
   useEffect(() => {
     if (!socket || !chatId) return;
