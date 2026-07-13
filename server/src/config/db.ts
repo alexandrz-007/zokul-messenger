@@ -3,6 +3,7 @@ import { config } from './app';
 
 export const pool = new Pool({
   connectionString: config.databaseUrl,
+  max: 20,
 });
 
 export async function migrate(): Promise<void> {

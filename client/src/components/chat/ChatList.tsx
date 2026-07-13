@@ -64,11 +64,14 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
   return (
     <div className="overflow-y-auto h-full">
       {chats.map((chat) => {
+        const isGroup = chat.isGroup;
         const other = chat.participants.find((p) => p.id !== currentUserId) || chat.participants[0];
         const online = isOnline(other?.id || '');
         const lastMsg = chat.lastMessage;
+        const sender = lastMsg && chat.participants.find((p) => p.id === lastMsg.senderId);
         const preview = lastMsg?.text || (lastMsg?.imageUrl ? 'Photo' : '');
         const count = unreadCount?.(chat.id) || 0;
+        const displayName = isGroup ? (chat.name || 'Group') : (other?.name || 'Unknown');
         return (
           <div key={chat.id} className="relative group">
             <button
@@ -78,13 +81,13 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
               }`}
             >
               <div className="relative shrink-0">
-                <Avatar name={other?.name || '?'} size={48} />
-                {count === 0 && <OnlineDot online={online} />}
+                <Avatar name={displayName} size={48} />
+                {!isGroup && count === 0 && <OnlineDot online={online} />}
               </div>
               <div className="flex-1 text-left min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className={`text-sm truncate ${count > 0 ? 'font-semibold' : 'font-medium'}`}>
-                    {other?.name || 'Unknown'}
+                    {displayName}
                   </span>
                   {lastMsg && (
                     <span className="text-[11px] text-gray-400 ml-2 shrink-0">
@@ -94,7 +97,7 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
                 </div>
                 <div className="flex items-center justify-between">
                   <span className={`text-xs truncate ${count > 0 ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-400'}`}>
-                    {preview || (other?.email ? other.email.split('@')[0] : '')}
+                    {isGroup && sender ? `${sender.name}: ` : ''}{preview || (other?.email ? other.email.split('@')[0] : '')}
                   </span>
                   {count > 0 && (
                     <span className="shrink-0 ml-2 min-w-[18px] h-[18px] rounded-full bg-primary text-white text-[10px] font-semibold flex items-center justify-center px-1">

@@ -117,7 +117,21 @@ function HomePageInner() {
     return () => { socket.off('chat:deleted', handler); };
   }, [socket, selectedChat?.id, reloadChats]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chatId = params.get('chat');
+    if (chatId && chats.length > 0) {
+      const chat = chats.find((c) => c.id === chatId);
+      if (chat) {
+        handleSelectChat(chat);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [chats, handleSelectChat]);
+
   const otherUser = selectedChat?.participants.find((p) => p.id !== user?.id);
+  const isGroupChat = selectedChat?.isGroup === true;
+  const displayChatName = isGroupChat ? (selectedChat?.name || 'Group') : (otherUser?.name || 'Unknown');
   const otherOnline = isOnline(otherUser?.id || '');
 
   return (
@@ -191,14 +205,16 @@ function HomePageInner() {
                   </svg>
                 </button>
                 <div className="relative shrink-0">
-                  <Avatar name={otherUser?.name || selectedChat.participants[0]?.name || 'Chat'} size={36} />
-                  <OnlineDot online={otherOnline} />
+                  <Avatar name={displayChatName} size={36} />
+                  {!isGroupChat && <OnlineDot online={otherOnline} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">
-                    {otherUser?.name || selectedChat.participants.map((p) => p.name).join(', ')}
+                    {displayChatName}
                   </div>
-                  <div className="text-xs text-gray-400">{otherOnline ? 'Online' : 'Offline'}</div>
+                  <div className="text-xs text-gray-400">
+                    {isGroupChat ? `${selectedChat.participants.length} members` : (otherOnline ? 'Online' : 'Offline')}
+                  </div>
                 </div>
               </div>
               <ChatView

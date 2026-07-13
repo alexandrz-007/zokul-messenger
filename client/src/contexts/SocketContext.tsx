@@ -17,7 +17,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     if (token) {
       const s = connectSocket(token);
       setSocket(s);
-      const onConnect = () => setSocket(s);
+      const onConnect = () => {
+        setSocket(s);
+      };
       s.on('connect', onConnect);
       return () => {
         s.off('connect', onConnect);

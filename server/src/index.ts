@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { createServer } from 'http';
 import { config } from './config/app';
 import { migrate } from './config/db';
@@ -15,6 +16,8 @@ import pushRoutes from './routes/pushRoutes';
 import { uploadMiddleware } from './middleware/uploadMiddleware';
 import { authMiddleware } from './middleware/authMiddleware';
 import { errorMiddleware } from './middleware/errorMiddleware';
+import { authLimiter, uploadLimiter } from './middleware/rateLimit';
+import { startCleanupScheduler } from './services/cleanupService';
 import { setupSocket } from './socket';
 import { closeRedis } from './config/redis';
 
@@ -27,14 +30,14 @@ app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/chats', groupRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/chats', messageRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/push', pushRoutes);
 
-app.post('/api/upload', authMiddleware, (req, res, next) => {
+app.post('/api/upload', uploadLimiter, authMiddleware, (req, res, next) => {
   uploadMiddleware(req, res, (err) => {
     if (err) {
       return next(err);
@@ -53,7 +56,9 @@ const io = setupSocket(httpServer);
 
 async function start(): Promise<void> {
   try {
+    fs.mkdirSync(config.uploadDir, { recursive: true });
     await migrate();
+    startCleanupScheduler();
     httpServer.listen(config.port, () => {
       logger(`Server running on port ${config.port}`);
     });

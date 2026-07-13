@@ -24,6 +24,15 @@ export function useChats() {
 
   useEffect(() => {
     if (!socket) return;
+    const handler = (data: { chatId: string }) => {
+      load();
+    };
+    socket.on('chat:new-room', handler);
+    return () => { socket.off('chat:new-room', handler); };
+  }, [socket, load]);
+
+  useEffect(() => {
+    if (!socket) return;
     const handler = (msg: Message) => {
       setChats((prev) => {
         const idx = prev.findIndex((c) => c.id === msg.chatId);

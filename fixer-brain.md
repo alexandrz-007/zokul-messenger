@@ -45,7 +45,7 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-- **Последнее действие:** Исправлены 20 проблем (Fix Cycle #2)
+- **Последнее действие:** Исправлены 7 проблем + 5 тестов (Fix Cycle #4 + Cycle #5)
 - **Текущая задача:** — (все диагностированные проблемы исправлены)
 - **Очередь:** Улучшения (админ панель, clean disk) — отложены
 
@@ -53,13 +53,22 @@
 
 ## АКТИВНЫЕ ЗАДАЧИ — ВСЕ ВЫПОЛНЕНЫ
 
-Фикс-цикл #2 (20 проблем):
-- 🔴 Critical: 3/3 — Error middleware, ErrorBoundary, group delete auth
-- 🟠 High: 7/7 — AbortController, debounce cleanup, socket try/catch, AuthSocket, TOCTOU, graceful shutdown
-- 🟡 Medium: 7/7 — helmet, crypto.randomUUID, inline errors, stable keys, aria-label, focus trap, query min length
-- 🔵 Low: 3/3 — uploadImagesMiddleware removed, closeRedis in shutdown, safe JSON.parse
+### Фикс-цикл #2 (20 проблем)
+- 🔴 Critical: 3/3 • 🟠 High: 7/7 • 🟡 Medium: 7/7 • 🔵 Low: 3/3
+- `reports/fix/DIAGNOSTIC2.md` • `reports/fix/FIX_PLAN2.md`
 
-Подробности — `reports/fix/DIAGNOSTIC2.md` (38 проблем) и `reports/fix/FIX_PLAN2.md` (20 шагов)
+### Фикс-цикл #3 (4 проблемы)
+- 🟡 Major: 4/4 — Push notification deep link, group display, padding, uploads dir
+- `reports/fix/DIAGNOSTIC3.md` • `reports/fix/FIX_PLAN3.md`
+
+### Фикс-цикл #4 (4 проблемы + 5 тестов)
+- 🟡 Major: 4/4 — chat:new-room, ImageViewer, nginx timeout, header group
+- `reports/fix/DIAGNOSTIC4.md` • `reports/fix/FIX_PLAN4.md`
+
+### Фикс-цикл #5 (7 проблем + 5 тестов)
+- 🟡 UI: 4/4 — input touch, input position, upload button, DaySeparator
+- 🟢 Infra: 3/3 — cleanup, rate_limit, pool_max
+- `reports/fix/DIAGNOSTIC5.md` • `reports/fix/FIX_PLAN5.md` • `reports/fix/FIX_LOG5.md`
 
 | # | Задача | Статус | Severity | Тип |
 |---|--------|--------|----------|-----|
@@ -68,6 +77,17 @@
 | ~~3~~ | ~~Групповые чаты не работают~~ | ✅ Fixed | 🔴 Critical | Bug |
 | ~~4~~ | ~~Невозможно удалить диалог~~ | ✅ Fixed | 🟡 Major | Feature |
 | ~~5~~ | ~~iOS Safari: layout плывёт~~ | ✅ Fixed | 🟡 Major | UX |
+| ~~6~~ | ~~Push notification → не открывает чат~~ | ✅ Fixed | 🟡 Major | UX |
+| ~~7~~ | ~~Группы показываются как 1-1 в списке~~ | ✅ Fixed | 🟡 Major | Bug |
+| ~~8~~ | ~~Сообщения с большими отступами~~ | ✅ Fixed | 🟢 Minor | UX |
+| ~~9~~ | ~~Загрузка фото не работает~~ | ✅ Fixed | 🟡 Major | Bug |
+| ~~10~~ | ~~Input touch area~~ | ✅ Fixed | 🟢 Minor | UX |
+| ~~11~~ | ~~Input position (safe-area-bottom)~~ | ✅ Fixed | 🟢 Minor | UX |
+| ~~12~~ | ~~Upload button alignment~~ | ✅ Fixed | 🟢 Minor | UX |
+| ~~13~~ | ~~DaySeparator lines~~ | ✅ Fixed | 🟢 Minor | UX |
+| ~~14~~ | ~~Cleanup uploads/~~ | ✅ Fixed | 🟡 Major | Infra |
+| ~~15~~ | ~~Rate limiting~~ | ✅ Fixed | 🟡 Major | Infra |
+| ~~16~~ | ~~DB Pool max: 20~~ | ✅ Fixed | 🟡 Major | Infra |
 
 ---
 
@@ -91,6 +111,23 @@
 | 2026-07-13 | **Cycle #2: Fix #13:** TOCTOU deleteMessage | `messageService.ts` | ✅ |
 | 2026-07-13 | **Cycle #2: Fix #14:** graceful shutdown | `index.ts` | ✅ |
 | 2026-07-13 | **Cycle #2: Fix #15:** helmet, crypto.randomUUID, dead code, inline errors, aria-labels, focus trap, query min length | Multiple files | ✅ |
+| 2026-07-13 | **Cycle #3: Bug #1:** Push notification deep link — URL param handler | `HomePage.tsx` | ✅ |
+| 2026-07-13 | **Cycle #3: Bug #2:** Group display in ChatList — name, avatar, no online dot | `ChatList.tsx` | ✅ |
+| 2026-07-13 | **Cycle #3: Bug #3:** Message padding — removed max-w-4xl | `ChatView.tsx` | ✅ |
+| 2026-07-13 | **Cycle #3: Bug #4:** Upload dir auto-create on server start | `server/src/index.ts` | ✅ |
+| 2026-07-13 | **Cycle #4: Bug #1:** chat:new-room handler → reload chats | `useChat.ts` | ✅ |
+| 2026-07-13 | **Cycle #4: Bug #2:** ImageViewer (full-screen + download) | `ImageViewer.tsx`, `ChatView.tsx` | ✅ |
+| 2026-07-13 | **Cycle #4: Bug #3:** nginx proxy_read_timeout 86400s | `nginx.local.conf` | ✅ |
+| 2026-07-13 | **Cycle #4: Bug #4:** Chat header — group name, no OnlineDot | `HomePage.tsx` | ✅ |
+| 2026-07-13 | **Cycle #4: Tests:** groupService (3 tests) + upload (2 tests) | `__tests__/` | ✅ |
+| 2026-07-13 | **Cycle #5: Bug #5:** Input touch area — onClick → focus | `MessageInput.tsx` | ✅ |
+| 2026-07-13 | **Cycle #5: Bug #6:** Input position — safe-area-bottom → pb-2 | `MessageInput.tsx` | ✅ |
+| 2026-07-13 | **Cycle #5: Bug #7:** Upload button — mb-0.5 → self-center | `MessageInput.tsx` | ✅ |
+| 2026-07-13 | **Cycle #5: Bug #8:** DaySeparator — убраны линии, my-4 → my-2 | `ChatView.tsx` | ✅ |
+| 2026-07-13 | **Cycle #5: Bug #9:** Cleanup uploads/ — cleanupService | `cleanupService.ts`, `index.ts` | ✅ |
+| 2026-07-13 | **Cycle #5: Bug #10:** Rate limiting — express-rate-limit | `rateLimit.ts`, `index.ts` | ✅ |
+| 2026-07-13 | **Cycle #5: Bug #11:** DB Pool max: 20 | `db.ts` | ✅ |
+| 2026-07-13 | **Cycle #5: Tests:** cleanupService (3) + rateLimit (2) | `__tests__/` | ✅ |
 
 ---
 
@@ -102,6 +139,10 @@
 4. Error middleware — строки ошибок могут рассинхронизироваться (hardcoded string comparison). Решение: enum ошибок или custom error classes с кодом.
 5. In-memory socket Map ломается в multi-instance. Решение: Redis-based pub/sub (Socket.IO Redis adapter) для продакшена.
 6. setTimeout без cleanup → setState после unmount. Решение: всегда возвращать `clearTimeout` из useEffect.
+7. Нарушение процедуры project-fixer — начал править код до создания DIAGNOSTIC и FIX_PLAN. Решение: всегда проходить Фазы 1→2→3, не пропускать шаги.
+8. chat:new-room — сервер шлёт, клиент не ловит → чаты не появляются у других участников. Решение: всегда проверять, что на клиенте есть обработчик для каждого server-emitted события.
+9. safe-area-bottom в className — Tailwind не включает safe-area по умолчанию; на desktop/Android это бесполезно. Решение: убрать, использовать стандартный Tailwind (pb-2).
+10. express-rate-limit должен быть в production deps, а не devDeps, т.к. используется в рантайме middleware.
 
 ---
 

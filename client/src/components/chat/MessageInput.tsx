@@ -141,7 +141,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const hasContent = text.trim().length > 0 || replyTo || editingMessage || pendingImages.length > 0;
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-gray-200 dark:border-gray-700 safe-area-bottom">
+    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-gray-200 dark:border-gray-700 pb-2">
       {replyTo && !editingMessage && (
         <div className="absolute bottom-full left-0 right-0 z-10 px-3">
           <ReplyQuote reply={replyTo} onCancel={() => setReplyTo(null)} />
@@ -170,7 +170,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="w-9 h-9 mb-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center shrink-0"
+          className="w-9 h-9 self-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center shrink-0"
           aria-label="Attach file"
         >
           {uploading ? (
@@ -194,7 +194,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
               ))}
             </div>
           )}
-            <div className="flex items-end gap-2 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2">
+            <div className="flex items-end gap-2 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2" onClick={() => inputRef.current?.focus()}>
               <input
                 ref={inputRef}
                 type="text"

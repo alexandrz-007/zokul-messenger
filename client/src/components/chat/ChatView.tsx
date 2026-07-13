@@ -7,6 +7,7 @@ import TypingIndicator from './TypingIndicator';
 import MessageActions from './MessageActions';
 import ReplyQuote from './ReplyQuote';
 import VoicePlayer from './VoicePlayer';
+import ImageViewer from './ImageViewer';
 import '../animations.css';
 
 interface ChatViewProps {
@@ -35,12 +36,10 @@ function formatTime(date: Date) {
 
 function DaySeparator({ date }: { date: Date }) {
   return (
-    <div className="flex items-center gap-3 my-4">
-      <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+    <div className="flex justify-center my-2">
       <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
         {formatTime(date)}
       </span>
-      <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
     </div>
   );
 }
@@ -48,6 +47,7 @@ function DaySeparator({ date }: { date: Date }) {
 export default function ChatView({ messages, currentUserId, currentUserName, participants, chatId, loading, error, hasMore, loadingMore, onLoadMore, onMessageEdit, onMessageDelete }: ChatViewProps) {
   const [typingUsers, setTypingUsers] = useState<Map<string, { userId: string; userName: string }>>(new Map());
   const [actionsMsg, setActionsMsg] = useState<string | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const { socket } = useSocket();
   const { setReplyTo, setEditingMessage } = useChatContext();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -188,7 +188,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-3">
-      <div className="max-w-4xl mx-auto lg:px-4">
+      <div className="px-1 sm:px-2">
         <div ref={sentinelRef} />
         {loadingMore && (
           <div className="text-center py-3">
@@ -229,12 +229,12 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
                       {(msg.imageUrls?.length ?? 0) > 0 ? (
                         <div onClick={(e) => e.stopPropagation()} className={`grid gap-0.5 mb-1.5 rounded-xl overflow-hidden ${(msg.imageUrls?.length ?? 0) > 1 ? 'grid-cols-2' : ''}`}>
                           {msg.imageUrls?.slice(0, 4).map((url, idx) => (
-                            <img key={idx} src={url} alt="" className="w-full h-40 object-cover cursor-pointer" loading="lazy" />
+                            <img key={idx} src={url} alt="" className="w-full h-40 object-cover cursor-pointer" loading="lazy" onClick={() => setViewerUrl(url)} />
                           ))}
                         </div>
                       ) : msg.imageUrl ? (
                         <div onClick={(e) => e.stopPropagation()}>
-                          <img src={msg.imageUrl} alt="" className="rounded-xl max-w-full mb-1.5 cursor-pointer" loading="lazy" />
+                          <img src={msg.imageUrl} alt="" className="rounded-xl max-w-full mb-1.5 cursor-pointer" loading="lazy" onClick={() => setViewerUrl(msg.imageUrl!)} />
                         </div>
                       ) : null}
                       {msg.voiceUrl && (
@@ -273,6 +273,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
         )}
         <div ref={bottomRef} />
       </div>
+      {viewerUrl && <ImageViewer src={viewerUrl} onClose={() => setViewerUrl(null)} />}
     </div>
   );
 }
