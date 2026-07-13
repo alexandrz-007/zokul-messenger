@@ -17,7 +17,7 @@ import { uploadMiddleware } from './middleware/uploadMiddleware';
 import { authMiddleware } from './middleware/authMiddleware';
 import { errorMiddleware } from './middleware/errorMiddleware';
 import { authLimiter, uploadLimiter } from './middleware/rateLimit';
-import { startCleanupScheduler } from './services/cleanupService';
+import { startCleanupScheduler, stopCleanupScheduler } from './services/cleanupService';
 import { setupSocket } from './socket';
 import { closeRedis } from './config/redis';
 
@@ -27,7 +27,13 @@ const httpServer = createServer(app);
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use((err: any, _req: any, res: any, next: any) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
+  next(err);
+});
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use('/api/auth', authLimiter, authRoutes);
@@ -72,6 +78,7 @@ start();
 
 function gracefulShutdown(signal: string): void {
   logger(`Received ${signal}, shutting down gracefully...`);
+  stopCleanupScheduler();
   httpServer.close(() => {
     logger('HTTP server closed');
     closeRedis().then(() => {

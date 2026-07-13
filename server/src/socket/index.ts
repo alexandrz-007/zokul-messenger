@@ -91,6 +91,11 @@ export function setupSocket(httpServer: HTTPServer): Server {
 
     socket.on('message:send', async (data: { chatId: string; text?: string; imageUrl?: string; imageUrls?: string[]; voiceUrl?: string; voiceDuration?: number; replyToId?: string }) => {
       try {
+        const chat = await chatModel.findChatById(data.chatId);
+        if (!chat || !chat.participantIds.includes(userId)) {
+          socket.emit('error', { message: 'Forbidden' });
+          return;
+        }
         socket.join(`chat:${data.chatId}`);
         const message = await messageService.createMessage(
           data.chatId,
@@ -111,6 +116,11 @@ export function setupSocket(httpServer: HTTPServer): Server {
 
     socket.on('message:edit', async (data: { messageId: string; text: string; chatId: string }) => {
       try {
+        const chat = await chatModel.findChatById(data.chatId);
+        if (!chat || !chat.participantIds.includes(userId)) {
+          socket.emit('error', { message: 'Forbidden' });
+          return;
+        }
         const message = await messageService.editMessage(data.messageId, data.text, userId);
         socket.to(`chat:${data.chatId}`).emit('message:edited', message);
         socket.emit('message:edited', message);
@@ -121,6 +131,11 @@ export function setupSocket(httpServer: HTTPServer): Server {
 
     socket.on('message:delete', async (data: { messageId: string; chatId: string }) => {
       try {
+        const chat = await chatModel.findChatById(data.chatId);
+        if (!chat || !chat.participantIds.includes(userId)) {
+          socket.emit('error', { message: 'Forbidden' });
+          return;
+        }
         await messageService.deleteMessage(data.messageId, userId);
         socket.to(`chat:${data.chatId}`).emit('message:deleted', { messageId: data.messageId, chatId: data.chatId });
         socket.emit('message:deleted', { messageId: data.messageId, chatId: data.chatId });

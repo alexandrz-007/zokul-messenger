@@ -45,7 +45,7 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-- **Последнее действие:** Исправлены 7 проблем + 5 тестов (Fix Cycle #4 + Cycle #5)
+- **Последнее действие:** Cycle #6: UI улучшение + 🔴 Socket security fix + Infra (SCAN, limit, shutdown) + 13 новых тестов
 - **Текущая задача:** — (все диагностированные проблемы исправлены)
 - **Очередь:** Улучшения (админ панель, clean disk) — отложены
 
@@ -89,6 +89,21 @@
 | ~~15~~ | ~~Rate limiting~~ | ✅ Fixed | 🟡 Major | Infra |
 | ~~16~~ | ~~DB Pool max: 20~~ | ✅ Fixed | 🟡 Major | Infra |
 
+### Фикс-цикл #6 (6 проблем + 13 тестов)
+- 🔴 Security: 1/1 — Socket checkParticipant
+- 🟡 Infra: 3/3 — JSON limit, Graceful shutdown, SCAN
+- 🟢 UI/Perf: 2/2 — MessageInput, upload parallel
+- `reports/fix/DIAGNOSTIC6.md` • `reports/fix/FIX_PLAN6.md` • `reports/fix/FIX_LOG6.md`
+
+| # | Задача | Статус | Severity | Тип |
+|---|--------|--------|----------|-----|
+| ~~1~~ | ~~MessageInput центрирование + тоньше + скругление~~ | ✅ Fixed | 🟢 Minor | UX |
+| ~~2~~ | ~~Socket checkParticipant (message:send/edit/delete)~~ | ✅ Fixed | 🔴 Critical | Security |
+| ~~3~~ | ~~express.json() limit '1mb'~~ | ✅ Fixed | 🟡 Major | Infra |
+| ~~4~~ | ~~Graceful shutdown — cleanup interval~~ | ✅ Fixed | 🟡 Major | Bug |
+| ~~5~~ | ~~Parallel image upload~~ | ✅ Fixed | 🟢 Minor | Performance |
+| ~~6~~ | ~~redis.keys() → SCAN~~ | ✅ Fixed | 🟡 Major | Performance |
+
 ---
 
 ## ИСТОРИЯ ИЗМЕНЕНИЙ
@@ -128,6 +143,13 @@
 | 2026-07-13 | **Cycle #5: Bug #10:** Rate limiting — express-rate-limit | `rateLimit.ts`, `index.ts` | ✅ |
 | 2026-07-13 | **Cycle #5: Bug #11:** DB Pool max: 20 | `db.ts` | ✅ |
 | 2026-07-13 | **Cycle #5: Tests:** cleanupService (3) + rateLimit (2) | `__tests__/` | ✅ |
+| 2026-07-13 | **Cycle #6: UI:** MessageInput — центр, тоньше, скругление | `MessageInput.tsx:197` | ✅ |
+| 2026-07-13 | **Cycle #6: 🔴 Fix:** Socket checkParticipant (message:send/edit/delete) | `socket/index.ts:93-140` | ✅ |
+| 2026-07-13 | **Cycle #6: Fix:** express.json() limit '1mb' + payloadTooLarge handler | `index.ts:30-35` | ✅ |
+| 2026-07-13 | **Cycle #6: Fix:** Graceful shutdown — cleanup interval | `cleanupService.ts`, `index.ts` | ✅ |
+| 2026-07-13 | **Cycle #6: Fix:** Sequential image upload → Promise.all | `MessageInput.tsx:68-73` | ✅ |
+| 2026-07-13 | **Cycle #6: Fix:** redis.keys() → SCAN | `presenceService.ts:33-43` | ✅ |
+| 2026-07-13 | **Cycle #6: Tests:** socket (3) + presenceService (8) + cleanup (2) | `__tests__/` | ✅ |
 
 ---
 
@@ -143,6 +165,9 @@
 8. chat:new-room — сервер шлёт, клиент не ловит → чаты не появляются у других участников. Решение: всегда проверять, что на клиенте есть обработчик для каждого server-emitted события.
 9. safe-area-bottom в className — Tailwind не включает safe-area по умолчанию; на desktop/Android это бесполезно. Решение: убрать, использовать стандартный Tailwind (pb-2).
 10. express-rate-limit должен быть в production deps, а не devDeps, т.к. используется в рантайме middleware.
+11. Socket security — REST-маршруты (messageRoutes) используют `checkParticipant`, а socket-обработчики нет. Любой JWT может писать в любой чат. Решение: всегда дублировать проверку participant в socket handler'ах.
+12. redis.keys() — блокирует Redis на время выполнения (O(N)). При 1000+ онлайн — секундная задержка. Решение: заменить на SCAN с пагинацией.
+13. Graceful shutdown — setInterval не даёт процессу завершиться, пока не сработает. Решение: сохранять interval reference и чистить в shutdown.
 
 ---
 

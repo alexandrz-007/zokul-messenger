@@ -32,6 +32,15 @@ export async function getOnlineUsers(userIds: string[]): Promise<Map<string, boo
 
 export async function getAllOnlineUserIds(): Promise<string[]> {
   const redis = getRedis();
-  const keys = await redis.keys(`${PRESENCE_PREFIX}*`);
-  return keys.map((k) => k.replace(PRESENCE_PREFIX, ''));
+  const ids: string[] = [];
+  let cursor = '0';
+  do {
+    const result = await redis.scan(cursor, 'MATCH', `${PRESENCE_PREFIX}*`, 'COUNT', 100);
+    cursor = result[0];
+    const keys = result[1];
+    for (const key of keys) {
+      ids.push(key.replace(PRESENCE_PREFIX, ''));
+    }
+  } while (cursor !== '0');
+  return ids;
 }

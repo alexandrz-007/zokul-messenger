@@ -64,13 +64,12 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
       setUploading(true);
       setUploadError('');
       try {
-        const urls: string[] = [];
-        for (const img of pendingImages) {
+        const uploads = pendingImages.map((img) => {
           const formData = new FormData();
           formData.append('file', img.file);
-          const res = await api.post<{ url: string }>('/upload', formData);
-          urls.push(res.data.url);
-        }
+          return api.post<{ url: string }>('/upload', formData).then((res) => res.data.url);
+        });
+        const urls = await Promise.all(uploads);
         pendingImages.forEach((img) => URL.revokeObjectURL(img.preview));
         setPendingImages([]);
         if (urls.length === 1) {
@@ -194,7 +193,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
               ))}
             </div>
           )}
-            <div className="flex items-end gap-2 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2" onClick={() => inputRef.current?.focus()}>
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-3xl px-4 py-1" onClick={() => inputRef.current?.focus()}>
               <input
                 ref={inputRef}
                 type="text"

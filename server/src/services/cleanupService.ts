@@ -30,6 +30,8 @@ export function cleanupOldFiles(dir?: string): number {
   return removed;
 }
 
+let cleanupTimer: NodeJS.Timeout | null = null;
+
 export function startCleanupScheduler(): void {
   const run = () => {
     try {
@@ -40,5 +42,12 @@ export function startCleanupScheduler(): void {
     }
   };
   run();
-  setInterval(run, CLEANUP_INTERVAL_MS);
+  cleanupTimer = setInterval(run, CLEANUP_INTERVAL_MS);
+}
+
+export function stopCleanupScheduler(): void {
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
+  }
 }

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { cleanupOldFiles } from '../src/services/cleanupService';
+import { cleanupOldFiles, startCleanupScheduler, stopCleanupScheduler } from '../src/services/cleanupService';
 
 describe('cleanupService', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cleanup-test-'));
@@ -38,5 +38,14 @@ describe('cleanupService', () => {
     expect(removed).toBe(0);
     expect(fs.existsSync(missingDir)).toBe(true);
     fs.rmSync(missingDir, { recursive: true, force: true });
+  });
+
+  it('should start and stop cleanup scheduler without error', () => {
+    startCleanupScheduler();
+    expect(() => stopCleanupScheduler()).not.toThrow();
+  });
+
+  it('should not throw when stopping already stopped scheduler', () => {
+    expect(() => stopCleanupScheduler()).not.toThrow();
   });
 });
