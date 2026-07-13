@@ -45,7 +45,7 @@
 
 ## ТЕКУЩИЙ СТАТУС
 
-- **Последнее действие:** Cycle #7: Security Hardening — httpOnly cookie, requireEnv, socket rate limit, hide email
+- **Последнее действие:** Cycle #8: Prod-readiness — healthcheck, pino logger, CI pipeline
 - **Текущая задача:** — (все диагностированные проблемы исправлены)
 - **Очередь:** Улучшения (админ панель, clean disk) — отложены
 
@@ -116,6 +116,16 @@
 | ~~3~~ | ~~Socket rate limiting (5/s)~~ | ✅ Fixed | 🟡 Major | Security |
 | ~~4~~ | ~~User search — hide email~~ | ✅ Fixed | 🟡 Major | Security |
 
+### Фикс-цикл #8 (3 проблемы + 2 теста)
+- 🟡 Infra: 3/3 — healthcheck, pino logs, CI
+- `reports/fix/DIAGNOSTIC8.md` • `reports/fix/FIX_PLAN8.md` • `reports/fix/FIX_LOG8.md`
+
+| # | Задача | Статус | Severity | Тип |
+|---|--------|--------|----------|-----|
+| ~~1~~ | ~~GET /health + Docker healthcheck~~ | ✅ Fixed | 🟡 Major | Infra |
+| ~~2~~ | ~~Pino structured logging~~ | ✅ Fixed | 🟡 Major | Infra |
+| ~~3~~ | ~~GitHub Actions CI~~ | ✅ Fixed | 🟢 Minor | Infra |
+
 ---
 
 ## ИСТОРИЯ ИЗМЕНЕНИЙ
@@ -168,6 +178,11 @@
 | 2026-07-13 | **Cycle #7: 🟡 Fix:** Socket rate limiting (5/s/user) | `socket/index.ts` | ✅ |
 | 2026-07-13 | **Cycle #7: 🟡 Fix:** User search — hide email | `models/User.ts` | ✅ |
 | 2026-07-13 | **Cycle #7: Tests:** authCookie (5), jest.setup | `__tests__/authCookie.test.ts`, `jest.setup.ts` | ✅ |
+| 2026-07-13 | **Cycle #7: Hotfix:** 401 interceptor → infinite loop | `api.ts` | ✅ |
+| 2026-07-13 | **Cycle #8: Fix:** GET /api/health + Docker healthcheck | `healthRoutes.ts`, `index.ts`, `docker-compose.local.yml` | ✅ |
+| 2026-07-13 | **Cycle #8: Fix:** Pino structured logging | `utils/logger.ts` | ✅ |
+| 2026-07-13 | **Cycle #8: Fix:** GitHub Actions CI (server + client) | `.github/workflows/ci.yml` | ✅ |
+| 2026-07-13 | **Cycle #8: Tests:** health (2) | `__tests__/health.test.ts` | ✅ |
 
 ---
 
@@ -189,6 +204,7 @@
 14. Переход с localStorage JWT на httpOnly cookie — сломал session restore. Старый клиент с токеном в localStorage не залогинится. Решение: authMiddleware поддерживает и cookie, и Bearer header для плавной миграции.
 15. requireEnv сломал все тесты — модули импортируют config на уровне модуля, а env vars ещё не установлены. Решение: jest.setup.ts с process.env=... загружается до всех тестов через setupFiles.
 16. VAPID ключи для тестов должны быть валидного формата (65 bytes base64), иначе web-push библиотека падает. Решение: использовать реальные ключи из docker-compose.local.yml.
+17. Docker healthcheck — curl не всегда доступен в alpine-образе. Решение: использовать `wget --spider` вместо curl.
 
 ---
 

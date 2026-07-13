@@ -8,6 +8,7 @@ import { createServer } from 'http';
 import { config } from './config/app';
 import { migrate } from './config/db';
 import { logger } from './utils/logger';
+import healthRoutes from './routes/healthRoutes';
 import authRoutes from './routes/authRoutes';
 import chatRoutes from './routes/chatRoutes';
 import groupRoutes from './routes/groupRoutes';
@@ -38,6 +39,7 @@ app.use((err: any, _req: any, res: any, next: any) => {
 });
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+app.use('/api/health', healthRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/chats', groupRoutes);
 app.use('/api/chats', chatRoutes);
