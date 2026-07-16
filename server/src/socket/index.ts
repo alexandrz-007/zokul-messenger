@@ -253,8 +253,22 @@ export function setupSocket(httpServer: HTTPServer): Server {
       }
     });
 
-    socket.on('chat:leave', (data: { chatId: string }) => {
-      socket.leave(`chat:${data.chatId}`);
+    socket.on('chat:leave', async (data: { chatId: string }) => {
+      try {
+        if (!data?.chatId) {
+          socket.emit('error', { message: 'Chat ID is required' });
+          return;
+        }
+        const allowed = await ensureChatParticipant(data.chatId, userId);
+        if (!allowed) {
+          socket.emit('error', { message: 'Forbidden' });
+          return;
+        }
+        socket.leave(`chat:${data.chatId}`);
+        logger(`Socket ${socket.id} left chat room ${data.chatId}`);
+      } catch (err: unknown) {
+        socket.emit('error', { message: 'Failed to leave chat' });
+      }
     });
 
     socket.on('disconnect', async () => {

@@ -173,6 +173,42 @@ describe('access control scenarios', () => {
     const chat = await chatModel.findChatById('chat1');
     expect(chat!.participantIds.includes('user1')).toBe(false);
   });
+
+  it('chat:leave logic - participant allowed', async () => {
+    jest.spyOn(chatModel, 'findChatById').mockResolvedValueOnce({
+      id: 'chat1',
+      isGroup: false,
+      participantIds: ['user1', 'user2'],
+      participants: [],
+      createdAt: new Date().toISOString(),
+    });
+
+    const chat = await chatModel.findChatById('chat1');
+    const allowed = !!chat && chat.participantIds.includes('user1');
+    expect(allowed).toBe(true);
+  });
+
+  it('chat:leave logic - non-participant rejected', async () => {
+    jest.spyOn(chatModel, 'findChatById').mockResolvedValueOnce({
+      id: 'chat1',
+      isGroup: false,
+      participantIds: ['user2', 'user3'],
+      participants: [],
+      createdAt: new Date().toISOString(),
+    });
+
+    const chat = await chatModel.findChatById('chat1');
+    const allowed = !!chat && chat.participantIds.includes('user1');
+    expect(allowed).toBe(false);
+  });
+
+  it('chat:leave logic - non-existent chat rejected', async () => {
+    jest.spyOn(chatModel, 'findChatById').mockResolvedValueOnce(null);
+
+    const chat = await chatModel.findChatById('nonexistent');
+    const allowed = !!chat && chat.participantIds.includes('user1');
+    expect(allowed).toBe(false);
+  });
 });
 
 describe('presence multi-tab logic', () => {
