@@ -69,7 +69,7 @@ export default function CreateGroupModal({ open, onClose, onCreated, socket }: C
         name: groupName.trim(),
         participantIds: selected.map((u) => u.id),
       });
-      socket?.emit('chat:created', { chatId: res.data.id, participantIds: selected.map((u) => u.id) });
+      socket?.emit('chat:created', { chatId: res.data.id });
       onCreated(res.data);
       onClose();
     } catch (err: unknown) {

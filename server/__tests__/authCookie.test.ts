@@ -86,7 +86,7 @@ describe('authController', () => {
     const token = jwt.sign({ userId: 'user1' }, 'test-secret');
 
     const controller = require('../src/controllers/authController');
-    const req: any = { body: { email: 'a@b.com', password: 'pass' } };
+    const req: any = { body: { email: 'a@b.com', password: 'pass' }, headers: {} };
     const res: any = {
       cookie: jest.fn(),
       json: jest.fn().mockReturnThis(),

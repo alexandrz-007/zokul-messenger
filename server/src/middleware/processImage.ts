@@ -36,6 +36,9 @@ export async function processAvatar(req: Request, _res: Response, next: NextFunc
 
     next();
   } catch (err) {
+    if (file && file.path && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
     next(err);
   }
 }
@@ -71,6 +74,9 @@ export async function processImage(req: Request, _res: Response, next: NextFunct
 
     next();
   } catch (err) {
+    if (file && file.path && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
     next(err);
   }
 }

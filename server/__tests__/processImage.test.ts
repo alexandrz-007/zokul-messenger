@@ -71,4 +71,18 @@ describe('processImage middleware', () => {
 
     expect(next).toHaveBeenCalledWith();
   });
+
+  it('should clean up temp file when sharp fails', async () => {
+    const filePath = path.join(uploadDir, 'corrupt.png');
+    fs.writeFileSync(filePath, 'not a real image data');
+
+    const req = { file: { path: filePath, filename: 'corrupt.png', mimetype: 'image/png' } } as any;
+
+    const next = jest.fn();
+
+    await processImage(req, {} as any, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(fs.existsSync(filePath)).toBe(false);
+  });
 });

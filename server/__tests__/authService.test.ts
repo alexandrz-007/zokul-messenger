@@ -35,6 +35,50 @@ describe('authService', () => {
     });
   });
 
+  describe('register password validation', () => {
+    it('should reject short password during registration', async () => {
+      await expect(authService.register('test@test.com', '12345', 'Test'))
+        .rejects.toThrow('Password must be at least 6 characters');
+    });
+
+    it('should reject empty password during registration', async () => {
+      await expect(authService.register('test@test.com', '', 'Test'))
+        .rejects.toThrow('Password must be at least 6 characters');
+    });
+
+    it('should generate token with expected payload for register', async () => {
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+      (UserModel.create as jest.Mock).mockResolvedValue({
+        id: '1',
+        email: 'test@test.com',
+        name: 'Test',
+      });
+      (jwt.sign as jest.Mock).mockReturnValue('token');
+
+      const result = await authService.register('test@test.com', 'Pass123!', 'Test');
+
+      expect(jwt.sign).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: '1', tokenVersion: 0 }),
+        expect.any(String),
+        expect.any(Object)
+      );
+      expect(result.token).toBe('token');
+    });
+  });
+
+  describe('changePassword', () => {
+    it('should reject short new password', async () => {
+      await expect(authService.changePassword('user1', 'oldPass', 'short'))
+        .rejects.toThrow('Password must be at least 6 characters');
+    });
+
+    it('should reject empty new password', async () => {
+      await expect(authService.changePassword('user1', 'oldPass', ''))
+        .rejects.toThrow('Password must be at least 6 characters');
+    });
+  });
+
   describe('login', () => {
     it('should login and return token', async () => {
       (UserModel.findByEmail as jest.Mock).mockResolvedValue({

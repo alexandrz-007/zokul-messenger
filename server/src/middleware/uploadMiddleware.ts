@@ -13,13 +13,11 @@ const storage = multer.diskStorage({
   },
 });
 
-const imageExts = /\.(jpg|jpeg|png|gif|webp)$/i;
-const audioExts = /\.(webm|ogg|wav|mp3|mp4|m4a|aac)$/i;
-const audioMimes = /^audio\//;
+const imageMimes = /^image\/(jpeg|png|gif|webp)$/;
+const audioMimes = /^audio\/(webm|ogg|wav|mpeg|mp4|x-m4a|aac)$/;
 
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const ext = path.extname(file.originalname);
-  if (imageExts.test(ext) || audioExts.test(ext) || audioMimes.test(file.mimetype)) {
+  if (imageMimes.test(file.mimetype) || audioMimes.test(file.mimetype)) {
     cb(null, true);
   } else {
     cb(new Error('Only image and audio files are allowed'));

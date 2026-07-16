@@ -35,6 +35,11 @@ interface AuthSocket extends Socket {
   userName: string;
 }
 
+async function ensureChatParticipant(chatId: string, userId: string): Promise<boolean> {
+  const chat = await chatModel.findChatById(chatId);
+  return !!chat && chat.participantIds.includes(userId);
+}
+
 export function setupSocket(httpServer: HTTPServer): Server {
   const { pubClient, subClient } = getRedisPubSub();
   const io = new Server(httpServer, {
@@ -122,7 +127,12 @@ export function setupSocket(httpServer: HTTPServer): Server {
       await presenceService.setOnline(userId);
     });
 
-    socket.on('chat:join', (chatId: string) => {
+    socket.on('chat:join', async (chatId: string) => {
+      const allowed = await ensureChatParticipant(chatId, userId);
+      if (!allowed) {
+        socket.emit('error', { message: 'Forbidden' });
+        return;
+      }
       socket.join(`chat:${chatId}`);
       logger(`Socket ${socket.id} joined chat room ${chatId}`);
     });
@@ -194,7 +204,12 @@ export function setupSocket(httpServer: HTTPServer): Server {
       }
     });
 
-    socket.on('message:typing', (data: { chatId: string }) => {
+    socket.on('message:typing', async (data: { chatId: string }) => {
+      const allowed = await ensureChatParticipant(data.chatId, userId);
+      if (!allowed) {
+        socket.emit('error', { message: 'Forbidden' });
+        return;
+      }
       socket.to(`chat:${data.chatId}`).emit('typing:start', {
         chatId: data.chatId,
         userId,
@@ -202,9 +217,18 @@ export function setupSocket(httpServer: HTTPServer): Server {
       });
     });
 
-    socket.on('chat:created', async (data: { chatId: string; participantIds: string[] }) => {
+    socket.on('chat:created', async (data: { chatId: string }) => {
+      const chat = await chatModel.findChatById(data.chatId);
+      if (!chat) {
+        socket.emit('error', { message: 'Chat not found' });
+        return;
+      }
+      if (!chat.participantIds.includes(userId)) {
+        socket.emit('error', { message: 'Forbidden' });
+        return;
+      }
       socket.join(`chat:${data.chatId}`);
-      for (const pid of data.participantIds) {
+      for (const pid of chat.participantIds) {
         if (pid === userId) continue;
         const sockets = userSockets.get(pid);
         if (!sockets) continue;
@@ -229,15 +253,25 @@ export function setupSocket(httpServer: HTTPServer): Server {
       }
     });
 
+    socket.on('chat:leave', (data: { chatId: string }) => {
+      socket.leave(`chat:${data.chatId}`);
+    });
+
     socket.on('disconnect', async () => {
       logger(`Socket disconnected: user ${userId}`);
       const sockets = userSockets.get(userId);
       if (sockets) {
         sockets.delete(socket.id);
-        if (sockets.size === 0) userSockets.delete(userId);
+        if (sockets.size === 0) {
+          userSockets.delete(userId);
+          try {
+            await presenceService.setOffline(userId);
+            socket.broadcast.emit('presence:update', { userId, status: 'offline' });
+          } catch (err) {
+            logger(`Failed to set offline presence for user ${userId}: ${err}`, 'error');
+          }
+        }
       }
-      await presenceService.setOffline(userId);
-      socket.broadcast.emit('presence:update', { userId, status: 'offline' });
     });
   });
 

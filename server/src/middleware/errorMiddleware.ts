@@ -15,6 +15,10 @@ export function errorMiddleware(err: Error, _req: Request, res: Response, _next:
     res.status(400).json({ error: err.message });
     return;
   }
+  if (err.message === 'Password must be at least 6 characters') {
+    res.status(400).json({ error: err.message });
+    return;
+  }
   if (err.message === 'Only image and audio files are allowed') {
     res.status(400).json({ error: err.message });
     return;

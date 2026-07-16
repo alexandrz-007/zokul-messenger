@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import api from '../src/services/api';
 
@@ -31,6 +31,8 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByText('not logged in')).toBeInTheDocument();
     });
+
+    await act(async () => {});
   });
 
   it('should set user after successful login', async () => {
@@ -57,10 +59,14 @@ describe('AuthContext', () => {
       expect(screen.getByText('not logged in')).toBeInTheDocument();
     });
 
-    await loginFn!('test@test.com', 'pass');
+    await act(async () => {
+      await loginFn!('test@test.com', 'pass');
+    });
 
     await waitFor(() => {
       expect(screen.getByText('logged in as Test')).toBeInTheDocument();
     });
+
+    await act(async () => {});
   });
 });

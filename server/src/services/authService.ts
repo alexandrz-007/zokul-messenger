@@ -7,14 +7,23 @@ import { logger } from '../utils/logger';
 
 const SALT_ROUNDS = 10;
 
+const MIN_PASSWORD_LENGTH = 6;
+
+function validatePassword(password: string): void {
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error('Password must be at least 6 characters');
+  }
+}
+
 export async function register(email: string, password: string, name: string): Promise<AuthResponse> {
+  validatePassword(password);
   const existing = await UserModel.findByEmail(email);
   if (existing) {
     throw new Error('Email already registered');
   }
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const user = await UserModel.create(email, passwordHash, name);
-  const token = generateToken(user.id);
+  const token = generateToken(user.id, 0);
   logger(`User registered: ${user.email}`);
   return { token, user };
 }
@@ -43,11 +52,11 @@ export function verifyToken(token: string): { userId: string; tokenVersion: numb
 }
 
 export async function changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+  validatePassword(newPassword);
   const row = await UserModel.findByIdWithPassword(userId);
   if (!row) throw new Error('User not found');
   const valid = await bcrypt.compare(oldPassword, row.passwordHash);
   if (!valid) throw new Error('Current password is incorrect');
-  if (newPassword.length < 6) throw new Error('New password must be at least 6 characters');
   const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
   await UserModel.updatePassword(userId, hash);
   logger(`Password changed for user ${userId}`);
