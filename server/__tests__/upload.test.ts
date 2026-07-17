@@ -10,11 +10,11 @@ describe('upload middleware', () => {
 });
 
 describe('upload fileFilter MIME whitelist', () => {
-  const imageMimes = /^image\/(jpeg|png|gif|webp)$/;
+  const imageMimes = /^image\/(jpeg|png|gif|webp|heic|heif|heic-sequence|heif-sequence)$/;
   const audioMimes = /^audio\/(webm|ogg|wav|mpeg|mp4|x-m4a|aac)$/;
 
   it('should accept valid image MIME types', () => {
-    const validMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const validMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
     for (const mime of validMimes) {
       expect(imageMimes.test(mime)).toBe(true);
     }

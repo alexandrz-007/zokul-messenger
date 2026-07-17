@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const imageMimes = /^image\/(jpeg|png|gif|webp)$/;
+const imageMimes = /^image\/(jpeg|png|gif|webp|heic|heif|heic-sequence|heif-sequence)$/;
 const audioMimes = /^audio\/(webm|ogg|wav|mpeg|mp4|x-m4a|aac)$/;
 
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
