@@ -85,3 +85,25 @@ Source commit: 96d5818
   - Priority: P2
   - Goal: Make timestamps, previews, selected state, and avatars easier to scan.
   - Out of scope: new unread logic unless already supported.
+
+## P2: Administration
+
+- [ ] ZOKUL-ADMIN-ROADMAP Admin panel initiative
+  - Status: Idea captured - needs Governor discovery before implementation
+  - Priority: P2
+  - Owner: Governor
+  - Goal: Add a secure graphical admin interface for operating the Zokul resource.
+  - Recommended approach: built-in `/admin` React area with backend `/api/admin/*` namespace.
+  - Proposed phases:
+    - `ZOKUL-ADMIN-001`: admin role, backend `adminOnly` guard, admin audit log.
+    - `ZOKUL-ADMIN-002`: admin stats and users API.
+    - `ZOKUL-ADMIN-003`: admin UI shell, dashboard, users page, audit log page.
+    - `ZOKUL-ADMIN-004`: user ban/unban management.
+    - `ZOKUL-ADMIN-005`: uploads/media administration.
+    - `ZOKUL-ADMIN-006`: moderation and reports.
+    - `ZOKUL-ADMIN-007`: settings and feature flags.
+  - Scope guard: do not implement as one large task; create one active executor handoff per phase.
+  - Security notes:
+    - enforce admin access on the backend, not only in UI;
+    - log every admin action;
+    - avoid destructive actions without confirmation and audit trail.

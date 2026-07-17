@@ -413,3 +413,99 @@ Improve voice-message composer UX with Telegram-like hold-to-record on mobile, k
 - Governor review required (risk level: Medium).
 - Manual QA on iPhone (hold-to-record, slide-to-cancel) and desktop Chrome.
 - Slide-up-to-lock enhancement could be future task.
+
+## 2026-07-17 - Governor review of Telegram-like voice recording UX
+
+Role: Governor
+Task ID: ZOKUL-VOICE-002
+Branch: codex/zokul-ui-redesign
+Reviewed commit: 2e1ddd6
+Result: Needs Changes
+
+### Findings
+
+- P1: Desktop cancel can still upload because `VoiceRecorder.cancelRecording()` calls `stop()`, while `recorder.onstop` uploads unconditionally when chunks exist.
+- P1: Mobile quick release during async microphone startup can be ignored because `handlePointerUp` exits while `touchRecorderActive` is still false.
+- P1: Commit/package hygiene is not ready: ZOKUL-VOICE-002 is committed, but required base voice/upload changes remain as modified tracked files.
+- P2: Review build failed locally with `EPERM` writing `client/dist/sw.js`; tests passed 95/95.
+
+### Verification
+
+- `npm.cmd run build`: failed locally with `EPERM: operation not permitted, open 'C:\zokul\client\dist\sw.js'`.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with Windows LF/CRLF warnings only.
+- `git status --short --branch`: dirty tracked files remain.
+
+### Next Action
+
+Executor should fix the two voice behavior bugs, add/adjust tests or manual QA notes, and resolve git packaging before another Governor review.
+
+## 2026-07-17 - Fix ZOKUL-VOICE-002 review findings (P1 bugs)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-VOICE-002
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Fix two P1 bugs identified in the Governor review of the Telegram-like voice recording UX:
+1. Desktop cancel in VoiceRecorder uploads the voice message anyway.
+2. Mobile quick release during async microphone startup is ignored.
+
+### Actions
+
+- **VoiceRecorder.tsx**: Added `discardRef`. Reset in `startRecording`; checked in `onstop` to skip upload; set to `true` in `cancelRecording` before `stop()`. Cancel never uploads.
+- **MessageInput.tsx**: Added `touchStartingRef`, `touchPendingFinishRef`, `touchPendingCancelRef`, `touchRecorderActiveRef`. Pointer up/cancel during async startup stores pending action; executed after `recorder.start()` completes. Added `setPointerCapture`/`releasePointerCapture` for reliable pointer tracking.
+
+### Changed Files
+
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `client/src/components/chat/MessageInput.tsx`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+
+### Decisions / Notes
+
+- Item #3 from the review (dirty tracked files from ZOKUL-VOICE-001) and item #4 (EPERM build failure during review) remain unaddressed. These are environment/process issues outside the scope of these fixes.
+- No new tests added for the fix itself (the bug is in timing/hardware interaction; reliable unit testing would require MediaRecorder mocking infrastructure not currently present). Manual QA checklist updated in NEXT_AGENT_TASK.md.
+- Ref-callback circular dependency resolved using intermediate refs (`finishTouchRecordingRef`, `cancelTouchRecordingRef`) rather than reordering hook definitions.
+
+### Follow-ups
+
+- Governor re-review required.
+- User to decide on committing fixes and packaging dirty tracked files.
+
+## 2026-07-17 - Governor re-review of ZOKUL-VOICE-002 fixes
+
+Role: Governor
+Task ID: ZOKUL-VOICE-002
+Branch: codex/zokul-ui-redesign
+Result: Accepted for behavior fixes; release packaging still required
+
+### Review
+
+- `VoiceRecorder.tsx`: accepted. `discardRef` prevents cancel from uploading after `MediaRecorder.stop()`.
+- `MessageInput.tsx`: accepted. Pending finish/cancel refs handle pointer up/cancel during async microphone startup.
+- No new product scope was added.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+- `git status --short --branch`: still dirty; packaging decision required.
+
+### Follow-ups
+
+- Package/commit the full voice/upload change set intentionally before merge/release.
+- Create a separate follow-up task for focused voice component tests with mocked `MediaRecorder`.
+- Admin panel idea captured in `03_PRODUCT_BACKLOG.md` as `ZOKUL-ADMIN-ROADMAP`.
