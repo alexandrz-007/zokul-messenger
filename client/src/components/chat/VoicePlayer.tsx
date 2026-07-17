@@ -64,7 +64,7 @@ export default function VoicePlayer({ voiceUrl, voiceDuration }: VoicePlayerProp
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}
       />
-      <button type="button" onClick={toggle} className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0 hover:bg-primary/30 transition-colors">
+      <button type="button" onClick={toggle} className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
         {playing ? (
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
             <rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />
@@ -76,11 +76,11 @@ export default function VoicePlayer({ voiceUrl, voiceDuration }: VoicePlayerProp
         )}
       </button>
       <div className="flex-1">
-        <div className="h-1.5 bg-white/20 dark:bg-white/10 rounded-full cursor-pointer" onClick={handleSeek}>
-          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-1 bg-gray-300 dark:bg-gray-600 rounded-full cursor-pointer" onClick={handleSeek}>
+          <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
         </div>
       </div>
-      <span className="text-[10px] opacity-70 tabular-nums w-10 text-right">
+      <span className="text-[10px] text-gray-400 tabular-nums w-10 text-right">
         {formatDuration(currentTime)}/{formatDuration(duration)}
       </span>
     </div>

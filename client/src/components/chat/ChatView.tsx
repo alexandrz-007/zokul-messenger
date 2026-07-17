@@ -25,20 +25,20 @@ interface ChatViewProps {
   onMessageDelete?: (messageId: string, chatId: string) => void;
 }
 
-function formatDateLabel(date: Date) {
+function formatTime(date: Date) {
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Today';
+  if (days === 0) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   if (days === 1) return 'Yesterday';
-  return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'short' });
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
 
 function DaySeparator({ date }: { date: Date }) {
   return (
-    <div className="flex items-center justify-center my-4">
-      <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium px-3 py-1 rounded-full bg-gray-50 dark:bg-white/5">
-        {formatDateLabel(date)}
+    <div className="flex justify-center my-2">
+      <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+        {formatTime(date)}
       </span>
     </div>
   );
@@ -165,15 +165,15 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-surface">
-        <div className="animate-pulse text-gray-400 dark:text-gray-500 text-sm">Loading messages...</div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading messages...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-surface">
+      <div className="flex-1 flex items-center justify-center">
         <div className="text-red-500 text-sm">{error}</div>
       </div>
     );
@@ -181,27 +181,27 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
 
   if (messages.length === 0 && typingNames.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-surface">
-        <div className="text-center px-6">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-7 h-7 text-gray-300 dark:text-gray-600">
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-gray-400">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No messages yet</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Send a message to start the conversation</p>
+          <p className="text-sm text-gray-500">No messages yet</p>
+          <p className="text-xs text-gray-400 mt-1">Send a message to start</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-3 sm:px-4 bg-white dark:bg-surface">
-      <div className="max-w-[768px] mx-auto">
+    <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="px-1 sm:px-2">
         <div ref={sentinelRef} />
         {loadingMore && (
-          <div className="text-center py-4">
-            <div className="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="text-center py-3">
+            <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
         )}
         {sortedMessages.map((msg, i) => {
@@ -212,81 +212,60 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
           const showAvatar = !isMine && (!sameSender || gap > 300000);
           const showDay = i > 0 && new Date(msg.createdAt).toDateString() !== new Date(sortedMessages[i - 1].createdAt).toDateString();
           const isNew = Date.now() - new Date(msg.createdAt).getTime() < 10000;
-          const hasImage = (msg.imageUrls?.length ?? 0) > 0 || !!msg.imageUrl;
-          const hasBubble = !!msg.text || !!msg.replyTo || !!msg.voiceUrl;
-
           return (
             <div key={msg.id}>
               {(i === 0 || showDay) && <DaySeparator date={new Date(msg.createdAt)} />}
-              <div className={`flex gap-2 ${isMine ? 'flex-row-reverse' : ''} ${showAvatar ? 'mt-3' : 'mt-0.5'} items-end`}>
-                <div className={`w-7 shrink-0 ${isMine || !showAvatar ? 'invisible' : ''}`}>
-                  <Avatar name={participants.find((p) => p.id === msg.senderId)?.name || msg.senderId} size={28} url={participants.find((p) => p.id === msg.senderId)?.avatarUrl} />
+              <div className={`flex gap-2 ${isMine ? 'flex-row-reverse' : ''} ${showAvatar ? 'mt-3' : 'mt-0.5'}`}>
+                <div className={`w-8 shrink-0 ${isMine ? 'hidden' : ''}`}>
+                  {showAvatar && <Avatar name={participants.find((p) => p.id === msg.senderId)?.name || msg.senderId} size={32} url={participants.find((p) => p.id === msg.senderId)?.avatarUrl} />}
                 </div>
-                <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[75%]`}>
-                  {/* Image content — OUTSIDE bubble, no blue frame */}
-                  {(hasImage) && (
+                <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                  <div className="relative">
                     <div
+                      className={`px-3 py-2 text-sm leading-relaxed cursor-pointer ${isNew ? 'animate-message-appear' : ''} ${
+                        isMine
+                          ? 'bg-primary text-white rounded-[18px] rounded-br-[6px]'
+                          : 'bg-gray-100 dark:bg-gray-800 rounded-[18px] rounded-bl-[6px]'
+                      }`}
                       onClick={() => handleActions(msg.id)}
                       onContextMenu={(e) => { e.preventDefault(); handleActions(msg.id); }}
-                      className={`cursor-pointer ${hasBubble ? 'mb-1.5' : ''}`}
                     >
+                      {msg.replyTo && (
+                        <div className="mb-1.5" onClick={(e) => e.stopPropagation()}>
+                          <ReplyQuote reply={msg.replyTo} />
+                        </div>
+                      )}
                       {(msg.imageUrls?.length ?? 0) > 0 ? (
-                        <div onClick={(e) => e.stopPropagation()} className={`rounded-xl overflow-hidden ${isMine ? 'border border-white/10' : ''}`}>
-                          <div className={`grid gap-px ${(msg.imageUrls?.length ?? 0) > 1 ? 'grid-cols-2' : ''}`}>
-                            {msg.imageUrls?.slice(0, 4).map((url, idx) => (
-                              <img key={idx} src={url} alt="" className="w-full h-40 object-cover cursor-pointer" loading="lazy" onClick={() => setViewerUrl(url)} />
-                            ))}
-                          </div>
+                        <div onClick={(e) => e.stopPropagation()} className={`grid gap-0.5 mb-1.5 rounded-xl overflow-hidden ${(msg.imageUrls?.length ?? 0) > 1 ? 'grid-cols-2' : ''}`}>
+                          {msg.imageUrls?.slice(0, 4).map((url, idx) => (
+                            <img key={idx} src={url} alt="" className="w-full h-40 object-cover cursor-pointer" loading="lazy" onClick={() => setViewerUrl(url)} />
+                          ))}
                         </div>
-                      ) : (
-                        <div onClick={(e) => e.stopPropagation()} className={`rounded-xl overflow-hidden ${isMine ? 'border border-white/10' : ''}`}>
-                          <img src={msg.imageUrl} alt="" className="max-w-full cursor-pointer object-cover" loading="lazy" onClick={() => setViewerUrl(msg.imageUrl!)} />
+                      ) : msg.imageUrl ? (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <img src={msg.imageUrl} alt="" className="rounded-xl max-w-full mb-1.5 cursor-pointer" loading="lazy" onClick={() => setViewerUrl(msg.imageUrl!)} />
+                        </div>
+                      ) : null}
+                      {msg.voiceUrl && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <VoicePlayer voiceUrl={msg.voiceUrl} voiceDuration={msg.voiceDuration} />
                         </div>
                       )}
+                      {msg.text && <p className="whitespace-pre-wrap break-words">{msg.text}</p>}
                     </div>
-                  )}
-                  {/* Reply + text + voice bubble */}
-                  {(hasBubble) && (
-                    <div className="relative">
-                      <div
-                        className={`px-3 py-2 text-sm leading-relaxed cursor-pointer ${isNew ? 'animate-message-appear' : ''} ${
-                          isMine
-                            ? 'bg-primary text-white rounded-[18px] rounded-br-[6px]'
-                            : 'bg-gray-100 dark:bg-surface-incoming text-gray-900 dark:text-gray-100 rounded-[18px] rounded-bl-[6px]'
-                        }`}
-                        onClick={() => handleActions(msg.id)}
-                        onContextMenu={(e) => { e.preventDefault(); handleActions(msg.id); }}
-                      >
-                        {msg.replyTo && (
-                          <div className="mb-1.5 opacity-90" onClick={(e) => e.stopPropagation()}>
-                            <ReplyQuote reply={msg.replyTo} />
-                          </div>
-                        )}
-                        {msg.voiceUrl && (
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <VoicePlayer voiceUrl={msg.voiceUrl} voiceDuration={msg.voiceDuration} />
-                          </div>
-                        )}
-                        {msg.text && <p className="whitespace-pre-wrap break-words">{msg.text}</p>}
-                      </div>
-                      {actionsMsg === msg.id && (
-                        <MessageActions
-                          message={msg}
-                          isMine={isMine}
-                          onClose={() => setActionsMsg(null)}
-                          onReply={() => handleReply(msg)}
-                          onEdit={isMine ? () => handleEdit(msg) : undefined}
-                          onDelete={isMine ? () => handleDelete(msg) : undefined}
-                        />
-                      )}
-                    </div>
-                  )}
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 px-1 flex items-center gap-1 select-none">
-                    {isMine && (
-                      <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current text-gray-400 dark:text-gray-500">
-                        <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/>
-                      </svg>
+                    {actionsMsg === msg.id && (
+                      <MessageActions
+                        message={msg}
+                        isMine={isMine}
+                        onClose={() => setActionsMsg(null)}
+                        onReply={() => handleReply(msg)}
+                        onEdit={isMine ? () => handleEdit(msg) : undefined}
+                        onDelete={isMine ? () => handleDelete(msg) : undefined}
+                      />
                     )}
+                  </div>
+                  <span className="text-[10px] text-gray-400 mt-0.5 px-1 flex items-center gap-1">
+                    {isMine && <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg>}
                     {msg.isEdited && <span className="italic">edited</span>}
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
@@ -296,8 +275,8 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
           );
         })}
         {typingNames.length > 0 && (
-          <div className="flex items-center gap-2 mt-2 mb-1">
-            <Avatar name={typingNames[0]} size={28} url={participants.find((p) => p.name === typingNames[0])?.avatarUrl} />
+          <div className="flex items-center gap-2 mt-2">
+            <Avatar name={typingNames[0]} size={32} url={participants.find((p) => p.name === typingNames[0])?.avatarUrl} />
             <TypingIndicator names={typingNames} />
           </div>
         )}

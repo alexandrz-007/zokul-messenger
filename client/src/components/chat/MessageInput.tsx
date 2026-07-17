@@ -140,9 +140,9 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const hasContent = text.trim().length > 0 || replyTo || editingMessage || pendingImages.length > 0;
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-gray-200/80 dark:border-white/5 bg-white dark:bg-surface-header safe-area-bottom">
+    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-gray-200 dark:border-gray-700 pb-2">
       {replyTo && !editingMessage && (
-        <div className="absolute bottom-full left-0 right-0 z-10 px-3 pb-1">
+        <div className="absolute bottom-full left-0 right-0 z-10 px-3">
           <ReplyQuote reply={replyTo} onCancel={() => setReplyTo(null)} />
         </div>
       )}
@@ -150,7 +150,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
         <div className="flex gap-1.5 px-3 pt-2 pb-1 overflow-x-auto">
           {pendingImages.map((img, idx) => (
             <div key={img.file.name + img.file.size} className="relative shrink-0">
-              <img src={img.preview} alt="" className="w-14 h-14 rounded-lg object-cover" />
+              <img src={img.preview} alt="" className="w-16 h-16 rounded-lg object-cover" />
               <button
                 type="button"
                 onClick={() => removeImage(idx)}
@@ -164,13 +164,12 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
           ))}
         </div>
       )}
-      <div className="flex items-end gap-1.5 px-2 py-2">
-        <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
+      <div className="flex items-end gap-2 px-3 py-2">
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors shrink-0"
+          className="w-9 h-9 self-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center shrink-0"
           aria-label="Attach file"
         >
           {uploading ? (
@@ -183,52 +182,53 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
             </svg>
           )}
         </button>
-        <div ref={emojiRef} className="relative flex-1 min-w-0">
+        <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
+        <div ref={emojiRef} className="relative flex-1">
           {showEmoji && (
-            <div className="absolute bottom-full left-0 mb-2 p-2 bg-white dark:bg-surface-elevated rounded-xl shadow-2xl border border-gray-200/80 dark:border-white/10 grid grid-cols-8 sm:grid-cols-10 gap-1 max-h-60 overflow-y-auto z-10">
+            <div className="absolute bottom-full left-0 mb-2 p-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 grid grid-cols-10 gap-1 max-h-72 overflow-y-auto z-10">
               {EMOJIS.map((e) => (
-                <button key={e} type="button" onClick={() => pickEmoji(e)} className="w-8 h-8 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-lg flex items-center justify-center">
+                <button key={e} type="button" onClick={() => pickEmoji(e)} className="w-8 h-8 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-lg flex items-center justify-center">
                   {e}
                 </button>
               ))}
             </div>
           )}
-          <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-white/5 rounded-2xl px-3 py-1.5 border border-gray-200/80 dark:border-white/10 focus-within:ring-2 focus-within:ring-primary/40 focus-within:border-primary transition-all">
-            <input
-              ref={inputRef}
-              type="text"
-              value={text}
-              onChange={handleChange}
-              placeholder={editingMessage ? 'Edit message...' : replyTo ? 'Reply...' : pendingImages.length > 0 ? 'Add a caption...' : 'Message...'}
-              className="flex-1 bg-transparent focus:outline-none text-sm leading-5 py-1 min-h-[36px] placeholder:text-gray-400 dark:placeholder:text-gray-600"
-              autoFocus={!!editingMessage}
-            />
-            <button
-              type="button"
-              onClick={() => setShowEmoji((v) => !v)}
-              className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors shrink-0"
-              aria-label="Toggle emoji picker"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5" strokeWidth={2}>
-                <circle cx="12" cy="12" r="10" />
-                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                <line x1="9" y1="9" x2="9.01" y2="9" />
-                <line x1="15" y1="9" x2="15.01" y2="9" />
-              </svg>
-            </button>
-          </div>
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-3xl px-4 py-1" onClick={() => inputRef.current?.focus()}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={text}
+                onChange={handleChange}
+                placeholder={editingMessage ? 'Edit message...' : replyTo ? 'Reply...' : pendingImages.length > 0 ? 'Add a caption...' : 'Message...'}
+                className="flex-1 bg-transparent focus:outline-none text-base leading-5 py-0.5"
+                autoFocus={!!editingMessage}
+              />
+              <button
+                type="button"
+                onClick={() => setShowEmoji((v) => !v)}
+                className="w-8 h-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center shrink-0"
+                aria-label="Toggle emoji picker"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5" strokeWidth={2}>
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                  <line x1="9" y1="9" x2="9.01" y2="9" />
+                  <line x1="15" y1="9" x2="15.01" y2="9" />
+                </svg>
+              </button>
+              <button
+                type="submit"
+                disabled={!hasContent && !text.trim()}
+                className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0"
+                aria-label="Send message"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </button>
+            </div>
         </div>
-        <button
-          type="submit"
-          disabled={!hasContent && !text.trim()}
-          className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center disabled:opacity-30 hover:bg-primary-dark transition-all active:scale-[0.95] shrink-0"
-          aria-label="Send message"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
-        {uploadError && <span className="text-xs text-red-500 absolute -bottom-5 left-3">{uploadError}</span>}
+        {uploadError && <span className="text-xs text-red-500 absolute -bottom-1 left-3">{uploadError}</span>}
       </div>
     </form>
   );

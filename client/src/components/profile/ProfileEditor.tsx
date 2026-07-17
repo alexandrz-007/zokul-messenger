@@ -64,7 +64,7 @@ export default function ProfileEditor({ open, onClose }: ProfileEditorProps) {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="absolute bottom-0 right-0 bg-primary text-white rounded-full w-7 h-7 text-xs flex items-center justify-center shadow-lg disabled:opacity-50 hover:bg-primary-dark transition-colors"
+            className="absolute bottom-0 right-0 bg-primary text-white rounded-full w-6 h-6 text-xs flex items-center justify-center shadow-md disabled:opacity-50"
           >
             +
           </button>
@@ -78,12 +78,12 @@ export default function ProfileEditor({ open, onClose }: ProfileEditorProps) {
         </div>
         {uploading && <p className="text-xs text-gray-500">Uploading...</p>}
         <div className="w-full">
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Name</label>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-600"
+            className="w-full px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/40"
             maxLength={100}
           />
         </div>
@@ -91,7 +91,7 @@ export default function ProfileEditor({ open, onClose }: ProfileEditorProps) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark disabled:opacity-40 transition-all active:scale-[0.98]"
+          className="w-full py-2 bg-primary text-white rounded-xl text-sm font-medium disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save'}
         </button>
