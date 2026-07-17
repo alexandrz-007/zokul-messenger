@@ -48,6 +48,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
   const [typingUsers, setTypingUsers] = useState<Map<string, { userId: string; userName: string }>>(new Map());
   const [actionsMsg, setActionsMsg] = useState<string | null>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [avatarViewerUrl, setAvatarViewerUrl] = useState<string | null>(null);
   const { socket } = useSocket();
   const { setReplyTo, setEditingMessage } = useChatContext();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -183,7 +184,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-[#DFEAF5] dark:bg-gray-800 flex items-center justify-center">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-gray-400">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
@@ -205,6 +206,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
           </div>
         )}
         {sortedMessages.map((msg, i) => {
+          const sender = participants.find((p) => p.id === msg.senderId);
           const isMine = msg.senderId === currentUserId;
           const prev = i > 0 ? sortedMessages[i - 1] : null;
           const sameSender = prev && prev.senderId === msg.senderId;
@@ -217,7 +219,13 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
               {(i === 0 || showDay) && <DaySeparator date={new Date(msg.createdAt)} />}
               <div className={`flex gap-2 ${isMine ? 'flex-row-reverse' : ''} ${showAvatar ? 'mt-3' : 'mt-0.5'}`}>
                 <div className={`w-8 shrink-0 ${isMine ? 'hidden' : ''}`}>
-                  {showAvatar && <Avatar name={participants.find((p) => p.id === msg.senderId)?.name || msg.senderId} size={32} url={participants.find((p) => p.id === msg.senderId)?.avatarUrl} />}
+                  {showAvatar && sender?.avatarUrl ? (
+                    <button type="button" onClick={() => setAvatarViewerUrl(sender.avatarUrl!)} aria-label={`View ${sender.name} avatar`} className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                      <Avatar name={sender.name || msg.senderId} size={32} url={sender.avatarUrl} />
+                    </button>
+                  ) : showAvatar && (
+                    <Avatar name={sender?.name || msg.senderId} size={32} url={sender?.avatarUrl} />
+                  )}
                 </div>
                 <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[75%]`}>
                   <div className="relative">
@@ -225,7 +233,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
                       className={`px-3 py-2 text-sm leading-relaxed cursor-pointer ${isNew ? 'animate-message-appear' : ''} ${
                         isMine
                           ? 'bg-primary text-white rounded-[18px] rounded-br-[6px]'
-                          : 'bg-gray-100 dark:bg-gray-800 rounded-[18px] rounded-bl-[6px]'
+                          : 'bg-[#DDE8F3] dark:bg-gray-800 rounded-[18px] rounded-bl-[6px]'
                       }`}
                       onClick={() => handleActions(msg.id)}
                       onContextMenu={(e) => { e.preventDefault(); handleActions(msg.id); }}
@@ -283,6 +291,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
         <div ref={bottomRef} />
       </div>
       {viewerUrl && <ImageViewer src={viewerUrl} onClose={() => setViewerUrl(null)} />}
+      {avatarViewerUrl && <ImageViewer src={avatarViewerUrl} onClose={() => setAvatarViewerUrl(null)} />}
     </div>
   );
 }

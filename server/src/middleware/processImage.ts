@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 
-const imageMimes = /^image\/(jpeg|png|gif|webp)$/;
+const imageMimes = /^image\/(jpeg|png|gif|webp|heic|heif|heic-sequence|heif-sequence)$/;
 
 export async function processAvatar(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const file = req.file;

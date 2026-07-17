@@ -1,6 +1,7 @@
 events {}
 http {
   include /etc/nginx/mime.types;
+  client_max_body_size 25m;
 
   server {
     listen 80;

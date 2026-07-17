@@ -15,41 +15,85 @@ interface ChatListProps {
   onDelete?: (chatId: string) => void;
 }
 
+function formatTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const oneDay = 86400000;
+
+  if (diff < oneDay && date.getDate() === now.getDate()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear()
+  ) {
+    return 'Yesterday';
+  }
+
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="flex-1 px-4 py-2">
+      <div className="animate-pulse space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+            <div className="w-[42px] h-[42px] rounded-full bg-[#D5DEE9] dark:bg-gray-800 shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 bg-[#D5DEE9] dark:bg-gray-800 rounded w-2/3" />
+              <div className="h-2.5 bg-[#D5DEE9] dark:bg-gray-800 rounded w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex-1 flex items-center justify-center px-4 py-8">
+      <div className="text-center">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-[#DFEAF5] dark:bg-gray-800/50 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-7 h-7 text-gray-400">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </div>
+        <p className="text-gray-500 font-medium text-sm">No chats yet</p>
+        <p className="text-xs text-gray-400 mt-1">Tap + to start a conversation</p>
+      </div>
+    </div>
+  );
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div className="flex-1 flex items-center justify-center px-4 py-8">
+      <div className="text-center">
+        <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5 text-red-500">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <p className="text-sm text-red-500 font-medium">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatList({ chats, selectedId, currentUserId, onSelect, loading, error, unreadCount, onDelete }: ChatListProps) {
   const { isOnline } = usePresence();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  if (loading) {
-    return (
-      <div className="p-4 text-center text-gray-400">
-        <div className="animate-pulse space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 bg-gray-100 dark:bg-gray-800 rounded-xl" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div className="p-4 text-center text-red-500 text-sm">{error}</div>;
-  }
-
-  if (chats.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-gray-400">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-          </div>
-          <p className="text-gray-500 font-medium">No chats yet</p>
-          <p className="text-sm text-gray-400 mt-1">Tap + to start messaging</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error} />;
+  if (chats.length === 0) return <EmptyState />;
 
   const handleDeleteRequest = (e: React.MouseEvent, chatId: string) => {
     e.stopPropagation();
@@ -62,7 +106,7 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
   };
 
   return (
-    <div className="overflow-y-auto h-full">
+    <div className="flex-1 overflow-y-auto">
       {chats.map((chat) => {
         const isGroup = chat.isGroup;
         const other = chat.participants.find((p) => p.id !== currentUserId) || chat.participants[0];
@@ -72,35 +116,38 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
         const preview = lastMsg?.text || (lastMsg?.imageUrl ? 'Photo' : '');
         const count = unreadCount?.(chat.id) || 0;
         const displayName = isGroup ? (chat.name || 'Group') : (other?.name || 'Unknown');
+        const isSelected = selectedId === chat.id;
         return (
           <div key={chat.id} className="relative group">
             <button
               onClick={() => onSelect(chat)}
-              className={`w-full flex items-center gap-3 px-4 py-3 active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${
-                selectedId === chat.id ? 'bg-gray-50 dark:bg-gray-800/50' : ''
+              className={`w-full flex items-center gap-3 px-4 py-2.5 border-l-[3px] transition-colors text-left ${
+                isSelected
+                  ? 'border-primary bg-[#D7E6F6] dark:bg-gray-800/60'
+                  : 'border-transparent hover:bg-[#DFEAF5] dark:hover:bg-gray-800/30'
               }`}
             >
               <div className="relative shrink-0">
-                <Avatar name={displayName} size={48} url={isGroup ? undefined : other?.avatarUrl} />
+                <Avatar name={displayName} size={42} url={isGroup ? undefined : other?.avatarUrl} />
                 {!isGroup && count === 0 && <OnlineDot online={online} />}
               </div>
-              <div className="flex-1 text-left min-w-0">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className={`text-sm truncate ${count > 0 ? 'font-semibold' : 'font-medium'}`}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className={`text-sm truncate ${count > 0 ? 'font-bold text-gray-900 dark:text-white' : 'font-medium text-gray-900 dark:text-gray-100'}`}>
                     {displayName}
                   </span>
                   {lastMsg && (
-                    <span className="text-[11px] text-gray-400 ml-2 shrink-0">
-                      {new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <span className="text-[11px] text-gray-400 ml-2 shrink-0 whitespace-nowrap leading-none">
+                      {formatTime(lastMsg.createdAt)}
                     </span>
                   )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs truncate ${count > 0 ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-400'}`}>
+                <div className={`flex items-center justify-between ${lastMsg ? 'mt-0.5' : ''}`}>
+                  <span className={`text-xs truncate ${count > 0 ? 'text-gray-600 dark:text-gray-400 font-medium' : 'text-gray-500 dark:text-gray-500'}`}>
                     {isGroup && sender ? `${sender.name}: ` : ''}{preview || (other?.email ? other.email.split('@')[0] : '')}
                   </span>
                   {count > 0 && (
-                    <span className="shrink-0 ml-2 min-w-[18px] h-[18px] rounded-full bg-primary text-white text-[10px] font-semibold flex items-center justify-center px-1">
+                    <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center leading-none">
                       {count > 99 ? '99+' : count}
                     </span>
                   )}
@@ -108,16 +155,16 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
               </div>
               <button
                 onClick={(e) => handleDeleteRequest(e, chat.id)}
-                className="shrink-0 p-1.5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+                className="shrink-0 p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-gray-400 hover:text-red-500 rounded-md hover:bg-[#C9D6E4] dark:hover:bg-gray-700/50"
                 title="Delete chat"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
                   <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                 </svg>
               </button>
             </button>
             {deleteTarget === chat.id && (
-              <div className="absolute right-2 top-12 z-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2">
+              <div className="absolute right-2 top-10 z-10 bg-[#F8FAFD] dark:bg-gray-800 border border-[#D5DEE9] dark:border-gray-700 rounded-lg shadow-lg p-2">
                 <p className="text-xs text-gray-500 mb-2 px-1">Delete this chat?</p>
                 <div className="flex gap-2">
                   <button
