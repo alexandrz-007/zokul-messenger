@@ -138,15 +138,18 @@ function HomePageInner() {
   return (
     <AppLayout>
       <div className="flex h-full">
-        <aside className={`${showSidebar ? 'flex' : 'hidden'} md:flex w-full md:w-80 border-r border-gray-200 dark:border-gray-700 flex-col`}>
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <button onClick={() => setShowProfile(true)} className="font-semibold text-sm truncate hover:text-primary transition-colors">
-              {user?.name || 'Chats'}
+        <aside className={`${showSidebar ? 'flex' : 'hidden'} md:flex w-full md:w-[340px] border-r border-gray-200/80 dark:border-white/5 flex-col bg-white dark:bg-surface-sidebar`}>
+          <div className="p-3 border-b border-gray-200/80 dark:border-white/5 flex items-center justify-between shrink-0">
+            <button onClick={() => setShowProfile(true)} className="flex items-center gap-2 group">
+              <Avatar name={user?.name || 'User'} size={32} url={user?.avatarUrl} />
+              <span className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                {user?.name || 'Chats'}
+              </span>
             </button>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <button
                 onClick={() => setShowGroup(true)}
-                className="w-8 h-8 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center justify-center transition-colors"
+                className="w-8 h-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg flex items-center justify-center transition-colors"
                 title="New Group"
                 aria-label="New Group"
               >
@@ -159,7 +162,7 @@ function HomePageInner() {
               </button>
               <button
                 onClick={() => setShowCreate(true)}
-                className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary-dark transition-colors"
+                className="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary-dark transition-colors"
                 title="New Chat"
                 aria-label="New Chat"
               >
@@ -169,7 +172,7 @@ function HomePageInner() {
               </button>
               <button
                 onClick={logout}
-                className="w-8 h-8 text-gray-400 hover:text-red-500 flex items-center justify-center transition-colors"
+                className="w-8 h-8 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex items-center justify-center transition-colors"
                 title="Log out"
                 aria-label="Log out"
               >
@@ -192,13 +195,13 @@ function HomePageInner() {
             onDelete={handleDeleteChat}
           />
         </aside>
-        <section className={`${!showSidebar || selectedChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col`}>
+        <section className={`${!showSidebar || selectedChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-white dark:bg-surface`}>
           {selectedChat ? (
             <>
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+              <div className="px-4 py-3 border-b border-gray-200/80 dark:border-white/5 flex items-center gap-3 shrink-0 bg-white dark:bg-surface-header">
                 <button
                   onClick={handleBack}
-                  className="md:hidden w-8 h-8 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center justify-center"
+                  className="md:hidden w-8 h-8 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg flex items-center justify-center transition-colors"
                   title="Back"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -210,10 +213,10 @@ function HomePageInner() {
                   {!isGroupChat && <OnlineDot online={otherOnline} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">
+                  <div className="font-semibold text-sm truncate text-gray-900 dark:text-gray-100">
                     {displayChatName}
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-400 dark:text-gray-500">
                     {isGroupChat ? `${selectedChat.participants.length} members` : (otherOnline ? 'Online' : 'Offline')}
                   </div>
                 </div>
@@ -243,10 +246,17 @@ function HomePageInner() {
               />
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <p className="text-lg mb-1">Select a chat</p>
-                <p className="text-sm">or create a new one</p>
+            <div className="flex-1 flex items-center justify-center bg-white dark:bg-surface-default">
+              <div className="text-center px-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-50 dark:bg-white/5 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-gray-300 dark:text-gray-600">
+                    <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">Select a chat</h2>
+                <p className="text-sm text-gray-400 dark:text-gray-500 max-w-[260px]">
+                  Choose a conversation from the sidebar or create a new one.
+                </p>
               </div>
             </div>
           )}

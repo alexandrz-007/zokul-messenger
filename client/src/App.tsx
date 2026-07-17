@@ -21,12 +21,13 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50 dark:bg-surface">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <span className="inline-block text-7xl font-extrabold text-primary animate-pulse-slow select-none leading-none">
+        <div className="text-center mb-8">
+          <span className="inline-block text-5xl font-bold text-primary select-none leading-none tracking-tight">
             Zokul
           </span>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Secure messenger</p>
         </div>
         {children}
       </div>

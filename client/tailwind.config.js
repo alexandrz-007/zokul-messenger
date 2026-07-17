@@ -5,9 +5,16 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#007AFF',
-          light: '#4DA3FF',
-          dark: '#0055CC',
+          DEFAULT: '#2F7CF6',
+          light: '#5B9AF8',
+          dark: '#2563EB',
+        },
+        surface: {
+          DEFAULT: '#0B111C',
+          sidebar: '#0E1726',
+          header: '#111C2D',
+          elevated: '#162235',
+          incoming: '#1B2738',
         },
       },
       animation: {
