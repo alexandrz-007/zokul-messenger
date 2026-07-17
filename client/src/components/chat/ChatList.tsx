@@ -73,22 +73,18 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
         const count = unreadCount?.(chat.id) || 0;
         const displayName = isGroup ? (chat.name || 'Group') : (other?.name || 'Unknown');
         return (
-          <div
-            key={chat.id}
-            className={`relative flex items-center gap-3 px-4 py-3 min-h-[60px] transition-colors ${
-              selectedId === chat.id ? 'bg-gray-50 dark:bg-white/[0.06]' : ''
-            }`}
-          >
+          <div key={chat.id} className="relative">
             <button
-              type="button"
               onClick={() => onSelect(chat)}
-              className="flex items-center gap-3 flex-1 min-w-0 text-left active:bg-gray-50 dark:active:bg-white/[0.04] rounded-lg transition-colors"
+              className={`w-full flex items-center gap-3 px-4 py-3 min-h-[60px] active:bg-gray-50 dark:active:bg-white/[0.04] transition-colors ${
+                selectedId === chat.id ? 'bg-gray-50 dark:bg-white/[0.06]' : ''
+              }`}
             >
               <div className="relative shrink-0">
                 <Avatar name={displayName} size={44} url={isGroup ? undefined : other?.avatarUrl} />
                 {!isGroup && count === 0 && <OnlineDot online={online} />}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 text-left min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className={`text-sm truncate ${count > 0 ? 'font-semibold text-gray-900 dark:text-gray-100' : 'font-medium text-gray-900 dark:text-gray-100'}`}>
                     {displayName}
@@ -110,30 +106,27 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
                   )}
                 </div>
               </div>
-            </button>
-            <button
-              type="button"
-              onClick={(e) => handleDeleteRequest(e, chat.id)}
-              className="shrink-0 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-              aria-label="Delete chat"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-                <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-              </svg>
+              <button
+                onClick={(e) => handleDeleteRequest(e, chat.id)}
+                className="shrink-0 w-9 h-9 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                title="Delete chat"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                  <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                </svg>
+              </button>
             </button>
             {deleteTarget === chat.id && (
               <div className="absolute right-2 top-14 z-10 bg-white dark:bg-surface-elevated border border-gray-200/80 dark:border-white/10 rounded-xl shadow-xl p-2.5 min-w-[160px]">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2.5 px-1">Delete this chat?</p>
                 <div className="flex gap-2">
                   <button
-                    type="button"
                     onClick={() => setDeleteTarget(null)}
                     className="flex-1 px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
                   <button
-                    type="button"
                     onClick={() => handleConfirmDelete(chat.id)}
                     className="flex-1 px-3 py-2 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                   >

@@ -137,7 +137,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
     setShowEmoji(false);
   };
 
-  const hasContent = text.trim().length > 0 || pendingImages.length > 0;
+  const hasContent = text.trim().length > 0 || replyTo || editingMessage || pendingImages.length > 0;
 
   return (
     <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-gray-200/80 dark:border-white/5 bg-white dark:bg-surface-header safe-area-bottom">
