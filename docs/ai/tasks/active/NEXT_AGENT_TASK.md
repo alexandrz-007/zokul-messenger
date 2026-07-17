@@ -1,110 +1,83 @@
-# NEXT_AGENT_TASK: Implement working voice messages
+# NEXT_AGENT_TASK: Telegram-like voice recording UX
 
-Task ID: ZOKUL-VOICE-001
+Task ID: ZOKUL-VOICE-002
 Status: Ready for Executor
 Created by: Governor
 Assigned role: Executor
-Recommended branch: codex/voice-messages
+Recommended branch: codex/zokul-ui-redesign
 Change type: feature
 Risk level: Medium
 Confidence: Medium
 
 ## Executive Summary
 
-Zokul already contains partial voice-message code, but the feature is hidden/incomplete. The server data model, Socket.IO message flow, upload endpoint, and `VoicePlayer` mostly exist. The missing and risky parts are in the client recorder integration and browser compatibility, especially Safari/iPhone.
+Improve the voice-message composer UX after the basic voice-message feature is accepted. The target interaction is Telegram-like on mobile: press and hold to record, release to send, slide left to cancel. Desktop should keep a reliable click-based fallback (tap mic, explicit stop/send).
 
-Implement voice messages as an existing unfinished feature, not as a redesign. The goal is to let a user record a short audio message, upload it, send it through the existing `message:send` socket flow, render it in chat, and play it back reliably on desktop and mobile browsers.
+Do not implement video circles, transcription, waveform, calls, or redesign.
 
 ## Must Do
 
-- Re-enable voice message UI in the existing composer.
-- Wire `sendVoice` from `HomePage` into `MessageInput`.
-- Integrate `VoiceRecorder` into `MessageInput` with clear start, cancel, stop/send, uploading, and error states.
-- Fix `VoiceRecorder` MIME selection for Chrome/Android/Safari/iPhone instead of assuming `audio/webm`.
-- Keep uploads on the existing `/api/upload` endpoint unless a real blocker is found.
-- Preserve existing text/image message behavior.
-- Add or update tests around MIME support and voice message send flow where practical.
-- Update `docs/ai/10_AI_WORKLOG.md` with execution results.
+- Keep current working voice-message pipeline intact.
+- Add mobile/touch hold-to-record behavior:
+  - pointer down starts recording;
+  - release sends recording;
+  - slide left cancels recording;
+  - very short recordings (< 1 sec) are discarded with clear feedback.
+- Keep desktop accessible behavior:
+  - click starts recording;
+  - explicit stop/send button sends;
+  - explicit cancel button cancels.
+- Use Pointer Events where practical.
+- Add visual recording state: duration, cancel hint for slide-left, release-to-send hint.
+- Ensure microphone permission is requested only after explicit user action.
+- Preserve text/image message behavior.
+- Add tests for gesture state helpers.
 
 ## Must Not Do
 
-- Do not redesign the messenger UI.
-- Do not add calls, video calls, transcription, waveform generation, reactions, or other new voice-related features.
-- Do not change database schema unless current columns are proven insufficient.
-- Do not weaken upload security by accepting arbitrary MIME types or extension-only validation.
-- Do not touch deployment secrets or `.env` values.
+- Do not add video messages, video notes, calls, transcription, reactions, or waveform rendering.
+- Do not redesign the whole composer or messenger.
+- Do not change database schema.
+- Do not change server upload/storage.
+- Do not remove the fallback click-based recorder flow.
 
-## Current Diagnosis
+## Context
 
-Code already present:
+User preference: voice messages should feel closer to Telegram, especially on smartphones.
 
-- `client/src/components/chat/VoiceRecorder.tsx`
-- `client/src/components/chat/VoicePlayer.tsx`
-- `client/src/hooks/useChat.ts` exposes `sendVoice`
-- `client/src/components/HomePage.tsx` destructures `sendVoice`
-- `server/src/socket/index.ts` accepts `voiceUrl` and `voiceDuration`
-- `server/src/models/Message.ts` stores and returns `voice_url` and `voice_duration`
-- `server/src/config/db.ts` creates `voice_url` and `voice_duration` columns
-- `server/src/middleware/uploadMiddleware.ts` accepts audio MIME types
-
-Likely causes of the broken/hidden feature:
-
-1. `HomePage` gets `sendVoice`, but does not pass it to `MessageInput`.
-2. `MessageInputProps` has no `onSendVoice` prop.
-3. `MessageInput` does not import or render `VoiceRecorder`.
-4. `VoiceRecorder` uses `MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : ''`, then falls back to `audio/webm` for blob type. This is unsafe for Safari/iPhone, where `audio/mp4` may be the supported format.
-5. `VoiceRecorder` starts recording immediately on mount, so the composer integration must avoid accidental mount/start behavior.
-6. The recorder timer uses a ref only, so duration display may not update while recording unless state is added.
-7. `VoicePlayer.toggle()` does not handle `audio.play()` promise rejection.
+Phased UX for this task:
+1. Mobile: hold to record, release to send, slide left to cancel.
+2. Desktop: click to start, explicit stop/send to finish.
+3. Slide-up to lock recording is deferred.
 
 ## Required Reading
 
-- `docs/ai/00_README_FOR_AGENTS.md`
-- `docs/ai/01_ARCHITECTURE_MAP.md`
-- `docs/ai/02_CODE_STRUCTURE.md`
-- `docs/ai/06_QA_CHECKLIST.md`
-- `docs/ai/gates/frontend-ui.md`
-- `docs/ai/gates/backend.md`
-- `client/src/components/HomePage.tsx`
 - `client/src/components/chat/MessageInput.tsx`
 - `client/src/components/chat/VoiceRecorder.tsx`
-- `client/src/components/chat/VoicePlayer.tsx`
-- `client/src/hooks/useChat.ts`
-- `server/src/middleware/uploadMiddleware.ts`
-- `server/src/socket/index.ts`
-- `server/src/models/Message.ts`
+- `client/src/utils/voice.ts`
+- `docs/ai/gates/frontend-ui.md`
 
 ## Scope
 
 Included:
-
-- Composer voice button and recorder state.
-- Client voice recording/upload/send path.
-- Voice message playback hardening.
-- Minimal backend/upload MIME adjustments if required for browser compatibility.
-- Tests and docs/worklog updates.
+- client-side voice recorder gesture UX;
+- mobile/touch handling;
+- desktop fallback handling;
+- tests for gesture thresholds/helper logic;
+- docs/worklog updates.
 
 Out of scope:
-
-- UI redesign.
-- Voice calls.
-- Message transcription.
-- Push notifications for voice specifically.
-- Large media storage architecture changes.
-- S3/object storage migration.
+- backend schema/API changes;
+- video messages/circles;
+- broad UI redesign;
+- deployment changes.
 
 ## Allowed Files
 
-- `client/src/components/HomePage.tsx`
 - `client/src/components/chat/MessageInput.tsx`
 - `client/src/components/chat/VoiceRecorder.tsx`
-- `client/src/components/chat/VoicePlayer.tsx`
-- `client/src/hooks/useChat.ts`
-- `client/src/types/index.ts`
-- `server/src/middleware/uploadMiddleware.ts`
-- `server/__tests__/upload.test.ts`
+- `client/src/utils/voice.ts`
 - `client/__tests__/*`
-- `server/__tests__/*`
 - `docs/ai/10_AI_WORKLOG.md`
 - `docs/ai/03_PRODUCT_BACKLOG.md`
 - `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
@@ -115,51 +88,36 @@ Out of scope:
 - `node_modules/`
 - `dist/`
 - `client/tsconfig*.tsbuildinfo`
-- unrelated UI/design files
-- Docker/deployment files unless a voice-upload Docker-only blocker is proven and documented in `docs/ai/CHANGE_REQUESTS.md`
+- server files unless a Governor-approved change request exists
+- Docker/deployment files
 
 ## Implementation Instructions
 
-1. Add `onSendVoice?: (voiceUrl: string, voiceDuration: number) => void` to `MessageInputProps`.
-2. Pass `onSendVoice={sendVoice}` from `HomePage` into `MessageInput`.
-3. Import and render `VoiceRecorder` from `MessageInput` only when the user explicitly taps/clicks a microphone button.
-4. Add a microphone button to the composer only when:
-   - not editing a message;
-   - not uploading images;
-   - `navigator.mediaDevices?.getUserMedia` and `window.MediaRecorder` are available.
-5. When recorder is active, show recorder controls instead of the normal text input row or in a compact inline area. Keep existing text/image send behavior untouched.
-6. In `VoiceRecorder`, implement a robust MIME preference list:
-   - `audio/webm;codecs=opus`
-   - `audio/webm`
-   - `audio/mp4`
-   - `audio/aac`
-   - fallback to default `new MediaRecorder(stream)` and use `recorder.mimeType` after creation.
-7. Derive upload extension from the actual recorder/blob MIME:
-   - webm -> `.webm`
-   - mp4 -> `.mp4`
-   - aac -> `.aac`
-   - ogg -> `.ogg`
-   - otherwise `.webm` only if actual type is empty and browser produced playable data.
-8. Track duration in React state so the recording timer visibly updates.
-9. Stop microphone tracks on send, cancel, unmount, and error.
-10. Do not call `onCancel()` immediately after permission errors if doing so hides the error too fast; show a short visible error or return error to `MessageInput`.
-11. After upload succeeds, call `onSendVoice(url, duration)` and close recorder.
-12. Harden `VoicePlayer`:
-   - catch `audio.play()` rejection;
-   - reset playing state on error;
-   - keep existing visual style.
-13. Confirm server upload MIME whitelist includes every MIME produced by the implemented recorder. Add tests for any newly accepted audio MIME.
-14. Add at least one client test or focused component test if the current test setup can support it. If not practical, document why in worklog.
+1. Model recorder interaction as explicit states: `idle`, `pressing`, `recording`, `uploading`, `error`.
+2. Replace current inline VoiceRecorder (which auto-starts on mount) with a gesture-based approach:
+   - Mobile: render a mic button that supports Pointer Events.
+     - `onPointerDown`: call `navigator.mediaDevices.getUserMedia` and start MediaRecorder.
+     - `onPointerMove`: track horizontal delta; if moved left beyond 80px threshold, mark as cancelled.
+     - `onPointerUp`: if cancelled → stop tracks and discard; if not cancelled → stop recorder, upload, send.
+     - `onPointerCancel`: cancel safely (stop tracks, discard).
+   - Desktop: if Pointer Events not available or no touch support, fall back to click → explicit stop/send.
+3. Use thresholds:
+   - cancel when horizontal movement left exceeds 80px;
+   - discard recordings shorter than 1.0 sec;
+4. Prevent page scrolling/selection during active recording by calling `e.preventDefault()` on touch events and setting `touch-action: none` on the button.
+5. Always stop microphone tracks on send, cancel, pointer cancel, unmount, and error.
+6. After upload succeeds, call `onSendVoice(url, duration)` and close recorder.
+7. Add visual feedback: when recording, show a compact bar with elapsed time, cancel hint text ("slide left to cancel"), and release hint.
+8. Keep keyboard-accessible fallback: if no touch support, show the old click-based VoiceRecorder.
+9. Add helper functions in `client/src/utils/voice.ts` for gesture decisions and unit-test them.
 
 ## Tests To Add Or Update
 
-- Update `server/__tests__/upload.test.ts` if new audio MIME types are accepted.
-- Add or update client tests for:
-  - microphone button visibility when recorder APIs exist;
-  - `onSendVoice` called after recorder upload success, if practical with mocks;
-  - existing image/text send behavior still available.
-
-If browser API mocking is too heavy for the current test setup, add a small helper function for MIME selection and unit-test that helper.
+- Unit tests for gesture helper thresholds:
+  - release without cancel -> should send;
+  - slide left beyond 80px threshold -> should cancel;
+  - recording below minimum duration (1s) -> should discard;
+- Existing voice MIME tests from ZOKUL-VOICE-001 must still pass.
 
 ## Verification Commands
 
@@ -170,75 +128,64 @@ git diff --check
 git status --short --branch
 ```
 
-Manual verification after Docker rebuild:
-
-```powershell
-docker compose -f docker-compose.local.yml down
-docker compose -f docker-compose.local.yml up --build
-```
-
-Then verify in browser:
-
-- text messages still send;
-- image messages still upload;
-- microphone permission prompt appears only after tapping the mic button;
-- recording can be cancelled;
-- recording can be sent;
-- sent voice message appears in chat;
-- playback works for sender and recipient;
-- iPhone/Safari behavior is tested if device is available.
+Manual QA:
+- Desktop Chrome/Edge: click flow works.
+- Mobile Safari/iPhone: hold to record, release to send.
+- Mobile Safari/iPhone: slide left cancels.
+- Android Chrome if available: hold/release/cancel.
+- Text and image sending still work.
 
 ## Acceptance Criteria
 
-- [ ] Voice button is visible only when supported and appropriate.
-- [ ] Recording starts only after explicit user action.
-- [ ] Cancel stops the microphone and sends nothing.
-- [ ] Stop/send uploads audio and sends `message:send` with `voiceUrl` and `voiceDuration`.
-- [ ] `VoicePlayer` renders and plays received voice messages.
-- [ ] Text and image messages still work.
-- [ ] Unsupported browsers fail gracefully without broken controls.
-- [ ] Build passes.
-- [ ] Tests pass.
-- [ ] Worklog is updated.
+- [ ] Mobile hold-to-record works.
+- [ ] Release sends recording.
+- [ ] Slide left cancels and sends nothing.
+- [ ] Very short recordings (< 1 sec) are discarded safely.
+- [ ] Desktop fallback remains usable (click → explicit stop/send).
+- [ ] No microphone request before explicit user action.
+- [ ] Text/image messaging is not regressed.
+- [ ] Build and tests pass.
+- [ ] Worklog and task execution result are updated.
 
 ## Definition Of Done
 
 - Follow `docs/ai/12_DEFINITION_OF_DONE.md`.
 - Apply `docs/ai/gates/frontend-ui.md`.
-- Apply `docs/ai/gates/backend.md` if upload MIME/server code changes.
-- Risk level is Medium, so Governor review is required before merge.
+- Governor review required before merge.
 
 ## Change Request Rule
 
-If implementation requires a new dependency, a database migration, a separate upload endpoint, Docker image changes, or broad UI redesign, stop and add an entry to `docs/ai/CHANGE_REQUESTS.md` before coding further.
+If implementation requires backend changes, new dependencies, schema changes, or video-message support, stop and add `docs/ai/CHANGE_REQUESTS.md`.
 
-## Worklog Requirements
+## Execution Result
 
-Update `docs/ai/10_AI_WORKLOG.md` with:
+Status: Implemented — ready for Governor review.
 
-- branch;
-- commit;
-- changed files;
-- browser support decisions;
-- verification results;
-- manual QA performed or not performed;
-- known follow-ups.
+Changed files:
+- `client/src/components/chat/MessageInput.tsx`
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `client/src/utils/voice.ts`
+- `client/__tests__/voice.test.ts`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
 
-## Backlog Requirements
+Voice flow implemented:
+1. **Touch (mobile)**: Hold mic button → pointerdown starts recording, inline bar with timer + "Slide to cancel" hint appears → slide left >80px triggers visual cancel indicator (bar turns red, text becomes "Release to cancel") → release sends (if not cancelled, duration >= 1s) or discards.
+2. **Desktop (no touch)**: Click mic → mounts VoiceRecorder → auto-starts recording → explicit stop/send or cancel buttons.
+3. Short recordings (< 1s) are silently discarded.
+4. Mic permission requested only after explicit pointer-down / click.
 
-Update `docs/ai/03_PRODUCT_BACKLOG.md`:
+Build/test results:
+- `npm.cmd run build`: passed
+- `npm.cmd test`: passed, 95/95 (23 client + 72 server)
+- `git diff --check`: CRLF warnings only
 
-- add or update `ZOKUL-VOICE-001`;
-- set status to `Implemented` only after code and verification are complete.
+Manual browser/device QA status: Not performed. Recommended before merge.
 
-## Final Report Format
+Commit: committed as `feat: add hold-to-record voice UX`
 
-Report:
-
-- changed files;
-- exact voice flow implemented;
-- supported recorder MIME types;
-- build/test results;
-- manual browser/device QA status;
-- commit hash if committed;
-- known risks/TODOs.
+Known risks/TODOs:
+- Safari/iPhone behavior unverified.
+- Slide-up-to-lock recording deferred.

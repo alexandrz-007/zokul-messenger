@@ -5,8 +5,10 @@ Source commit: 96d5818
 
 ## P1: Messaging Features
 
-- [ ] ZOKUL-VOICE-001 Implement working voice messages
-  - Status: Ready for Executor
+- [x] ZOKUL-VOICE-001 Implement working voice messages
+  - Status: Implemented
+- [x] ZOKUL-VOICE-002 Telegram-like voice recording UX
+  - Status: Implemented
   - Priority: P1
   - Owner: Governor/Executor
   - Files:
@@ -24,6 +26,25 @@ Source commit: 96d5818
     - voice message uploads and sends through existing socket flow;
     - received voice messages render with playable `VoicePlayer`;
     - unsupported browsers fail gracefully;
+    - build/tests pass.
+
+- [ ] ZOKUL-VOICE-002 Telegram-like hold-to-record voice UX
+  - Status: Planned - blocked until `ZOKUL-VOICE-001` is accepted
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/chat/MessageInput.tsx`
+    - `client/src/components/chat/VoiceRecorder.tsx`
+    - `client/src/utils/voice.ts`
+  - Goal: Make mobile voice recording feel closer to Telegram without adding unrelated media features.
+  - Scope: hold to record, release to send, slide left to cancel, desktop fallback, tests.
+  - Out of scope: video circles, calls, transcription, backend schema changes.
+  - Acceptance criteria:
+    - mobile hold-to-record works;
+    - release sends recording;
+    - slide left cancels;
+    - very short recordings are discarded;
+    - desktop click fallback remains usable;
     - build/tests pass.
 
 ## P1: UI Polish

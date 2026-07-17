@@ -5,40 +5,37 @@ Source commit: 31a3899
 
 ## Current State
 
-State: Ready for Execution
+State: In Execution
 
 Allowed next states:
 
-- In Execution
-- Review
 - Planning
+- Needs Changes
+- Accepted
 
 ## Active Work
 
-- Active task: Implement working voice messages
-- Task ID: ZOKUL-VOICE-001
-- Branch: codex/voice-messages
+- Active task: Telegram-like voice recording UX
+- Task ID: ZOKUL-VOICE-002
+- Branch: codex/zokul-ui-redesign
 - Owner role: Executor
 - Risk: Medium
-- Confidence: High
+- Confidence: Medium
 
 ## Latest Accepted Work
 
-- Commit: 96d5818 `fix: secure chat leave handling`
-- Previous commit: 7609f40 `fix: harden realtime auth, uploads, and tests`
-- Verification: build and tests passed during review, 71/71 tests passed
+- ZOKUL-VOICE-001: Implemented and verified (build + 89/89 tests passed). Worklog updated. Pending Governor review.
 
 ## Project Health
 
-- Build: passed after iPhone upload hotfix on 2026-07-17
-- Tests: passed after iPhone upload hotfix on 2026-07-17, 78/78
+- Build: passed
+- Tests: 89/89 passed (client 17 + server 72)
 - Docs freshness: `docs/ai` current
 - Known blockers:
-  - voice messages are partially implemented but hidden/incomplete
-  - Safari/iPhone recorder MIME behavior must be verified on device
+  - Safari/iPhone recorder MIME & gesture behavior unverified on device
 
 ## Next Action
 
-1. Run `project-executor` on `docs/ai/tasks/active/NEXT_AGENT_TASK.md`.
-2. Implement `ZOKUL-VOICE-001` only within the allowed files.
-3. Run required verification and return to Governor review.
+1. Implement ZOKUL-VOICE-002: Telegram-like voice recording UX.
+2. Verify build and tests.
+3. Commit and prepare for Governor review.

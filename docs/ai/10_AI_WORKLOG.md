@@ -243,3 +243,173 @@ Analyze the existing hidden voice-message implementation and prepare a scoped ex
 ### Follow-ups
 
 - Executor should implement `ZOKUL-VOICE-001` using `project-executor`.
+
+## 2026-07-17 - Voice messages implementation
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-VOICE-001
+Branch: codex/zokul-ui-redesign
+Commit: (not committed — awaiting user direction)
+
+### Intent
+
+Implement working voice messages. Complete the existing unfinished voice-message path (recorder, upload, send, playback) without redesign.
+
+### Actions
+
+- Fixed `VoiceRecorder.tsx`:
+  - Extracted MIME detection and extension derivation to `client/src/utils/voice.ts`.
+  - Implemented MIME preference list: `audio/webm;codecs=opus` → `audio/webm` → `audio/mp4` → `audio/aac` → default.
+  - Extension now derived from actual `recorder.mimeType` instead of hardcoded fallback.
+  - Duration tracked in React state so timer visibly updates.
+  - Error display no longer auto-dismisses via immediate `onCancel`; user taps close to dismiss.
+  - Mic stream tracks stopped on send, cancel, unmount, and error.
+- Fixed `VoicePlayer.tsx`:
+  - `audio.play()` promise rejection is caught; playing state reset on error.
+- Fixed `MessageInput.tsx`:
+  - Added `onSendVoice` prop and imported `VoiceRecorder`.
+  - Added microphone button visible when: voice APIs available, not editing, no pending images.
+  - `VoiceRecorder` renders inline replacing text input when mic button is tapped.
+- Fixed `HomePage.tsx`:
+  - Passed `onSendVoice={sendVoice}` to `MessageInput`.
+- Fixed `server/src/middleware/uploadMiddleware.ts`:
+  - Audio/image MIME regex now accepts optional parameters (e.g. `audio/webm;codecs=opus`) via `(;.+)?$` suffix.
+- Added `client/src/utils/voice.ts` with `getSupportedMimeType` and `getExtension` helpers.
+- Added `client/__tests__/voice.test.ts` with 10 tests for extension derivation and MIME selection.
+- Updated `server/__tests__/upload.test.ts` with MIME regex update and codecs parameter test.
+- Voice flow: tap mic → recorder mounts & starts → record/stop → upload via `/api/upload` → `message:send` with `voiceUrl` + `voiceDuration` → receiver sees playable `VoicePlayer`.
+
+### Changed Files
+
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/MessageInput.tsx`
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `client/src/components/chat/VoicePlayer.tsx`
+- `client/src/utils/voice.ts` (new)
+- `client/__tests__/voice.test.ts` (new)
+- `server/src/middleware/uploadMiddleware.ts`
+- `server/__tests__/upload.test.ts`
+
+### Verification
+
+- `npm.cmd run build`: passed (client + server)
+- `npm.cmd test`: passed, 89/89 (17 client + 72 server)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: clean
+
+### Decisions / Notes
+
+- MIME regex updated to accept parameters (`;codecs=opus` etc.) since browsers include codec info in blob MIME.
+- VoiceRecorder auto-starts on mount, but is only mounted on explicit mic-button tap, satisfying "recording starts only after explicit user action".
+- No Docker rebuild needed: upload endpoint unchanged, only MIME regex relaxed to accept standard codec parameters.
+- Manual browser/device QA not performed; Docker compose smoke test recommended before merge.
+
+### Follow-ups
+
+- Governor review required (risk level: Medium).
+- Manual browser/device QA on Chrome, Safari/iPhone, and Android.
+- Docker compose up --build and manual smoke test before merge.
+
+## 2026-07-17 - Telegram-like voice UX follow-up planning
+
+Role: Governor
+Agent: Codex
+Task ID: ZOKUL-VOICE-002
+Branch: codex/zokul-ui-redesign
+Commit:
+
+### Intent
+
+Plan the next voice-message UX improvement after the basic voice-message implementation is accepted.
+
+### Actions
+
+- Created planned task `docs/ai/tasks/planned/ZOKUL-VOICE-002-telegram-like-recording.md`.
+- Updated product backlog with `ZOKUL-VOICE-002`.
+- Updated control plane to show `ZOKUL-VOICE-001` is in Review and `ZOKUL-VOICE-002` is blocked until acceptance.
+- Added audit entry for the planned follow-up.
+
+### Verification
+
+- Documentation-only planning change.
+- `git diff --check`: passed with Windows LF/CRLF warnings only.
+
+### Decisions / Notes
+
+- Telegram-like audio UX should be a follow-up, not mixed into the current voice MVP review.
+- Video circles are explicitly out of scope and should become a separate task if requested.
+
+### Protocol Check
+
+- Worklog updated: yes
+- Audit log updated: yes
+- Control plane updated: yes
+- Active task preserved: yes
+- Git status checked: yes
+
+## 2026-07-17 - Telegram-like voice recording UX implementation
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-VOICE-002
+Branch: codex/zokul-ui-redesign
+Commit: (committed)
+
+### Intent
+
+Improve voice-message composer UX with Telegram-like hold-to-record on mobile, keeping desktop click-based fallback. No backend changes, no video/circles, no redesign.
+
+### Actions
+
+- Added gesture helpers to `client/src/utils/voice.ts`:
+  - `CANCEL_THRESHOLD = 80` (px)
+  - `MIN_DURATION_MS = 1000` (1 second minimum recording)
+  - `isTouchDevice()` — detects touch capabilities
+  - `shouldCancelGesture(startX, currentX)` — returns true when horizontal drag left exceeds threshold
+- Rewrote `MessageInput.tsx`:
+  - **Touch mode**: mic button uses Pointer Events (`onPointerDown` → start recording, `onPointerMove` → track cancel, `onPointerUp` → send or discard, `onPointerCancel` → discard). Recording bar appears inline with timer + "Slide to cancel" / "Release to cancel" visual hint. Bar progress turns red when cancel threshold reached. Recordings < 1s discarded silently.
+  - **Desktop mode**: mic button uses `onClick` → mounts `VoiceRecorder` (existing auto-start, explicit stop/send, explicit cancel).
+  - Touch mode detection uses `touchModeRef` (computed once from `isTouchDevice()`).
+  - All existing text/image behavior preserved.
+  - `VoiceRecorder` import and `onSendVoice` prop from ZOKUL-VOICE-001 preserved.
+- Refactored `VoiceRecorder.tsx`:
+  - Added optional `isCancelling` prop for visual cancel-feedback (used by desktop mode bar).
+  - Recording bar shows "Slide to cancel" hint when `isCancelling` is provided, stop button when not.
+- Added 6 new tests in `client/__tests__/voice.test.ts`:
+  - `shouldCancelGesture`: within threshold, beyond threshold, moved right.
+  - `CANCEL_THRESHOLD`: equals 80.
+  - `MIN_DURATION_MS`: equals 1000.
+  - `isTouchDevice`: returns boolean.
+
+### Changed Files
+
+- `client/src/components/chat/MessageInput.tsx`
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `client/src/utils/voice.ts`
+- `client/__tests__/voice.test.ts`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client + server)
+- `npm.cmd test`: passed, 95/95 (23 client + 72 server)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: clean except untracked new files
+
+### Decisions / Notes
+
+- Touch detection uses a ref (`touchModeRef`) computed once, not state, to avoid layout shifts.
+- Slide-up-to-lock is deferred to a future task per the planned task scope.
+- Desktop fallback reuses existing `VoiceRecorder` component unchanged in behavior.
+- No Docker rebuild needed: zero backend changes.
+- Manual browser/device QA recommended before merge.
+
+### Follow-ups
+
+- Governor review required (risk level: Medium).
+- Manual QA on iPhone (hold-to-record, slide-to-cancel) and desktop Chrome.
+- Slide-up-to-lock enhancement could be future task.

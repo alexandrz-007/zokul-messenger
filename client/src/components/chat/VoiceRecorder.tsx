@@ -1,33 +1,46 @@
 import { useState, useRef, useEffect } from 'react';
 import api from '../../services/api';
+import { getSupportedMimeType, getExtension } from '../../utils/voice';
 
 interface VoiceRecorderProps {
   onSend: (voiceUrl: string, voiceDuration: number) => void;
   onCancel: () => void;
+  isCancelling?: boolean;
 }
 
-export default function VoiceRecorder({ onSend, onCancel }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceRecorderProps) {
   const [recording, setRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [duration, setDuration] = useState(0);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
-  const durationRef = useRef(0);
+  const streamRef = useRef<MediaStream | null>(null);
+  const startTimeRef = useRef(0);
 
   useEffect(() => {
     startRecording();
-    return () => stopRecording();
+    return () => stopTracks();
   }, []);
+
+  const stopTracks = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  };
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      streamRef.current = stream;
+      const mimeType = getSupportedMimeType();
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       mediaRef.current = recorder;
       chunksRef.current = [];
-      durationRef.current = 0;
+      setDuration(0);
+      startTimeRef.current = Date.now();
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
@@ -35,13 +48,14 @@ export default function VoiceRecorder({ onSend, onCancel }: VoiceRecorderProps) 
 
       recorder.onstop = () => {
         clearInterval(timerRef.current);
-        stream.getTracks().forEach((t) => t.stop());
+        stopTracks();
         if (chunksRef.current.length === 0) return;
-        const blobType = mimeType || 'audio/webm';
-        const blob = new Blob(chunksRef.current, { type: blobType });
+        const actualMimeType = recorder.mimeType || mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: actualMimeType });
         setUploading(true);
-        const ext = blobType === 'audio/webm' ? '.webm' : blobType === 'audio/mp4' ? '.mp4' : '.ogg';
-        const finalDuration = durationRef.current;
+        const ext = getExtension(actualMimeType);
+        const elapsed = Date.now() - startTimeRef.current;
+        const finalDuration = Math.max(1, Math.round(elapsed / 1000));
         uploadBlob(blob, ext, finalDuration);
       };
 
@@ -49,7 +63,7 @@ export default function VoiceRecorder({ onSend, onCancel }: VoiceRecorderProps) 
       setRecording(true);
 
       timerRef.current = setInterval(() => {
-        durationRef.current += 1;
+        setDuration((prev) => prev + 1);
       }, 1000);
     } catch (err: unknown) {
       const domErr = err as { name?: string };
@@ -60,7 +74,6 @@ export default function VoiceRecorder({ onSend, onCancel }: VoiceRecorderProps) 
       } else {
         setError('Failed to start recording');
       }
-      onCancel();
     }
   };
 
@@ -88,10 +101,11 @@ export default function VoiceRecorder({ onSend, onCancel }: VoiceRecorderProps) 
 
   const cancelRecording = () => {
     if (mediaRef.current && mediaRef.current.state !== 'inactive') {
-      mediaRef.current.stream.getTracks().forEach((t) => t.stop());
       mediaRef.current.stop();
     }
     clearInterval(timerRef.current);
+    stopTracks();
+    setRecording(false);
     onCancel();
   };
 
@@ -118,34 +132,35 @@ export default function VoiceRecorder({ onSend, onCancel }: VoiceRecorderProps) 
   }
 
   return (
-    <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2">
-      <button type="button" onClick={cancelRecording} className="text-gray-400 hover:text-gray-600">
+    <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2 select-none">
+      <button type="button" onClick={cancelRecording} className="text-gray-400 hover:text-gray-600 shrink-0" aria-label="Cancel recording">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       </button>
-      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
       <span className="text-sm font-medium tabular-nums">
-        {Math.floor(durationRef.current / 60)}:{(durationRef.current % 60).toString().padStart(2, '0')}
+        {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')}
       </span>
       <div className="flex-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
-        <div className="h-full bg-primary rounded-full animate-pulse w-1/2" />
+        <div className={`h-full rounded-full transition-all ${isCancelling ? 'bg-red-500 w-full' : 'bg-primary w-1/2 animate-pulse'}`} />
       </div>
-      <button
-        type="button"
-        onClick={recording ? stopRecording : startRecording}
-        className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shrink-0"
-      >
-        {recording ? (
+      {typeof isCancelling !== 'undefined' ? (
+        <span className={`text-[10px] whitespace-nowrap transition-colors ${isCancelling ? 'text-red-500' : 'text-gray-400'}`}>
+          {isCancelling ? 'Release to cancel' : 'Slide to cancel'}
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={stopRecording}
+          className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shrink-0"
+          aria-label="Stop recording"
+        >
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
             <rect x="6" y="6" width="4" height="12" /><rect x="14" y="6" width="4" height="12" />
           </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-            <polygon points="5 3 19 12 5 21 5 3" />
-          </svg>
-        )}
-      </button>
+        </button>
+      )}
     </div>
   );
 }
