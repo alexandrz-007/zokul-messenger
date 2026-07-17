@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .safe-area-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top, 12px);
 }
 
 .safe-area-bottom {

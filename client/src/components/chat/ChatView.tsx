@@ -227,7 +227,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
                     <Avatar name={sender?.name || msg.senderId} size={32} url={sender?.avatarUrl} />
                   )}
                 </div>
-                <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[min(75%,400px)]`}>
                   <div className="relative">
                     <div
                       className={`px-3 py-2 text-sm leading-relaxed cursor-pointer ${isNew ? 'animate-message-appear' : ''} ${

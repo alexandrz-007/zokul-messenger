@@ -44,3 +44,9 @@
 | 2026-07-17 | Executor | Implemented mobile voice UX polish | ZOKUL-VOICE-003 | master | | Tap-to-start/tap-to-stop voice recording on touch devices; main-menu bottom safe-area padding; build/test passed |
 | 2026-07-17 | Governor | Corrected AI protocol guardrails | ZOKUL-PROTOCOL-001 | master | | Added handoff barrier, execution owner requirement, and ambiguous UI-area clarification rule |
 | 2026-07-17 | Release Agent | Fixed release packaging script | ZOKUL-RELEASE-002 | master | | `prepare-release.ps1` now preserves target `.git` metadata during package refresh |
+| 2026-07-17 | Governor | Created executor task | ZOKUL-MOBILE-001 | master | | Real-device QA failed ZOKUL-VOICE-003; mobile layout containment and tap voice state-machine fix prepared |
+| 2026-07-17 | Executor | Implemented mobile layout + voice state-machine fix | ZOKUL-MOBILE-001 | codex/zokul-ui-redesign | | overflow-x-hidden, safe-area fallbacks, bubble max-width cap, VoicePlayer w-full, voice state machine with onPointerDown; build+test passed 91/91 |
+| 2026-07-17 | Governor | Reviewed ZOKUL-MOBILE-001 | ZOKUL-MOBILE-001 | codex/zokul-ui-redesign | | Needs Changes: cancel race during startup, min-h-screen conflict, index.css scope exception, docs inconsistency |
+| 2026-07-17 | Executor | Fixed Governor review findings | ZOKUL-MOBILE-001 | codex/zokul-ui-redesign | | startupTokenRef for cancel race, removed min-h-screen, added index.css to Allowed Files + CHANGE_REQUESTS.md, docs alignment; build+test passed 91/91 |
+| 2026-07-17 | Governor | Reviewed executor work | ZOKUL-MOBILE-001 | master | | Needs Changes: async cancel race, viewport height risk, scope exception, stale docs, device QA required |
+| 2026-07-17 | Governor | Re-reviewed executor work | ZOKUL-MOBILE-001 | master | | Passed for User QA: startup token fix, min-h-screen removal, index.css scope approved; build/test passed |

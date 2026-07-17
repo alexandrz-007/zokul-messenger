@@ -1,25 +1,26 @@
 # AI Control Plane
 
 Last updated: 2026-07-17
-Source commit: fd5b6eb
+Source commit: b12b629
 
 ## Current State
 
-State: Review
+State: User QA
 
 Allowed next states:
 
-- Verification
+- Ready for Execution
+- In Execution
+- Review
 - Commit Approval
-- User QA
 
 ## Active Work
 
-- Active task: Mobile voice tap recording and safe-area polish
-- Task ID: ZOKUL-VOICE-003
+- Active task: Mobile browser layout and tap voice fix
+- Task ID: ZOKUL-MOBILE-001
 - Branch: master
-- Owner role: Governor Review
-- Execution owner: current agent
+- Owner role: User QA
+- Execution owner: external agent
 - Risk: Medium
 - Confidence: High
 
@@ -35,9 +36,36 @@ Allowed next states:
 
 ## Latest Review
 
-- ZOKUL-VOICE-003: Implemented and ready for Governor/user review. Build and 91/91 tests pass.
-- Changes:
-  - **Mobile voice recording**: touch/mobile mic button is now tap-to-start and tap-to-stop/send.
+- ZOKUL-MOBILE-001: Governor review passed for user device QA.
+- Verification:
+  - `npm.cmd run build`: passed.
+  - `npm.cmd test`: passed, 91/91.
+  - `git diff --check`: passed with Windows CRLF warnings only.
+- Review result:
+  - Startup cancel race is fixed with `startupTokenRef`.
+  - `min-h-screen` was removed from `AppLayout`.
+  - `client/src/index.css` scope exception was documented and approved.
+  - No backend, socket, upload, dependency, Docker, or deploy changes were made.
+- Remaining gate: real iPhone/Android QA by user before acceptance/commit/release.
+
+- ZOKUL-MOBILE-001: Fixes applied after Governor review. Awaiting re-review.
+- Findings addressed:
+  - P1: startup token ref added to prevent cancel race during microphone async startup.
+  - P1/P2: `min-h-screen` removed; only `h-[100dvh] max-h-screen` used.
+  - P2: `client/src/index.css` added to Allowed Files + CHANGE_REQUESTS.md entry.
+  - P2: protocol docs aligned (branch, owner, state).
+- Remaining: real-device QA required before acceptance.
+
+- ZOKUL-VOICE-003: User/device QA failed. Superseded by ZOKUL-MOBILE-001.
+- Findings:
+  - Mobile mic tap can still behave as hold-to-record or immediately stop after first tap on iPhone/Android.
+  - iPhone headers and composer need safe-area/top-bottom correction.
+  - Android light mobile layout clips outgoing voice bubbles and composer controls.
+  - Main-screen bottom action buttons can be hidden below the visible mobile browser area.
+
+- ZOKUL-VOICE-003 previous implementation notes:
+  - Changes:
+    - **Mobile voice recording**: touch/mobile mic button is now tap-to-start and tap-to-stop/send.
   - **Cancel**: existing cancel button remains available while recording.
   - **Main menu buttons**: create/theme/logout bottom action bar now includes mobile safe-area bottom padding.
   - **Viewport**: app shell uses dynamic viewport height (`100dvh`) with `min-h-screen` fallback.
@@ -78,4 +106,4 @@ Allowed next states:
 
 ## Next Action
 
-User should QA `ZOKUL-VOICE-003` on smartphone. Do not push or deploy until accepted.
+User should QA `ZOKUL-MOBILE-001` on iPhone/Android. Do not push or deploy until accepted.

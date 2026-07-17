@@ -29,7 +29,7 @@ Source commit: 96d5818
     - build/tests pass.
 
 - [ ] ZOKUL-VOICE-003 Mobile tap-to-record voice UX
-  - Status: Implemented - ready for review
+  - Status: Superseded by `ZOKUL-MOBILE-001` after real-device QA failed
   - Priority: P1
   - Owner: Governor/Executor
   - Files:
@@ -45,6 +45,30 @@ Source commit: 96d5818
     - cancel still discards;
     - desktop voice recorder behavior remains unchanged;
     - main-menu bottom controls remain visible on mobile;
+    - build/tests pass.
+
+- [ ] ZOKUL-MOBILE-001 Mobile browser layout and tap voice fix
+  - Status: Ready for Executor
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/layout/AppLayout.tsx`
+    - `client/src/components/HomePage.tsx`
+    - `client/src/components/chat/ChatList.tsx`
+    - `client/src/components/chat/ChatView.tsx`
+    - `client/src/components/chat/MessageInput.tsx`
+    - `client/src/components/chat/VoicePlayer.tsx`
+    - `client/src/utils/voice.ts`
+  - Goal: Stabilize the messenger on real mobile browsers and make touch voice recording truly tap-to-start/tap-to-stop.
+  - Scope: mobile viewport/safe-area containment, no horizontal overflow, composer/sidebar visibility, voice tap state machine.
+  - Out of scope: backend, upload protocol, sockets, dependencies, new features, broad redesign.
+  - Acceptance criteria:
+    - Android/iPhone mobile screens do not clip headers, composer, bottom actions, bubbles, or voice players;
+    - no horizontal overflow on mobile;
+    - first mobile mic tap starts recording and keeps it active;
+    - second mobile mic tap stops/sends when duration is valid;
+    - cancel discards;
+    - desktop voice behavior remains unchanged;
     - build/tests pass.
 
 ## P1: UI Polish

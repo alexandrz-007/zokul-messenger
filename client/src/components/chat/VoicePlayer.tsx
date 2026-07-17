@@ -58,7 +58,7 @@ export default function VoicePlayer({ voiceUrl, voiceDuration }: VoicePlayerProp
   };
 
   return (
-    <div className="flex items-center gap-2 min-w-[140px]">
+    <div className="flex items-center gap-2 w-full min-w-0">
       <audio
         ref={audioRef}
         src={voiceUrl}

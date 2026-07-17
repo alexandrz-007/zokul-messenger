@@ -178,7 +178,7 @@ function HomePageInner() {
                 </div>
                 <div className="text-[11px] text-green-500 font-medium">Online</div>
               </div>
-              <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-600 tracking-wider uppercase shrink-0">Zokul</span>
+              <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-600 tracking-wider uppercase shrink-0 hidden min-[360px]:inline">Zokul</span>
             </button>
           </div>
           <div className="mx-4 border-t border-[#C9D6E4] dark:border-gray-800" />
@@ -192,7 +192,7 @@ function HomePageInner() {
             unreadCount={unreadCount}
             onDelete={handleDeleteChat}
           />
-          <div className="border-t border-[#C9D6E4] dark:border-gray-800 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] flex items-center justify-around gap-1">
+          <div className="border-t border-[#C9D6E4] dark:border-gray-800 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom,0.625rem))] flex items-center justify-around gap-1">
             <div className="relative">
               <button
                 onClick={() => setShowCreateMenu((v) => !v)}

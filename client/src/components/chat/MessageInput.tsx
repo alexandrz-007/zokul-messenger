@@ -25,10 +25,9 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const [showEmoji, setShowEmoji] = useState(false);
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([]);
-  const [touchRecorderActive, setTouchRecorderActive] = useState(false);
+  const [voiceState, setVoiceState] = useState<'idle' | 'starting' | 'recording' | 'uploading' | 'error'>('idle');
   const [touchDuration, setTouchDuration] = useState(0);
-  const [touchUploading, setTouchUploading] = useState(false);
-  const [touchError, setTouchError] = useState('');
+  const [voiceError, setVoiceError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
@@ -39,10 +38,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const touchTimerRef = useRef<ReturnType<typeof setInterval>>();
   const touchStartTimeRef = useRef(0);
   const touchModeRef = useRef(isTouchDevice());
-  const touchStartingRef = useRef(false);
-  const touchPendingFinishRef = useRef<boolean | null>(null);
-  const touchPendingCancelRef = useRef(false);
-  const touchRecorderActiveRef = useRef(false);
+  const startupTokenRef = useRef(0);
   const finishTouchRecordingRef = useRef<(discard: boolean) => void>();
   const cancelTouchRecordingRef = useRef<() => void>();
 
@@ -77,15 +73,20 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   }, []);
 
   const startTouchRecording = useCallback(async () => {
+    const token = ++startupTokenRef.current;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (token !== startupTokenRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       touchStreamRef.current = stream;
       const mimeType = getSupportedMimeType();
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       touchMediaRef.current = recorder;
       touchChunksRef.current = [];
       setTouchDuration(0);
-      setTouchError('');
+      setVoiceError('');
       touchStartTimeRef.current = Date.now();
 
       recorder.ondataavailable = (e) => {
@@ -93,34 +94,19 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
       };
 
       recorder.start();
-      touchRecorderActiveRef.current = true;
-      setTouchRecorderActive(true);
-      touchStartingRef.current = false;
-
-      const pending = touchPendingFinishRef.current;
-      if (pending !== null) {
-        touchPendingFinishRef.current = null;
-        finishTouchRecordingRef.current?.(pending);
-        return;
-      }
-      if (touchPendingCancelRef.current) {
-        touchPendingCancelRef.current = false;
-        cancelTouchRecordingRef.current?.();
-        return;
-      }
+      setVoiceState('recording');
 
       touchTimerRef.current = setInterval(() => {
         setTouchDuration((prev) => prev + 1);
       }, 1000);
     } catch (err: unknown) {
-      touchStartingRef.current = false;
-      touchPendingFinishRef.current = null;
-      touchPendingCancelRef.current = false;
+      if (token !== startupTokenRef.current) return;
+      setVoiceState('error');
       const domErr = err as { name?: string };
       if (domErr.name === 'NotAllowedError' || domErr.name === 'PermissionDeniedError') {
-        setTouchError('Microphone access denied');
+        setVoiceError('Microphone access denied');
       } else {
-        setTouchError('Failed to start recording');
+        setVoiceError('Failed to start recording');
       }
     }
   }, []);
@@ -130,22 +116,28 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
     if (!recorder || recorder.state === 'inactive') {
       stopTouchTracks();
       clearInterval(touchTimerRef.current);
-      touchRecorderActiveRef.current = false;
-      setTouchRecorderActive(false);
+      setVoiceState('idle');
       return;
     }
     recorder.onstop = () => {
       clearInterval(touchTimerRef.current);
       stopTouchTracks();
-      touchRecorderActiveRef.current = false;
-      setTouchRecorderActive(false);
-      if (discard) return;
-      if (touchChunksRef.current.length === 0) return;
+      if (discard) {
+        setVoiceState('idle');
+        return;
+      }
+      if (touchChunksRef.current.length === 0) {
+        setVoiceState('idle');
+        return;
+      }
       const elapsed = Date.now() - touchStartTimeRef.current;
-      if (elapsed < MIN_DURATION_MS) return;
+      if (elapsed < MIN_DURATION_MS) {
+        setVoiceState('idle');
+        return;
+      }
       const actualMimeType = recorder.mimeType || getSupportedMimeType() || 'audio/webm';
       const blob = new Blob(touchChunksRef.current, { type: actualMimeType });
-      setTouchUploading(true);
+      setVoiceState('uploading');
       const ext = getExtension(actualMimeType);
       const finalDuration = Math.max(1, Math.round(elapsed / 1000));
       const formData = new FormData();
@@ -153,45 +145,48 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
       api.post<{ url: string }>('/upload', formData)
         .then((res) => {
           onSendVoice?.(res.data.url, finalDuration);
+          setVoiceState('idle');
         })
         .catch(() => {
-          setTouchError('Upload failed');
-        })
-        .finally(() => {
-          setTouchUploading(false);
+          setVoiceError('Upload failed');
+          setVoiceState('error');
         });
     };
     recorder.stop();
   }, [stopTouchTracks, onSendVoice]);
 
   const cancelTouchRecording = useCallback(() => {
+    startupTokenRef.current++;
     clearInterval(touchTimerRef.current);
     stopTouchTracks();
     if (touchMediaRef.current && touchMediaRef.current.state !== 'inactive') {
       touchMediaRef.current.stream.getTracks().forEach((t) => t.stop());
       touchMediaRef.current.stop();
     }
-    touchRecorderActiveRef.current = false;
-    setTouchRecorderActive(false);
+    setVoiceState('idle');
     setTouchDuration(0);
   }, [stopTouchTracks]);
 
   finishTouchRecordingRef.current = finishTouchRecording;
   cancelTouchRecordingRef.current = cancelTouchRecording;
 
-  const handleTouchRecordToggle = useCallback(() => {
-    if (touchUploading) return;
-    if (touchStartingRef.current) {
-      touchPendingFinishRef.current = false;
-      return;
-    }
-    if (touchRecorderActiveRef.current) {
+  const handleTouchMicPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (voiceState === 'uploading') return;
+    if (voiceState === 'starting') return;
+    if (voiceState === 'recording') {
       finishTouchRecording(false);
       return;
     }
-    touchStartingRef.current = true;
+    if (voiceState === 'error') {
+      setVoiceState('idle');
+      setVoiceError('');
+      return;
+    }
+    setVoiceState('starting');
     startTouchRecording();
-  }, [finishTouchRecording, startTouchRecording, touchUploading]);
+  }, [voiceState, finishTouchRecording, startTouchRecording]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -287,10 +282,10 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
 
   const hasContent = text.trim().length > 0 || replyTo || editingMessage || pendingImages.length > 0;
   const showVoiceButton = voiceSupported && !editingMessage && pendingImages.length === 0;
-  const showTouchRecorderBar = touchRecorderActive || touchUploading || !!touchError;
+  const showTouchRecorderBar = voiceState !== 'idle';
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-[#C9D6E4] dark:border-gray-700 pb-2">
+    <form onSubmit={handleSubmit} className="relative flex flex-col border-t border-[#C9D6E4] dark:border-gray-700 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
       {replyTo && !editingMessage && (
         <div className="absolute bottom-full left-0 right-0 z-10 px-3">
           <ReplyQuote reply={replyTo} onCancel={() => setReplyTo(null)} />
@@ -336,15 +331,15 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
           <div>
             <button
               type="button"
-              onClick={handleTouchRecordToggle}
-              disabled={touchUploading}
-              className={`w-9 h-9 self-center transition-colors flex items-center justify-center shrink-0 disabled:opacity-50 ${
-                touchRecorderActive || touchStartingRef.current
+              onPointerDown={handleTouchMicPointerDown}
+              disabled={voiceState === 'uploading'}
+              className={`w-9 h-9 self-center transition-colors flex items-center justify-center shrink-0 disabled:opacity-50 touch-none ${
+                voiceState === 'recording' || voiceState === 'starting'
                   ? 'text-primary'
                   : 'text-gray-400 hover:text-primary dark:hover:text-primary'
               }`}
-              aria-label={touchRecorderActive ? 'Stop and send voice message' : 'Start voice message recording'}
-              title={touchRecorderActive ? 'Stop and send' : 'Start recording'}
+              aria-label={voiceState === 'recording' ? 'Stop and send voice message' : 'Start voice message recording'}
+              title={voiceState === 'recording' ? 'Stop and send' : 'Start recording'}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5" strokeWidth={2}>
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -382,16 +377,16 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
             </div>
           )}
           {showTouchRecorderBar ? (
-            touchError ? (
+            voiceState === 'error' ? (
               <div className="flex items-center gap-2 bg-[#E1EAF4] dark:bg-gray-800 rounded-2xl px-4 py-2">
-                <span className="text-xs text-red-500 flex-1">{touchError}</span>
-                <button type="button" onClick={() => { setTouchError(''); setTouchRecorderActive(false); }} className="text-gray-400 hover:text-gray-600 shrink-0">
+                <span className="text-xs text-red-500 flex-1">{voiceError}</span>
+                <button type="button" onClick={() => { setVoiceState('idle'); setVoiceError(''); }} className="text-gray-400 hover:text-gray-600 shrink-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
-            ) : touchUploading ? (
+            ) : voiceState === 'uploading' ? (
               <div className="flex items-center gap-2 bg-[#E1EAF4] dark:bg-gray-800 rounded-2xl px-4 py-2">
                 <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 <span className="text-sm text-gray-500">Uploading...</span>
