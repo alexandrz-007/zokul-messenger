@@ -1,456 +1,244 @@
-# NEXT_AGENT_TASK: Polish Zokul messenger interface
+# NEXT_AGENT_TASK: Implement working voice messages
 
-Task ID: ZOKUL-UI-001
+Task ID: ZOKUL-VOICE-001
 Status: Ready for Executor
 Created by: Governor
 Assigned role: Executor
-Recommended branch: codex/zokul-ui-redesign
-Change type: design
+Recommended branch: codex/voice-messages
+Change type: feature
 Risk level: Medium
-Confidence: High
+Confidence: Medium
 
 ## Executive Summary
 
-Redesign the existing Zokul web messenger UI to feel like a polished modern dark-mode messenger while preserving current functionality. Do not add UI for unavailable features. The target style is calm, premium, compact, readable, and product-like: better sidebar, message bubbles, image messages, composer, auth screens, empty states, and modals.
+Zokul already contains partial voice-message code, but the feature is hidden/incomplete. The server data model, Socket.IO message flow, upload endpoint, and `VoicePlayer` mostly exist. The missing and risky parts are in the client recorder integration and browser compatibility, especially Safari/iPhone.
+
+Implement voice messages as an existing unfinished feature, not as a redesign. The goal is to let a user record a short audio message, upload it, send it through the existing `message:send` socket flow, render it in chat, and play it back reliably on desktop and mobile browsers.
 
 ## Must Do
 
-- Improve existing UI only.
-- Keep all current app behavior intact.
-- Keep dark mode first, but do not intentionally break light mode.
-- Remove the thick blue frame/background around outgoing image messages.
-- Make message bubbles, timestamps, date separators, and media cards more refined.
-- Make sidebar/chat list denser and easier to scan.
-- Make message input feel like a stable polished composer dock.
-- Improve login/register visual polish.
-- Improve empty chat state.
-- Improve modal styling consistency.
-- Run build/test verification.
+- Re-enable voice message UI in the existing composer.
+- Wire `sendVoice` from `HomePage` into `MessageInput`.
+- Integrate `VoiceRecorder` into `MessageInput` with clear start, cancel, stop/send, uploading, and error states.
+- Fix `VoiceRecorder` MIME selection for Chrome/Android/Safari/iPhone instead of assuming `audio/webm`.
+- Keep uploads on the existing `/api/upload` endpoint unless a real blocker is found.
+- Preserve existing text/image message behavior.
+- Add or update tests around MIME support and voice message send flow where practical.
+- Update `docs/ai/10_AI_WORKLOG.md` with execution results.
 
 ## Must Not Do
 
-- Do not add call buttons.
-- Do not add video buttons.
-- Do not add message reactions.
-- Do not add pinned chats.
-- Do not add fake search if no working search exists.
-- Do not add archive/folders/filters unless already implemented.
-- Do not change backend/API/Socket.IO behavior.
-- Do not change auth logic.
-- Do not touch `production`.
-- Do not include unrelated generated files.
+- Do not redesign the messenger UI.
+- Do not add calls, video calls, transcription, waveform generation, reactions, or other new voice-related features.
+- Do not change database schema unless current columns are proven insufficient.
+- Do not weaken upload security by accepting arbitrary MIME types or extension-only validation.
+- Do not touch deployment secrets or `.env` values.
 
-## Context
+## Current Diagnosis
 
-The current UI is functional but visually MVP-like: very dark, blue-heavy, sparse, and not yet distinctive. Prior design audit recommended a calm premium messenger direction.
+Code already present:
 
-Reference design guidance:
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `client/src/components/chat/VoicePlayer.tsx`
+- `client/src/hooks/useChat.ts` exposes `sendVoice`
+- `client/src/components/HomePage.tsx` destructures `sendVoice`
+- `server/src/socket/index.ts` accepts `voiceUrl` and `voiceDuration`
+- `server/src/models/Message.ts` stores and returns `voice_url` and `voice_duration`
+- `server/src/config/db.ts` creates `voice_url` and `voice_duration` columns
+- `server/src/middleware/uploadMiddleware.ts` accepts audio MIME types
 
-- `docs/09_UI_REDESIGN_IMPLEMENTATION_GUIDE.md`
-- `docs/ai/03_PRODUCT_BACKLOG.md`
-- `docs/ai/gates/frontend-ui.md`
-- `docs/ai/12_DEFINITION_OF_DONE.md`
+Likely causes of the broken/hidden feature:
 
-## Visual Direction
-
-Use a calm premium messenger style:
-
-- compact but breathable;
-- professional, not decorative;
-- dark mode first;
-- no landing-page hero patterns inside the app;
-- no fake future controls;
-- no heavy gradients or decorative blobs.
-
-Suggested dark palette:
-
-| Role | Color |
-|---|---|
-| App background | `#0B111C` |
-| Sidebar background | `#0E1726` |
-| Header/input panels | `#111C2D` |
-| Elevated surface | `#162235` |
-| Incoming bubble | `#1B2738` |
-| Outgoing bubble | `#2F7CF6` |
-| Outgoing active/hover | `#2563EB` |
-| Primary text | `#F8FAFC` |
-| Secondary text | `#94A3B8` |
-| Muted text | `#64748B` |
-| Border | `rgba(148, 163, 184, 0.16)` |
-| Online | `#22C55E` |
-| Danger | `#EF4444` |
-
-Do not blindly hard-code every color if existing Tailwind/theme tokens can express it cleanly. Prefer maintaining current project style patterns.
+1. `HomePage` gets `sendVoice`, but does not pass it to `MessageInput`.
+2. `MessageInputProps` has no `onSendVoice` prop.
+3. `MessageInput` does not import or render `VoiceRecorder`.
+4. `VoiceRecorder` uses `MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : ''`, then falls back to `audio/webm` for blob type. This is unsafe for Safari/iPhone, where `audio/mp4` may be the supported format.
+5. `VoiceRecorder` starts recording immediately on mount, so the composer integration must avoid accidental mount/start behavior.
+6. The recorder timer uses a ref only, so duration display may not update while recording unless state is added.
+7. `VoicePlayer.toggle()` does not handle `audio.play()` promise rejection.
 
 ## Required Reading
 
 - `docs/ai/00_README_FOR_AGENTS.md`
-- `docs/ai/00_PROJECT_OVERVIEW.md`
+- `docs/ai/01_ARCHITECTURE_MAP.md`
 - `docs/ai/02_CODE_STRUCTURE.md`
-- `docs/ai/03_PRODUCT_BACKLOG.md`
-- `docs/ai/05_DEVELOPMENT_PROCESS.md`
 - `docs/ai/06_QA_CHECKLIST.md`
-- `docs/ai/12_DEFINITION_OF_DONE.md`
 - `docs/ai/gates/frontend-ui.md`
-- `docs/09_UI_REDESIGN_IMPLEMENTATION_GUIDE.md`
-
-Source files to inspect before editing:
-
-- `client/src/index.css`
-- `client/tailwind.config.js`
+- `docs/ai/gates/backend.md`
 - `client/src/components/HomePage.tsx`
-- `client/src/components/layout/AppLayout.tsx`
-- `client/src/components/chat/ChatList.tsx`
-- `client/src/components/chat/ChatView.tsx`
 - `client/src/components/chat/MessageInput.tsx`
-- `client/src/components/common/Avatar.tsx`
-- `client/src/components/common/Button.tsx`
-- `client/src/components/common/Modal.tsx`
-- `client/src/components/auth/LoginForm.tsx`
-- `client/src/components/auth/RegisterForm.tsx`
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `client/src/components/chat/VoicePlayer.tsx`
+- `client/src/hooks/useChat.ts`
+- `server/src/middleware/uploadMiddleware.ts`
+- `server/src/socket/index.ts`
+- `server/src/models/Message.ts`
 
 ## Scope
 
 Included:
 
-- visual styling and layout improvements for existing UI;
-- auth screens;
-- sidebar/chat list;
-- empty state;
-- chat header;
-- message timeline;
-- text bubbles;
-- image/media messages;
-- voice message styling if present;
-- message composer;
-- modals;
-- responsive/mobile polish;
-- tests only if existing tests need updates due to markup/class changes.
+- Composer voice button and recorder state.
+- Client voice recording/upload/send path.
+- Voice message playback hardening.
+- Minimal backend/upload MIME adjustments if required for browser compatibility.
+- Tests and docs/worklog updates.
 
 Out of scope:
 
-- backend changes;
-- API changes;
-- realtime behavior changes;
-- new product features;
-- new routes;
-- new dependencies unless absolutely necessary and approved;
-- Figma generation;
-- production deployment.
+- UI redesign.
+- Voice calls.
+- Message transcription.
+- Push notifications for voice specifically.
+- Large media storage architecture changes.
+- S3/object storage migration.
 
 ## Allowed Files
 
-Primary:
-
-- `client/src/index.css`
-- `client/tailwind.config.js`
 - `client/src/components/HomePage.tsx`
-- `client/src/components/layout/AppLayout.tsx`
-- `client/src/components/chat/ChatList.tsx`
-- `client/src/components/chat/ChatView.tsx`
 - `client/src/components/chat/MessageInput.tsx`
-- `client/src/components/common/Avatar.tsx`
-- `client/src/components/common/Button.tsx`
-- `client/src/components/common/Modal.tsx`
-- `client/src/components/auth/LoginForm.tsx`
-- `client/src/components/auth/RegisterForm.tsx`
-
-Secondary if needed:
-
-- `client/src/components/chat/MessageActions.tsx`
-- `client/src/components/chat/ReplyQuote.tsx`
+- `client/src/components/chat/VoiceRecorder.tsx`
 - `client/src/components/chat/VoicePlayer.tsx`
-- `client/src/components/chat/ImageViewer.tsx`
-- `client/src/components/profile/ProfileEditor.tsx`
+- `client/src/hooks/useChat.ts`
+- `client/src/types/index.ts`
+- `server/src/middleware/uploadMiddleware.ts`
+- `server/__tests__/upload.test.ts`
 - `client/__tests__/*`
+- `server/__tests__/*`
 - `docs/ai/10_AI_WORKLOG.md`
 - `docs/ai/03_PRODUCT_BACKLOG.md`
 - `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
-- `docs/ai/CHANGE_REQUESTS.md`
 
 ## Forbidden Files
 
-- `server/**`
 - `.env`
-- `node_modules/**`
-- `dist/**`
-- `uploads/**`
+- `node_modules/`
+- `dist/`
 - `client/tsconfig*.tsbuildinfo`
-- generated build artifacts
-- Docker/deployment files
-- `docs/ai/09_DECISIONS.md` unless Governor explicitly asks
-- `docs/ai/14_RELEASE_PROTOCOL.md`
-- `docs/ai/tasks/archive/**`
+- unrelated UI/design files
+- Docker/deployment files unless a voice-upload Docker-only blocker is proven and documented in `docs/ai/CHANGE_REQUESTS.md`
 
 ## Implementation Instructions
 
-1. Preflight:
-   - Check `git status --short --branch`.
-   - Note existing unrelated dirty files. Do not stage or modify them unless necessary.
-   - If branch creation is safe, create/switch to `codex/zokul-ui-redesign`. If unsafe because of existing changes, continue carefully and report.
-
-2. Inspect existing UI structure:
-   - Identify current Tailwind tokens/classes in `index.css` and `tailwind.config.js`.
-   - Identify where message bubbles, image messages, composer, sidebar, auth forms, and modals are styled.
-
-3. Establish visual tokens:
-   - Prefer CSS variables or Tailwind theme extension if current project supports it cleanly.
-   - Keep changes simple and maintainable.
-   - Avoid large one-off class chaos when a small shared utility class is clearer.
-
-4. Auth screens:
-   - Make login/register feel branded and intentional.
-   - Keep forms simple and centered.
-   - Reduce dead empty space.
-   - Improve field/button/focus/error styling.
-   - Do not add social login or marketing sections.
-
-5. Sidebar/chat list:
-   - Improve header spacing and current user area.
-   - Keep only existing working controls.
-   - Make chat rows denser and more scannable.
-   - Selected chat should have a clear but subtle highlight.
-   - Timestamps/previews should align consistently.
-   - Avatars without images should use calmer varied colors, not all identical bright blue if practical.
-
-6. Empty state:
-   - Replace the plain empty center with a polished, quiet state.
-   - Suggested copy:
-     - `Select a chat`
-     - `Choose a conversation from the sidebar or create a new one.`
-   - Do not make it a landing page.
-
-7. Chat header:
-   - Improve avatar/name/status alignment.
-   - Keep mobile back button.
-   - Do not add call/video/search icons unless they already work.
-
-8. Message timeline:
-   - Improve spacing, max-width, radius, timestamp placement, and date separators.
-   - Incoming bubbles: muted slate/elevated surface.
-   - Outgoing bubbles: calmer blue.
-   - Small messages should not look like oversized pills.
-   - Long messages should wrap cleanly.
-
-9. Image/media messages:
-   - Remove thick outgoing blue frame/background around uploaded/forwarded images.
-   - Render images as rounded media cards.
-   - Use subtle outline/shadow only if needed.
-   - Ensure timestamp/checkmark does not overlap media.
-
-10. Message composer:
-   - Make the bottom input area a stable composer dock.
-   - Keep only existing working actions.
-   - Send button should have clear enabled/disabled state.
-   - Input focus should be visible.
-   - Ensure no overlap on mobile.
-
-11. Modals:
-   - Align modal styling with new surface system.
-   - Keep content compact and mobile-safe.
-
-12. Update tests only if needed:
-   - Existing tests should still pass.
-   - Do not weaken tests to pass.
-
-13. Update docs:
-   - Append execution result to this task.
-   - Append worklog entry to `docs/ai/10_AI_WORKLOG.md`.
-   - Mark `ZOKUL-UI-001` status in `docs/ai/03_PRODUCT_BACKLOG.md` as `Review` or `Done` depending on task completion policy.
+1. Add `onSendVoice?: (voiceUrl: string, voiceDuration: number) => void` to `MessageInputProps`.
+2. Pass `onSendVoice={sendVoice}` from `HomePage` into `MessageInput`.
+3. Import and render `VoiceRecorder` from `MessageInput` only when the user explicitly taps/clicks a microphone button.
+4. Add a microphone button to the composer only when:
+   - not editing a message;
+   - not uploading images;
+   - `navigator.mediaDevices?.getUserMedia` and `window.MediaRecorder` are available.
+5. When recorder is active, show recorder controls instead of the normal text input row or in a compact inline area. Keep existing text/image send behavior untouched.
+6. In `VoiceRecorder`, implement a robust MIME preference list:
+   - `audio/webm;codecs=opus`
+   - `audio/webm`
+   - `audio/mp4`
+   - `audio/aac`
+   - fallback to default `new MediaRecorder(stream)` and use `recorder.mimeType` after creation.
+7. Derive upload extension from the actual recorder/blob MIME:
+   - webm -> `.webm`
+   - mp4 -> `.mp4`
+   - aac -> `.aac`
+   - ogg -> `.ogg`
+   - otherwise `.webm` only if actual type is empty and browser produced playable data.
+8. Track duration in React state so the recording timer visibly updates.
+9. Stop microphone tracks on send, cancel, unmount, and error.
+10. Do not call `onCancel()` immediately after permission errors if doing so hides the error too fast; show a short visible error or return error to `MessageInput`.
+11. After upload succeeds, call `onSendVoice(url, duration)` and close recorder.
+12. Harden `VoicePlayer`:
+   - catch `audio.play()` rejection;
+   - reset playing state on error;
+   - keep existing visual style.
+13. Confirm server upload MIME whitelist includes every MIME produced by the implemented recorder. Add tests for any newly accepted audio MIME.
+14. Add at least one client test or focused component test if the current test setup can support it. If not practical, document why in worklog.
 
 ## Tests To Add Or Update
 
-Only update tests if markup or accessible names change enough to break current tests.
+- Update `server/__tests__/upload.test.ts` if new audio MIME types are accepted.
+- Add or update client tests for:
+  - microphone button visibility when recorder APIs exist;
+  - `onSendVoice` called after recorder upload success, if practical with mocks;
+  - existing image/text send behavior still available.
 
-Do not add snapshot-heavy tests for pure styling.
+If browser API mocking is too heavy for the current test setup, add a small helper function for MIME selection and unit-test that helper.
 
 ## Verification Commands
-
-Run:
-
-```powershell
-cd client
-npm.cmd run build
-npm.cmd test
-cd ..
-```
-
-Then run from repo root if practical:
 
 ```powershell
 npm.cmd run build
 npm.cmd test
 git diff --check
-git status --short
+git status --short --branch
 ```
 
-If full root tests are slow but available, run them. If any command cannot run, document the reason.
+Manual verification after Docker rebuild:
 
-## Manual / Visual QA
+```powershell
+docker compose -f docker-compose.local.yml down
+docker compose -f docker-compose.local.yml up --build
+```
 
-If the app can be run locally, inspect:
+Then verify in browser:
 
-- login screen;
-- register screen;
-- no selected chat empty state;
-- selected chat with text messages;
-- selected chat with image messages;
-- message composer;
-- create chat modal;
-- create group modal;
-- profile editor;
-- desktop viewport;
-- mobile/narrow viewport.
-
-Required visual checks:
-
-- no fake future controls;
-- no thick blue frame around image messages;
-- no text overlap/clipping;
-- mobile composer remains usable;
-- selected chat is obvious;
-- dark theme remains coherent.
+- text messages still send;
+- image messages still upload;
+- microphone permission prompt appears only after tapping the mic button;
+- recording can be cancelled;
+- recording can be sent;
+- sent voice message appears in chat;
+- playback works for sender and recipient;
+- iPhone/Safari behavior is tested if device is available.
 
 ## Acceptance Criteria
 
-- [ ] UI looks materially more polished while preserving current functionality.
-- [ ] No controls for unavailable features were added.
-- [ ] Outgoing image messages no longer have a thick blue frame/background.
-- [ ] Sidebar is more scannable and selected chat state is clear.
-- [ ] Message bubbles and timestamps look refined.
-- [ ] Composer is stable and polished.
-- [ ] Auth screens and modals match the new visual system.
-- [ ] Client build passes.
-- [ ] Client tests pass.
-- [ ] Root build/tests pass or reason for not running is documented.
-- [ ] Worklog and task execution result are updated.
+- [ ] Voice button is visible only when supported and appropriate.
+- [ ] Recording starts only after explicit user action.
+- [ ] Cancel stops the microphone and sends nothing.
+- [ ] Stop/send uploads audio and sends `message:send` with `voiceUrl` and `voiceDuration`.
+- [ ] `VoicePlayer` renders and plays received voice messages.
+- [ ] Text and image messages still work.
+- [ ] Unsupported browsers fail gracefully without broken controls.
+- [ ] Build passes.
+- [ ] Tests pass.
+- [ ] Worklog is updated.
 
 ## Definition Of Done
 
 - Follow `docs/ai/12_DEFINITION_OF_DONE.md`.
 - Apply `docs/ai/gates/frontend-ui.md`.
-- Risk level is Medium, so Governor review is required before marking Accepted.
+- Apply `docs/ai/gates/backend.md` if upload MIME/server code changes.
+- Risk level is Medium, so Governor review is required before merge.
 
 ## Change Request Rule
 
-If implementation requires touching files outside Allowed Files, adding dependencies, adding unavailable UI features, or changing app behavior/API, stop and add an entry to `docs/ai/CHANGE_REQUESTS.md`.
+If implementation requires a new dependency, a database migration, a separate upload endpoint, Docker image changes, or broad UI redesign, stop and add an entry to `docs/ai/CHANGE_REQUESTS.md` before coding further.
 
 ## Worklog Requirements
 
 Update `docs/ai/10_AI_WORKLOG.md` with:
 
 - branch;
+- commit;
 - changed files;
+- browser support decisions;
 - verification results;
-- visual QA performed or not performed;
-- follow-ups.
+- manual QA performed or not performed;
+- known follow-ups.
+
+## Backlog Requirements
+
+Update `docs/ai/03_PRODUCT_BACKLOG.md`:
+
+- add or update `ZOKUL-VOICE-001`;
+- set status to `Implemented` only after code and verification are complete.
 
 ## Final Report Format
 
 Report:
 
 - changed files;
-- what visual areas changed;
-- verification commands and results;
-- visual QA status;
+- exact voice flow implemented;
+- supported recorder MIME types;
+- build/test results;
+- manual browser/device QA status;
 - commit hash if committed;
 - known risks/TODOs.
-
----
-
-## Execution Result (ZOKUL-UI-001)
-
-**Executor**: project-executor
-**Branch**: `codex/zokul-ui-redesign`
-**Date**: 2026-07-17
-**Status**: `Implemented` (awaiting Governor review per Medium risk level)
-
-### Changed Files
-
-| File | Type |
-|---|---|
-| `client/tailwind.config.js` | New color tokens (primary `#2F7CF6`, surface palette) |
-| `client/src/index.css` | Global styles, scrollbars, body transitions |
-| `client/src/App.tsx` | AuthLayout branding (smaller logo, tagline, bg) |
-| `client/src/components/HomePage.tsx` | Sidebar header, empty state, chat header |
-| `client/src/components/layout/AppLayout.tsx` | Background, text colors |
-| `client/src/components/chat/ChatList.tsx` | Denser rows, selected state, touch targets |
-| `client/src/components/chat/ChatView.tsx` | **Images outside bubble (no blue frame)**, bubble colors, day separators, mobile layout |
-| `client/src/components/chat/MessageInput.tsx` | Composer dock, focus states, touch targets |
-| `client/src/components/common/Avatar.tsx` | Varied fallback colors |
-| `client/src/components/common/Button.tsx` | Style refinement |
-| `client/src/components/common/Modal.tsx` | Surface alignment, spacing |
-| `client/src/components/auth/LoginForm.tsx` | Branded card layout, focus/error states |
-| `client/src/components/auth/RegisterForm.tsx` | Branded card layout, focus/error states |
-| `client/src/components/chat/MessageActions.tsx` | Touch-friendly sizing |
-| `client/src/components/chat/ReplyQuote.tsx` | Styling alignment |
-| `client/src/components/chat/VoicePlayer.tsx` | Styling alignment |
-| `client/src/components/chat/ImageViewer.tsx` | Backdrop blur, shadow |
-| `client/src/components/chat/CreateChatModal.tsx` | Refactored to use Modal component |
-| `client/src/components/chat/CreateGroupModal.tsx` | Refactored to use Modal component |
-| `client/src/components/profile/ProfileEditor.tsx` | Styling alignment |
-| `client/src/components/chat/OnlineDot.tsx` | Border color alignment |
-
-### Visual Changes
-
-- **Auth screens**: Centered card, smaller Zokul logo, tagline, refined inputs/buttons, better error presentation, matching dark surface
-- **Sidebar/chat list**: User avatar in header, denser rows (44px avatars, tighter text), subtle selected highlight (`bg-white/[0.06]`), styled unread badge, consistent timestamps
-- **Empty state**: Chat icon, "Select a chat / Choose a conversation from the sidebar or create a new one." copy
-- **Chat header**: Aligned with new surface system (`bg-surface-header`), stable height, better typography
-- **Message bubbles**:
-  - Incoming: `bg-surface-incoming` (`#1B2738`) dark / `bg-gray-100` light
-  - Outgoing: `bg-primary` (`#2F7CF6`) calmer blue
-  - Bubble radius: 18px with 6px corner on sender side
-  - **Images rendered OUTSIDE bubble** — no blue frame/background on outgoing images
-  - Images use rounded media cards with subtle `border-white/10` outline for outgoing
-  - Timestamps below content, checkmark, "edited" label
-  - Day separators: pill-style with rounded background
-- **Message composer**: Stable dock with `bg-surface-header`, 40px touch targets, rounded input container with focus ring, upload/emoji/send buttons with hover states
-- **Modals**: Unified via Modal component; `bg-surface-elevated`, consistent close button, compact padding, mobile-safe
-- **Avatar**: 10 varied fallback colors based on name hash (not all identical blue)
-
-### Mobile-First Decisions
-
-- All touch targets ≥ 40px (typically 40×40 or 44×44)
-- Chat list rows min height 60px
-- Sidebar full-width on mobile, 340px on desktop
-- Message max-width: `85%` mobile, `75%` desktop
-- Composer dock safe-area aware (`safe-area-bottom`)
-- Modals max-width `sm` constraint, overflow scroll
-- Back button visible on mobile (md:hidden)
-
-### Verification Results
-
-| Command | Result |
-|---|---|
-| `cd client; npm.cmd run build` | ✅ Passed |
-| `cd client; npm.cmd test` | ✅ Passed (7/7) |
-| `npm.cmd run build` (root) | ✅ Passed (client + server) |
-| `npm.cmd test` (root) | ✅ Passed (78/78: 7 client + 71 server) |
-| `git diff --check` | ⚠️ CRLF warnings only (expected on Windows) |
-| `git status --short` | 21 modified UI files; 3 pre-existing dirty files untouched |
-
-### Visual QA
-
-Manual visual inspection could not be performed — no backend running in this environment. Component-level review confirms:
-- No blue frame around outgoing images ✅
-- No controls for unavailable features ✅
-- No text overlap/clipping in templates ✅
-- Mobile layout considered in all components ✅
-
-### Pre-existing Dirty Files (not staged, not changed)
-
-- `client/tsconfig.node.tsbuildinfo`
-- `client/tsconfig.tsbuildinfo`
-- `client/vite.config.js`
-- `docs/05_IMPROVEMENT_OVERVIEW.md` (untracked)
-- Various `docs/06_*`..`docs/10_*` (untracked)
-- `docs/ai/` (untracked)
-
-### Follow-ups / Risks
-
-- Governor review required (Medium risk level)
-- Some inline Tailwind classes may benefit from future component extraction
-- ReplyQuote inside ChatView bubble uses simplified styling — confirm visually
-- The `animations.css` file still has deprecated `animate-pulse-slow` keyframe (unused after auth layout change — harmless)
-- Server tests pass but some may rely on test DB availability

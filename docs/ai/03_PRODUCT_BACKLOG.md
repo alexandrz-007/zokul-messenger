@@ -3,10 +3,33 @@
 Last reviewed: 2026-07-17
 Source commit: 96d5818
 
+## P1: Messaging Features
+
+- [ ] ZOKUL-VOICE-001 Implement working voice messages
+  - Status: Ready for Executor
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/HomePage.tsx`
+    - `client/src/components/chat/MessageInput.tsx`
+    - `client/src/components/chat/VoiceRecorder.tsx`
+    - `client/src/components/chat/VoicePlayer.tsx`
+    - `client/src/hooks/useChat.ts`
+    - `server/src/middleware/uploadMiddleware.ts`
+  - Goal: Complete the existing unfinished voice-message path without redesigning the messenger.
+  - Scope: recorder button, recording/upload/send flow, playback hardening, tests.
+  - Out of scope: calls, transcription, waveform generation, storage migration.
+  - Acceptance criteria:
+    - voice recording starts only after explicit user action;
+    - voice message uploads and sends through existing socket flow;
+    - received voice messages render with playable `VoicePlayer`;
+    - unsupported browsers fail gracefully;
+    - build/tests pass.
+
 ## P1: UI Polish
 
 - [x] ZOKUL-UI-001 Messenger visual redesign
-  - Status: Implemented (awaiting Governor review)
+  - Status: Reverted after user review
   - Priority: P1
   - Owner: Governor/Executor
   - Files:

@@ -149,3 +149,97 @@ Redesign Zokul messenger UI in a calm premium dark-first style. Mobile-first, no
 
 - Governor review required.
 - User to decide on commit.
+
+## 2026-07-17 - UI redesign rollback
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-001
+Branch: codex/zokul-ui-redesign
+Commit: cf986d3, 7fc1392, 0dcceb7
+
+### Intent
+
+Rollback all UI redesign changes after user review showed the interface became worse.
+
+### Actions
+
+- Reverted `b40070d fix: address ui redesign review findings`.
+- Reverted `50a7532 style: polish messenger interface`.
+- Restored `docs/ai/03_PRODUCT_BACKLOG.md`, `docs/ai/10_AI_WORKLOG.md`, and `docs/ai/tasks/active/NEXT_AGENT_TASK.md` because the UI revert removed those protocol files from history.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 78/78.
+- `git diff --check master..HEAD`: passed.
+- `git status --short --branch`: clean.
+
+### Decisions / Notes
+
+- Client UI files no longer differ from `master`.
+- AI protocol documentation remains in the branch.
+
+## 2026-07-17 - iPhone photo upload hotfix
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UPLOAD-001
+Branch: codex/zokul-ui-redesign
+Commit: 31a3899
+
+### Intent
+
+Fix likely iPhone browser photo upload failures before server release validation.
+
+### Actions
+
+- Allowed HEIC/HEIF image MIME types in upload middleware and image processing.
+- Added `client_max_body_size 25m` to nginx configs to avoid large phone photos being rejected before reaching the server.
+- Updated upload MIME tests.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 78/78.
+- `git diff --check`: passed with Windows LF/CRLF warnings only.
+
+### Decisions / Notes
+
+- This hotfix was initially committed before updating `docs/ai`, which violated the AI workflow protocol.
+- Protocol record was added after user correction.
+- If HEIC still fails on device, the next likely issue is Sharp/libvips HEIF codec support in the Docker image; solve via client-side conversion or explicit server image pipeline change.
+
+## 2026-07-17 - Voice messages task planning
+
+Role: Governor
+Agent: Codex
+Task ID: ZOKUL-VOICE-001
+Branch: codex/zokul-ui-redesign
+Commit:
+
+### Intent
+
+Analyze the existing hidden voice-message implementation and prepare a scoped executor task to make it work.
+
+### Findings
+
+- Backend message model, DB columns, Socket.IO message send path, upload endpoint, and `VoicePlayer` are partially present.
+- `HomePage` destructures `sendVoice` but does not pass it into `MessageInput`.
+- `MessageInput` has no `onSendVoice` prop and does not render `VoiceRecorder`.
+- `VoiceRecorder` assumes `audio/webm` too aggressively and is likely incompatible with Safari/iPhone recording behavior.
+- Recorder duration uses refs only, so visible timer updates are unreliable.
+
+### Actions
+
+- Replaced active task with `ZOKUL-VOICE-001`.
+- Updated control plane and product backlog.
+- Added audit entries for rollback, upload hotfix, and voice task planning.
+
+### Verification
+
+- Planning/docs only; no product build required for this handoff.
+
+### Follow-ups
+
+- Executor should implement `ZOKUL-VOICE-001` using `project-executor`.

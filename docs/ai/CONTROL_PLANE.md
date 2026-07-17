@@ -1,23 +1,23 @@
 # AI Control Plane
 
 Last updated: 2026-07-17
-Source commit: 96d5818
+Source commit: 31a3899
 
 ## Current State
 
-State: Needs Changes
+State: Ready for Execution
 
 Allowed next states:
 
 - In Execution
 - Review
-- Ready for Execution
+- Planning
 
 ## Active Work
 
-- Active task: Polish Zokul messenger interface review fixes
-- Task ID: ZOKUL-UI-001-R1
-- Branch: codex/zokul-ui-redesign
+- Active task: Implement working voice messages
+- Task ID: ZOKUL-VOICE-001
+- Branch: codex/voice-messages
 - Owner role: Executor
 - Risk: Medium
 - Confidence: High
@@ -30,16 +30,15 @@ Allowed next states:
 
 ## Project Health
 
-- Build: passed during UI review on 2026-07-17
-- Tests: passed during UI review on 2026-07-17, 78/78
+- Build: passed after iPhone upload hotfix on 2026-07-17
+- Tests: passed after iPhone upload hotfix on 2026-07-17, 78/78
 - Docs freshness: `docs/ai` current
 - Known blockers:
-  - working tree contains old build artifacts and untracked legacy docs outside `docs/ai`
-  - `master` is ahead of `origin/master` by 2 commits
+  - voice messages are partially implemented but hidden/incomplete
+  - Safari/iPhone recorder MIME behavior must be verified on device
 
 ## Next Action
 
 1. Run `project-executor` on `docs/ai/tasks/active/NEXT_AGENT_TASK.md`.
-2. Continue from `Governor Review Fix Request (ZOKUL-UI-001-R1)`.
-3. Fix only review findings; do not restart the redesign or add unavailable UI controls.
-4. Run required verification and return to Governor review.
+2. Implement `ZOKUL-VOICE-001` only within the allowed files.
+3. Run required verification and return to Governor review.
