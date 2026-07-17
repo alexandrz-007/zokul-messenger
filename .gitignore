@@ -3,4 +3,8 @@ dist/
 .env
 *.log
 uploads/
+test-uploads/
+reports/
 *.tsbuildinfo
+client/vite.config.js
+client/vite.config.d.ts
