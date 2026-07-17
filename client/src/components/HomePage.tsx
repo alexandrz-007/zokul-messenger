@@ -237,6 +237,7 @@ function HomePageInner() {
                 onEdit={handleEditSubmit}
                 onSendImage={sendImage}
                 onSendImages={sendImages}
+                onSendVoice={sendVoice}
                 onTyping={handleTyping}
                 draft={draft}
                 onDraftChange={saveDraft}

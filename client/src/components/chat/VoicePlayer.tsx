@@ -18,7 +18,9 @@ export default function VoicePlayer({ voiceUrl, voiceDuration }: VoicePlayerProp
       audio.pause();
       setPlaying(false);
     } else {
-      audio.play();
+      audio.play().catch(() => {
+        setPlaying(false);
+      });
       setPlaying(true);
     }
   };

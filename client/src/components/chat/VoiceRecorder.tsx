@@ -18,6 +18,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const streamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef(0);
+  const discardRef = useRef(false);
 
   useEffect(() => {
     startRecording();
@@ -39,6 +40,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       mediaRef.current = recorder;
       chunksRef.current = [];
+      discardRef.current = false;
       setDuration(0);
       startTimeRef.current = Date.now();
 
@@ -49,7 +51,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
       recorder.onstop = () => {
         clearInterval(timerRef.current);
         stopTracks();
-        if (chunksRef.current.length === 0) return;
+        if (discardRef.current || chunksRef.current.length === 0) return;
         const actualMimeType = recorder.mimeType || mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type: actualMimeType });
         setUploading(true);
@@ -100,6 +102,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
   };
 
   const cancelRecording = () => {
+    discardRef.current = true;
     if (mediaRef.current && mediaRef.current.state !== 'inactive') {
       mediaRef.current.stop();
     }

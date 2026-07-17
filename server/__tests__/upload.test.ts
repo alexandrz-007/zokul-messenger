@@ -10,8 +10,8 @@ describe('upload middleware', () => {
 });
 
 describe('upload fileFilter MIME whitelist', () => {
-  const imageMimes = /^image\/(jpeg|png|gif|webp|heic|heif|heic-sequence|heif-sequence)$/;
-  const audioMimes = /^audio\/(webm|ogg|wav|mpeg|mp4|x-m4a|aac)$/;
+  const imageMimes = /^image\/(jpeg|png|gif|webp|heic|heif|heic-sequence|heif-sequence)(;.+)?$/;
+  const audioMimes = /^audio\/(webm|ogg|wav|mpeg|mp4|x-m4a|aac)(;.+)?$/;
 
   it('should accept valid image MIME types', () => {
     const validMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
@@ -59,6 +59,13 @@ describe('upload fileFilter MIME whitelist', () => {
     const isImage = imageMimes.test(file.mimetype);
     const isAudio = audioMimes.test(file.mimetype);
     expect(isImage || isAudio).toBe(true);
+  });
+
+  it('should accept audio MIME types with codecs parameter', () => {
+    const validMimes = ['audio/webm;codecs=opus', 'audio/mp4;codecs=mp4a.40.2', 'audio/webm;codecs=opus,vorbis'];
+    for (const mime of validMimes) {
+      expect(audioMimes.test(mime)).toBe(true);
+    }
   });
 
   it('should reject unknown MIME even with audio extension', () => {

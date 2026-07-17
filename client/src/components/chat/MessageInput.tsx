@@ -41,6 +41,13 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const touchStartXRef = useRef(0);
   const touchStartTimeRef = useRef(0);
   const touchModeRef = useRef(isTouchDevice());
+  const touchPointerDownRef = useRef(false);
+  const touchStartingRef = useRef(false);
+  const touchPendingFinishRef = useRef<boolean | null>(null);
+  const touchPendingCancelRef = useRef(false);
+  const touchRecorderActiveRef = useRef(false);
+  const finishTouchRecordingRef = useRef<(discard: boolean) => void>();
+  const cancelTouchRecordingRef = useRef<() => void>();
 
   const voiceSupported = typeof navigator !== 'undefined' &&
     !!navigator.mediaDevices?.getUserMedia &&
@@ -90,12 +97,29 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
       };
 
       recorder.start();
+      touchRecorderActiveRef.current = true;
       setTouchRecorderActive(true);
+      touchStartingRef.current = false;
+
+      const pending = touchPendingFinishRef.current;
+      if (pending !== null) {
+        touchPendingFinishRef.current = null;
+        finishTouchRecordingRef.current?.(pending);
+        return;
+      }
+      if (touchPendingCancelRef.current) {
+        touchPendingCancelRef.current = false;
+        cancelTouchRecordingRef.current?.();
+        return;
+      }
 
       touchTimerRef.current = setInterval(() => {
         setTouchDuration((prev) => prev + 1);
       }, 1000);
     } catch (err: unknown) {
+      touchStartingRef.current = false;
+      touchPendingFinishRef.current = null;
+      touchPendingCancelRef.current = false;
       const domErr = err as { name?: string };
       if (domErr.name === 'NotAllowedError' || domErr.name === 'PermissionDeniedError') {
         setTouchError('Microphone access denied');
@@ -110,12 +134,14 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
     if (!recorder || recorder.state === 'inactive') {
       stopTouchTracks();
       clearInterval(touchTimerRef.current);
+      touchRecorderActiveRef.current = false;
       setTouchRecorderActive(false);
       return;
     }
     recorder.onstop = () => {
       clearInterval(touchTimerRef.current);
       stopTouchTracks();
+      touchRecorderActiveRef.current = false;
       setTouchRecorderActive(false);
       if (discard) return;
       if (touchChunksRef.current.length === 0) return;
@@ -149,32 +175,53 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
       touchMediaRef.current.stream.getTracks().forEach((t) => t.stop());
       touchMediaRef.current.stop();
     }
+    touchRecorderActiveRef.current = false;
     setTouchRecorderActive(false);
     setTouchDuration(0);
   }, [stopTouchTracks]);
 
+  finishTouchRecordingRef.current = finishTouchRecording;
+  cancelTouchRecordingRef.current = cancelTouchRecording;
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
+    touchPointerDownRef.current = true;
+    touchStartingRef.current = true;
     touchStartXRef.current = e.clientX;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     startTouchRecording();
   }, [startTouchRecording]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!touchRecorderActive) return;
+    if (!touchRecorderActiveRef.current) return;
     setTouchCancelling(shouldCancelGesture(touchStartXRef.current, e.clientX));
-  }, [touchRecorderActive]);
+  }, []);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!touchRecorderActive) return;
+    touchPointerDownRef.current = false;
+    if (touchStartingRef.current) {
+      touchPendingFinishRef.current = shouldCancelGesture(touchStartXRef.current, e.clientX);
+      touchStartingRef.current = false;
+      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+      return;
+    }
+    if (!touchRecorderActiveRef.current) return;
     e.preventDefault();
     const discard = shouldCancelGesture(touchStartXRef.current, e.clientX);
     finishTouchRecording(discard);
-  }, [touchRecorderActive, finishTouchRecording]);
+  }, [finishTouchRecording]);
 
-  const handlePointerCancel = useCallback(() => {
-    if (!touchRecorderActive) return;
+  const handlePointerCancel = useCallback((e: React.PointerEvent) => {
+    touchPointerDownRef.current = false;
+    if (touchStartingRef.current) {
+      touchPendingCancelRef.current = true;
+      touchStartingRef.current = false;
+      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+      return;
+    }
+    if (!touchRecorderActiveRef.current) return;
     cancelTouchRecording();
-  }, [touchRecorderActive, cancelTouchRecording]);
+  }, [cancelTouchRecording]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
