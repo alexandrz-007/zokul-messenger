@@ -7,7 +7,7 @@ interface ReplyQuoteProps {
 
 export default function ReplyQuote({ reply, onCancel }: ReplyQuoteProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-t-2xl border-l-4 border-primary">
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#E1EAF4] dark:bg-gray-800 rounded-t-2xl border-l-4 border-primary">
       <div className="flex-1 min-w-0">
         <span className="text-xs font-semibold text-primary">{reply.senderName}</span>
         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">

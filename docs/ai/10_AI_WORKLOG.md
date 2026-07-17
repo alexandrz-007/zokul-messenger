@@ -484,6 +484,209 @@ Fix two P1 bugs identified in the Governor review of the Telegram-like voice rec
 - Governor re-review required.
 - User to decide on committing fixes and packaging dirty tracked files.
 
+## 2026-07-17 - Sidebar Visual Polish (ZOKUL-UI-001)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-001
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Polish only the messenger left sidebar / chat list to move Zokul closer to the approved visual concept while preserving current functionality. First small step of the larger staged UI refresh.
+
+### Actions
+
+- **Avatar.tsx**: Added deterministic color palette (12 colors) based on name hash. Uploaded avatars unaffected.
+- **HomePage.tsx**: Redesigned sidebar — "Zokul" brand at top, profile block (avatar + name + Online status) opens ProfileEditor on click, bottom action bar with create chat / theme toggle / logout. Removed group creation button from top bar.
+- **ChatList.tsx**: Premium rows — rounded selected state, bold/regular name weight by unread status, "Yesterday"/date formatting for timestamps, stronger unread badge, cleaner hover/active states, polished delete affordance on hover.
+- No new dependencies, no backend changes, no search, no settings, no fake controls.
+
+### Changed Files
+
+- `client/src/components/common/Avatar.tsx`
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatList.tsx`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: modified tracked files as listed above
+
+### Decisions / Notes
+
+- `CreateGroupModal` is kept in JSX (state + component) but its button is removed from the sidebar. The modal still renders but is only accessible programmatically. This avoids breaking existing functionality while respecting the "3 bottom actions only" requirement.
+- Theme toggle uses the existing `useTheme()` from `ThemeContext` — no changes needed there.
+- Avatar `bg-primary` is replaced by deterministic color. The `size` prop and `url` (image) fallback remain unchanged.
+- Time formatting in ChatList uses a local `formatTime` helper rather than a new dependency.
+
+### Follow-ups
+
+- Governor review required.
+- Manual QA on desktop and mobile before merge.
+
+## 2026-07-17 - Release Package Preparation (ZOKUL-RELEASE-001)
+
+Role: Governor / Release
+Task ID: ZOKUL-RELEASE-001
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Prepare a deployable copy of the accepted Zokul code in a separate release folder while preserving server-only runtime files and avoiding accidental deletion of SSL certificates, `.env`, accounts, messages, or uploaded files.
+
+### Actions
+
+- Added `scripts/prepare-release.ps1` as the new release packaging script.
+- The release script copies source code into `C:\zokul-deploy`, excludes local/development artifacts, and preserves existing `ssl/` and `.env` in the deploy folder.
+- Added `scripts/fresh-start-prod.sh` for intentional empty-server starts. It requires `--confirm-delete-data` and runs Docker Compose with `down -v` before `up -d --build`.
+- Prepared `C:\zokul-deploy` with `-FreshServerData`; `docs/` and local-only files are excluded from the package.
+- Initialized the release folder as a separate git repository and staged the packaged files there.
+
+### Verification
+
+- `npm.cmd run build`: passed during packaging.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+- `docker compose -f docker-compose.prod.yml build`: passed from `C:\zokul-deploy`.
+
+### Runtime Notes
+
+- Production start was not run locally because `C:\zokul-deploy\.env` is not present and `C:\zokul-deploy\ssl` is currently empty.
+- Normal production update command preserves Docker volumes:
+  `docker compose -f docker-compose.prod.yml up -d --build`
+- Fresh empty server command deletes Docker volumes and starts with no accounts/messages/files:
+  `./scripts/fresh-start-prod.sh --confirm-delete-data`
+
+## 2026-07-17 - Governor review of participant avatar viewer
+
+Role: Governor
+Task ID: ZOKUL-UI-006
+Branch: codex/zokul-ui-redesign
+Result: Accepted
+
+### Review
+
+- Scope check: passed. Implementation is limited to `HomePage.tsx`, `ChatView.tsx`, and protocol docs.
+- Functionality check: passed by code inspection. Real `avatarUrl` images open through existing `ImageViewer`; fallback initials remain non-clickable.
+- Product boundary check: passed. No backend/API/socket/upload changes, no profile pages, no contact cards, no new dependencies.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+
+### Next Action
+
+Rebuild Docker for user visual QA. If accepted visually, package and commit the accepted UI/docs change set.
+
+## 2026-07-17 - Sidebar Create Menu & Theme Toggle (ZOKUL-UI-003)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-003
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Restore group chat creation access without adding a fourth sidebar button, and ensure theme toggle visibly works. The bottom create button should open a compact menu with Personal chat and Group chat options.
+
+### Actions
+
+- **HomePage.tsx**:
+  - Added `showCreateMenu` state + `createMenuRef` for outside-click / Escape detection.
+  - Create button now toggles the menu (with highlight state when open).
+  - Menu positioned above the button with two items: "Personal chat" (user icon) opens `CreateChatModal`; "Group chat" (group icon) opens `CreateGroupModal`.
+  - Both existing modals reused as-is.
+- **ThemeContext**: Verified working. No changes needed. Light mode sidebar (`bg-gray-50`) is acceptable.
+
+### Changed Files
+
+- `client/src/components/HomePage.tsx`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: modified tracked files as listed above
+
+### Decisions / Notes
+
+- No changes to `CreateChatModal`, `CreateGroupModal`, or `ThemeContext`.
+- Bottom action bar keeps exactly 3 visible buttons.
+- No avatar viewer, search, settings, calls/video, or fake controls added.
+
+### Follow-ups
+
+- Governor review required.
+- Manual QA on desktop and mobile before merge.
+- Future stages could extend polish to chat header, bubbles, composer, etc.
+
+## 2026-07-17 - Sidebar Composition & States Polish (ZOKUL-UI-002)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-002
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Refine the sidebar composition after user review of ZOKUL-UI-001. Fix profile looking like a chat row, move Zokul inline, add zone dividers, compact chat rows, polish states, and improve avatar colors.
+
+### Actions
+
+- **Avatar.tsx**: Replaced neon color palette with deep premium colors (forest green, violet, teal, muted gold, emerald, etc.). Deterministic hash unchanged.
+- **HomePage.tsx**: Merged Zokul into the account header row with right alignment. Removed standalone Zokul line. Profile goes to very top of sidebar. Clear `mx-4` dividers between zones. Bottom bar has `border-t` divider, uniform `w-11 h-11` / `w-5 h-5` buttons/icons, focus-visible rings for accessibility.
+- **ChatList.tsx**: Avatar 42px, rows `py-2.5`, selected state uses `border-l-[3px] border-primary` left accent. Added dedicated `LoadingSkeleton` (avatar+text lines), `EmptyState`, and `ErrorState` sub-components. Fixed `formatTime` across month/year boundaries. Smaller delete button. Removed row rounding.
+
+### Changed Files
+
+- `client/src/components/common/Avatar.tsx`
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatList.tsx`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: modified tracked files as listed above
+
+### Decisions / Notes
+
+- Zokul rendered as uppercase `ZOKUL` with `tracking-wider` letter-spacing for a subtle premium logo feel.
+- The left accent line (`border-l-[3px] border-primary`) provides a clear selected indicator without adding visual bulk.
+- Avatar colors removed bright iOS-style colors like `#FF2D55` (hot pink), `#FFD60A` (bright yellow), `#34C759` (bright green) in favor of deeper/moodier tones that work better on dark gray sidebar.
+- `showGroup` state and `CreateGroupModal` remain in JSX (unchanged from previous task).
+
+### Follow-ups
+
+- Governor review required.
+- Manual QA on desktop and mobile before merge.
+
 ## 2026-07-17 - Governor re-review of ZOKUL-VOICE-002 fixes
 
 Role: Governor
@@ -509,3 +712,514 @@ Result: Accepted for behavior fixes; release packaging still required
 - Package/commit the full voice/upload change set intentionally before merge/release.
 - Create a separate follow-up task for focused voice component tests with mocked `MediaRecorder`.
 - Admin panel idea captured in `03_PRODUCT_BACKLOG.md` as `ZOKUL-ADMIN-ROADMAP`.
+
+## 2026-07-17 - Created sidebar UI polish handoff
+
+Role: Governor
+Task ID: ZOKUL-UI-001
+Branch: codex/zokul-ui-redesign
+Result: Active task ready for Executor
+
+### Intent
+
+Start the UI refresh as a small, reviewable task focused only on the left sidebar/chat list. User wants the visual direction close to the provided concept, but without chat search or fake controls.
+
+### Decisions
+
+- First UI stage is sidebar only.
+- Do not add chat search yet.
+- Bottom sidebar actions are create chat, theme toggle, and logout.
+- Keep profile editor behavior on profile/name click.
+- Use varied deterministic avatar colors.
+- Design must consider both desktop and smartphone usage.
+
+### Changed Docs
+
+- Archived accepted `ZOKUL-VOICE-002` active task.
+- Created new active task `ZOKUL-UI-001`.
+- Updated `CONTROL_PLANE.md`.
+- Updated `03_PRODUCT_BACKLOG.md`.
+
+### Next Action
+
+Executor should implement only `ZOKUL-UI-001` and then hand off for Governor review.
+
+## 2026-07-17 - Governor review of sidebar UI polish
+
+Role: Governor
+Task ID: ZOKUL-UI-001
+Branch: codex/zokul-ui-redesign
+Result: Accepted
+
+### Review
+
+- Scope check: passed. Implementation stayed within `HomePage.tsx`, `ChatList.tsx`, `Avatar.tsx`, and protocol docs.
+- Product direction: passed. Sidebar now follows the concept more closely without adding search or fake controls.
+- Functionality check: passed by code inspection. Create chat, theme toggle, logout, profile editor trigger, chat selection, unread badge, and avatar fallback paths are preserved.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+
+### Non-blocking Follow-ups
+
+- Clean up nested interactive controls in `ChatList.tsx` in a later accessibility pass.
+- Harden `formatTime()` around month/year boundaries if date labels become important.
+- User should visually approve the sidebar before commit/release packaging.
+
+## 2026-07-17 - Created sidebar composition polish handoff
+
+Role: Governor
+Task ID: ZOKUL-UI-002
+Branch: codex/zokul-ui-redesign
+Result: Active task ready for Executor
+
+### Intent
+
+Create the second small UI task after user visual review of `ZOKUL-UI-001`. The user likes the style direction, but the sidebar composition needs correction: the profile looks like a dialog, `Zokul` is detached at the top, and sidebar zones need clearer boundaries.
+
+### Decisions
+
+- Keep the UI refresh staged and sidebar-only.
+- Move `Zokul` into the account/header area to the right of the user identity.
+- Make account/profile visually distinct from chat rows.
+- Add sidebar-local polish for spacing, dividers, chat row density, selected state, loading/empty/error states, bottom action bar, avatar palette, and mobile ergonomics.
+- Do not add search, settings, calls/video, or change chat/message/composer areas.
+
+### Changed Docs
+
+- Archived accepted `ZOKUL-UI-001` active task.
+- Created new active task `ZOKUL-UI-002`.
+- Updated `CONTROL_PLANE.md`.
+- Updated `03_PRODUCT_BACKLOG.md`.
+
+### Next Action
+
+Executor should implement only `ZOKUL-UI-002` and then hand off for Governor review.
+
+## 2026-07-17 - Governor review of sidebar composition polish
+
+Role: Governor
+Task ID: ZOKUL-UI-002
+Branch: codex/zokul-ui-redesign
+Result: Accepted
+
+### Review
+
+- Scope check: passed. Implementation stayed within `HomePage.tsx`, `ChatList.tsx`, `Avatar.tsx`, and protocol docs.
+- Product direction: passed. Account header now separates profile identity from chat rows and places `Zokul` in the intended top/header area.
+- Functionality check: passed by code inspection. Profile editor trigger, create chat, theme toggle, logout, chat selection, unread badges, and uploaded avatar fallback paths are preserved.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+
+### Non-blocking Follow-up
+
+- Clean up nested interactive controls in `ChatList.tsx` in a separate accessibility pass.
+
+### Next Action
+
+User should visually review the result. If accepted, package and commit the UI docs/code changes.
+
+## 2026-07-17 - Created sidebar create menu and theme task
+
+Role: Governor
+Task ID: ZOKUL-UI-003
+Branch: codex/zokul-ui-redesign
+Result: Active task ready for Executor
+
+### Intent
+
+Restore group chat creation without adding a fourth bottom action, and ensure the theme button is visibly useful.
+
+### Decisions
+
+- Bottom bar remains exactly three visible buttons: create, theme, logout.
+- Create button should open a compact menu with `Personal chat` and `Group chat`.
+- Theme toggle should visibly switch light/dark; sidebar light mode may be polished within allowed files.
+- Viewing another participant's avatar is captured as `ZOKUL-PROD-003` and is out of scope for this task.
+
+### Changed Docs
+
+- Archived accepted `ZOKUL-UI-002` active task.
+- Created new active task `ZOKUL-UI-003`.
+- Updated `CONTROL_PLANE.md`.
+- Updated `03_PRODUCT_BACKLOG.md`.
+
+### Next Action
+
+Executor should implement only `ZOKUL-UI-003` and hand off for Governor review.
+
+## 2026-07-17 - Governor review of sidebar create menu and theme toggle
+
+Role: Governor
+Task ID: ZOKUL-UI-003
+Branch: codex/zokul-ui-redesign
+Result: Accepted
+
+### Review
+
+- Scope check: passed. Group chat creation was restored through the existing create flow without adding a fourth bottom action.
+- Functionality check: passed by code inspection. `Personal chat` opens `CreateChatModal`, `Group chat` opens `CreateGroupModal`, theme toggle uses the existing `ThemeContext`, and logout/profile/chat selection behavior remains in place.
+- Product direction: passed. No search, settings page, calls/video, avatar viewer, backend changes, or new dependencies were added.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+
+### Non-blocking Follow-up
+
+- Consider wrapping the create button and popover in the same outside-click ref later so a second click on the open create button predictably closes the menu. Current selection, outside click, and Escape close paths work for the task acceptance criteria.
+
+### Next Action
+
+Rebuild Docker for user visual QA. If accepted visually, package and commit the full accepted UI/docs change set.
+
+## 2026-07-17 - Hotfix theme toggle Tailwind config
+
+Role: Governor hotfix exception
+Task ID: ZOKUL-UI-003
+Branch: codex/zokul-ui-redesign
+Result: Implemented
+
+### Problem
+
+The theme button called `toggleTheme()` and `ThemeContext` correctly toggled `dark` on `<html>`, but Tailwind was not configured to use class-based dark mode.
+
+### Change
+
+- Added `darkMode: 'class'` to `client/tailwind.config.js`.
+
+### Scope
+
+- No UI redesign.
+- No backend changes.
+- Existing `ThemeContext` behavior preserved.
+
+### Verification
+
+- Pending rebuild after hotfix.
+
+## 2026-07-17 - Created soft light theme handoff
+
+Role: Governor
+Task ID: ZOKUL-UI-004
+Branch: codex/zokul-ui-redesign
+Result: Active task ready for Executor
+
+### Intent
+
+User likes the new UI direction, but the light theme is too bright. Create a small, color-only task to make the light theme softer and less eye-straining without changing layout or adding functionality.
+
+### Decisions
+
+- Use a calm blue-gray soft light palette rather than pure white.
+- Keep dark theme behavior unchanged.
+- Keep the task limited to existing messenger UI surfaces.
+- Do not mix participant avatar viewing into this task.
+
+### Changed Docs
+
+- Archived accepted `ZOKUL-UI-003` active task.
+- Created new active task `ZOKUL-UI-004`.
+- Updated `CONTROL_PLANE.md`.
+- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `AUDIT_LOG.md`.
+
+### Queued Follow-up
+
+- `ZOKUL-UI-005 Participant avatar viewer` captured as a separate follow-up after `ZOKUL-UI-004` acceptance.
+
+### Next Action
+
+Executor should implement only `ZOKUL-UI-004` and hand off for Governor review.
+
+## 2026-07-17 - Soft Light Theme Polish (ZOKUL-UI-004)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-004
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Make the light theme softer and less eye-straining using a calm blue-gray palette. Replace harsh pure-white / bright light surfaces while keeping the dark theme unchanged.
+
+### Actions
+
+- **AppLayout.tsx**: Added `bg-[#F3F6FA] dark:bg-gray-900` for overall app background.
+- **HomePage.tsx**: Sidebar `bg-[#E7EDF5]`, borders `border-[#CBD6E2]`, create menu popover `bg-[#F8FAFD]` + `border-[#D5DEE9]`, button hover states `bg-[#DCE8F7]`/`bg-[#E7EDF5]`, menu divider `border-[#D5DEE9]`, chat section `bg-[#F5F8FB]`, chat header bg + border.
+- **ChatList.tsx**: Skeleton `bg-[#D5DEE9]`, empty state `bg-[#E7EDF5]`, selected row `bg-[#DCE8F7]`, hover `bg-[#E7EDF5]`, delete popover `bg-[#F8FAFD]` + `border-[#D5DEE9]`, delete button hover `bg-[#CBD6E2]`.
+- **ChatView.tsx**: Incoming bubble `bg-[#E6EDF5]`, empty state icon `bg-[#E7EDF5]`.
+- **MessageInput.tsx**: Composer `bg-[#E8EEF6]`, emoji picker `bg-[#F8FAFD]` + `border-[#D5DEE9]`, touch recorder surfaces `bg-[#E8EEF6]`, progress track `bg-[#CBD6E2]`, form border `border-[#D5DEE9]`.
+- **MessageActions.tsx**: Popover `bg-[#F8FAFD]` + `border-[#D5DEE9]`, hover `bg-[#E7EDF5]`.
+- **ReplyQuote.tsx**: `bg-[#E8EEF6]`.
+- **VoicePlayer.tsx**: Track `bg-[#CBD6E2]`.
+- **VoiceRecorder.tsx**: All surfaces `bg-[#E8EEF6]`, track `bg-[#CBD6E2]`.
+
+### Changed Files
+
+- `client/src/components/layout/AppLayout.tsx`
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatList.tsx`
+- `client/src/components/chat/ChatView.tsx`
+- `client/src/components/chat/MessageInput.tsx`
+- `client/src/components/chat/MessageActions.tsx`
+- `client/src/components/chat/ReplyQuote.tsx`
+- `client/src/components/chat/VoicePlayer.tsx`
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: modified tracked files as listed
+
+### Decisions / Notes
+
+- All changes are color-only. No features, dependencies, layout, or dark theme changes.
+- Used Tailwind arbitrary values (`bg-[#...]`) for minimal diff.
+- Dark theme `dark:` classes untouched everywhere.
+- No new design tokens or token system introduced.
+
+### Follow-ups
+
+- Governor review required.
+- Manual visual QA on desktop and mobile before merge.
+- Next queued: ZOKUL-UI-005 participant avatar viewer.
+
+## 2026-07-17 - Governor review of soft light theme polish
+
+Role: Governor
+Task ID: ZOKUL-UI-004
+Branch: codex/zokul-ui-redesign
+Result: Accepted
+
+### Review
+
+- Scope check: passed. Changes are limited to allowed messenger UI/component files and docs.
+- Product direction: passed. Light theme surfaces now use a softer blue-gray palette instead of harsh white surfaces.
+- Functionality check: passed by code inspection. No backend/API/socket changes, no avatar viewer, no search/settings/calls/read receipts, and no new dependencies were added.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+
+### Next Action
+
+Rebuild Docker for user visual QA. If accepted visually, package and commit the accepted UI/docs change set.
+
+## 2026-07-17 - Created participant avatar viewer handoff
+
+Role: Governor
+Task ID: ZOKUL-UI-006
+Branch: codex/zokul-ui-redesign
+Result: Active task ready for Executor
+
+### Intent
+
+After user accepted the light theme balance, prepare the next focused UI task: allow viewing another participant's uploaded avatar from the existing chat UI.
+
+### Decisions
+
+- Reuse existing `ImageViewer`.
+- Keep the task client-only unless code discovery proves avatar URLs are unavailable.
+- Make only real uploaded `avatarUrl` images clickable.
+- Do not add profile pages, contact cards, social features, backend APIs, or database changes.
+
+### Changed Docs
+
+- Archived accepted `ZOKUL-UI-005` active task.
+- Created new active task `ZOKUL-UI-006`.
+- Updated `CONTROL_PLANE.md`.
+- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `AUDIT_LOG.md`.
+
+### Next Action
+
+Executor should implement only `ZOKUL-UI-006` and hand off for Governor review.
+
+## 2026-07-17 - Created light theme balance fix handoff
+
+Role: Governor
+Task ID: ZOKUL-UI-005
+Branch: codex/zokul-ui-redesign
+Result: Active task ready for Executor
+
+### Intent
+
+User visual QA showed the first light theme pass is unbalanced: the left sidebar looks gray while the right chat area still looks too white. Create a small corrective task focused only on balancing existing light-theme surfaces.
+
+### Decisions
+
+- Keep this as color-only correction.
+- Do not add participant avatar viewer in this task.
+- Move participant avatar viewer to `ZOKUL-UI-006`.
+- Optional subtle chat background pattern is allowed only if it stays extremely understated and light-mode only.
+
+### Changed Docs
+
+- Archived accepted `ZOKUL-UI-004` active task.
+- Created new active task `ZOKUL-UI-005`.
+- Updated `CONTROL_PLANE.md`.
+- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `AUDIT_LOG.md`.
+
+### Next Action
+
+Executor should implement only `ZOKUL-UI-005` and hand off for Governor review.
+
+## 2026-07-17 - Light Theme Balance Fix (ZOKUL-UI-005)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-005
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Fix the visual imbalance where the left sidebar looked gray and the right chat area looked like a white blank document. Make both zones feel like a single coherent light theme.
+
+### Actions
+
+- **AppLayout.tsx**: `#F3F6FA` → `#EAF1F8` for a deeper/warmer app shell.
+- **HomePage.tsx**: Sidebar `#E7EDF5` → `#E8EFF7`, borders `#CBD6E2` → `#C9D6E4`, create button active/hover `#DCE8F7` → `#D7E6F6`, menu hover `#E7EDF5` → `#DFEAF5`, theme/logout hovers `#DCE8F7` → `#D7E6F6`, chat section `#F5F8FB` → `#EAF1F8`, chat header `#F5F8FB` → `#E6EEF7` with `border-[#C9D6E4]`.
+- **ChatList.tsx**: Selected row `#DCE8F7` → `#D7E6F6`, hover `#E7EDF5` → `#DFEAF5`, empty state icon `#E7EDF5` → `#DFEAF5`, delete hover `#CBD6E2` → `#C9D6E4`.
+- **ChatView.tsx**: Incoming bubble `#E6EDF5` → `#DDE8F3`, empty state icon `#E7EDF5` → `#DFEAF5`.
+- **MessageInput.tsx**: Form border `#D5DEE9` → `#C9D6E4`, composer `#E8EEF6` → `#E1EAF4`, touch recorder surfaces `#E8EEF6` → `#E1EAF4`, emoji hover `#E7EDF5` → `#DFEAF5`, progress track `#CBD6E2` → `#C9D6E4`.
+- **MessageActions.tsx**: Hover `#E7EDF5` → `#DFEAF5`.
+- **ReplyQuote.tsx**: `#E8EEF6` → `#E1EAF4`.
+- **VoicePlayer.tsx**: Track `#CBD6E2` → `#C9D6E4`.
+- **VoiceRecorder.tsx**: Surfaces `#E8EEF6` → `#E1EAF4`, track `#CBD6E2` → `#C9D6E4`.
+
+### Changed Files
+
+- `client/src/components/layout/AppLayout.tsx`
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatList.tsx`
+- `client/src/components/chat/ChatView.tsx`
+- `client/src/components/chat/MessageInput.tsx`
+- `client/src/components/chat/MessageActions.tsx`
+- `client/src/components/chat/ReplyQuote.tsx`
+- `client/src/components/chat/VoicePlayer.tsx`
+- `client/src/components/chat/VoiceRecorder.tsx`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: modified tracked files as listed
+
+### Decisions / Notes
+
+- All changes color-only. No features, dependencies, layout, or dark theme changes.
+- Popover elevated surfaces (create menu, actions, emoji picker, delete confirm) kept at `#F8FAFD` to maintain visual hierarchy.
+- No chat background pattern added — surface colors alone were sufficient to solve the imbalance.
+
+### Follow-ups
+
+- Governor review required.
+- Manual visual QA on desktop and mobile before merge.
+- Next queued: ZOKUL-UI-006 participant avatar viewer.
+
+## 2026-07-17 - Governor review of light theme balance fix
+
+Role: Governor
+Task ID: ZOKUL-UI-005
+Branch: codex/zokul-ui-redesign
+Result: Accepted
+
+### Review
+
+- Scope check: passed. Changes remain a color-only light theme rebalance in allowed UI files.
+- Product direction: passed. Main chat area is no longer configured as a near-white field and sidebar/chat surfaces now use a closer blue-gray family.
+- Functionality check: passed by code inspection. No backend/API/socket changes, no avatar viewer, no new controls, and no new dependencies were added.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 95/95.
+- `git diff --check`: passed with CRLF warnings only.
+
+### Next Action
+
+Rebuild Docker for user visual QA. If accepted visually, package and commit the accepted UI/docs change set.
+
+## 2026-07-17 - Participant Avatar Viewer (ZOKUL-UI-006)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-006
+Branch: codex/zokul-ui-redesign
+Commit: (not committed)
+
+### Intent
+
+Allow viewing another participant's uploaded avatar by clicking/tapping the avatar in the chat header or message list, reusing the existing ImageViewer. Fallback-initials avatars must remain non-clickable.
+
+### Actions
+
+- **HomePage.tsx**:
+  - Added `avatarViewerUrl` state.
+  - Imported `ImageViewer`.
+  - In 1:1 chat header: when `otherUser?.avatarUrl` exists, the `Avatar` is wrapped in a `<button>` with `aria-label` and `focus-visible:ring`. Click sets `avatarViewerUrl`.
+  - Group header and non-avatarUrl cases stay non-clickable.
+  - `ImageViewer` rendered at component root.
+
+- **ChatView.tsx**:
+  - Added `avatarViewerUrl` state alongside existing `viewerUrl`.
+  - Extracted `const sender = participants.find(...)` once per message (replaces two `.find()` calls).
+  - Incoming avatar: when `showAvatar && sender?.avatarUrl`, wrapped in `<button>` with `aria-label`.
+  - Fallback initials and own avatars (already hidden) remain non-clickable.
+  - Second `ImageViewer` rendered for `avatarViewerUrl`.
+
+### Changed Files
+
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatView.tsx`
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: modified tracked files as listed
+
+### Decisions / Notes
+
+- No changes to `ImageViewer.tsx`, `Avatar.tsx`, or any backend/socket code.
+- Two independent viewer states: `viewerUrl` (message images) and `avatarViewerUrl` (avatars).
+- `sender` variable extracted in the render loop to avoid duplicate `participants.find()` calls.
+
+### Follow-ups
+
+- Governor review required.
+- Manual QA on desktop and mobile before merge.

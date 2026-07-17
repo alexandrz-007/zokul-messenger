@@ -78,7 +78,7 @@ export default function VoicePlayer({ voiceUrl, voiceDuration }: VoicePlayerProp
         )}
       </button>
       <div className="flex-1">
-        <div className="h-1 bg-gray-300 dark:bg-gray-600 rounded-full cursor-pointer" onClick={handleSeek}>
+        <div className="h-1 bg-[#C9D6E4] dark:bg-gray-600 rounded-full cursor-pointer" onClick={handleSeek}>
           <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
         </div>
       </div>

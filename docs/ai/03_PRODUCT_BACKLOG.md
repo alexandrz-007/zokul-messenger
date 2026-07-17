@@ -28,29 +28,10 @@ Source commit: 96d5818
     - unsupported browsers fail gracefully;
     - build/tests pass.
 
-- [ ] ZOKUL-VOICE-002 Telegram-like hold-to-record voice UX
-  - Status: Planned - blocked until `ZOKUL-VOICE-001` is accepted
-  - Priority: P1
-  - Owner: Governor/Executor
-  - Files:
-    - `client/src/components/chat/MessageInput.tsx`
-    - `client/src/components/chat/VoiceRecorder.tsx`
-    - `client/src/utils/voice.ts`
-  - Goal: Make mobile voice recording feel closer to Telegram without adding unrelated media features.
-  - Scope: hold to record, release to send, slide left to cancel, desktop fallback, tests.
-  - Out of scope: video circles, calls, transcription, backend schema changes.
-  - Acceptance criteria:
-    - mobile hold-to-record works;
-    - release sends recording;
-    - slide left cancels;
-    - very short recordings are discarded;
-    - desktop click fallback remains usable;
-    - build/tests pass.
-
 ## P1: UI Polish
 
-- [x] ZOKUL-UI-001 Messenger visual redesign
-  - Status: Reverted after user review
+- [x] ZOKUL-UI-LEGACY-001 Messenger visual redesign
+  - Status: Reverted after user review; legacy attempt, not part of the new staged UI refresh numbering
   - Priority: P1
   - Owner: Governor/Executor
   - Files:
@@ -70,6 +51,113 @@ Source commit: 96d5818
     - build/tests pass.
   - Source: `docs/09_UI_REDESIGN_IMPLEMENTATION_GUIDE.md`
 
+- [ ] ZOKUL-UI-001 Sidebar visual polish
+  - Status: Accepted
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/HomePage.tsx`
+    - `client/src/components/chat/ChatList.tsx`
+    - `client/src/components/common/Avatar.tsx`
+  - Goal: Redesign only the left sidebar/chat list toward the approved concept without adding unavailable features.
+  - Scope: profile block, brand placement, chat rows, varied avatar colors, bottom create/theme/logout actions, desktop/mobile sidebar behavior.
+  - Out of scope: chat search, calls/video, chat header, message bubbles, composer, backend.
+  - Acceptance criteria:
+    - sidebar looks closer to concept;
+    - no chat search is added;
+    - bottom actions are create chat, theme toggle, logout;
+    - profile editor still opens from profile/name;
+    - mobile sidebar behavior remains usable;
+    - build/tests pass.
+
+- [ ] ZOKUL-UI-002 Sidebar composition and states polish
+  - Status: Accepted
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/HomePage.tsx`
+    - `client/src/components/chat/ChatList.tsx`
+    - `client/src/components/common/Avatar.tsx`
+  - Goal: Fix sidebar composition after visual review so the profile/header, chat list, and bottom actions feel like distinct zones.
+  - Scope: account header, `Zokul` placement, dividers, chat row density, selected state, sidebar loading/empty/error states, bottom action bar polish, mobile sidebar ergonomics.
+  - Out of scope: search, settings, calls/video, chat header, messages, composer, backend.
+  - Acceptance criteria:
+    - profile/header no longer looks like a chat row;
+    - `Zokul` is placed to the right of the user identity in the account/header area;
+    - sidebar zones have clear boundaries;
+    - chat rows are more compact and aligned;
+    - no out-of-scope controls are added;
+    - build/tests pass.
+
+- [ ] ZOKUL-UI-003 Sidebar create menu and theme toggle
+  - Status: Accepted
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/HomePage.tsx`
+    - `client/src/contexts/ThemeContext.tsx`
+  - Goal: Restore group chat creation through a compact create menu and make the theme button visibly useful.
+  - Scope: one create button menu with personal/group chat choices, theme toggle verification/light sidebar polish, desktop/mobile menu usability.
+  - Out of scope: avatar viewer, search, settings, calls/video, chat header, messages, composer, backend.
+  - Acceptance criteria:
+    - group creation is reachable again;
+    - personal and group chat creation are both available from one create menu;
+    - bottom bar still has exactly three buttons;
+    - theme toggle visibly changes theme;
+    - sidebar looks acceptable in light and dark modes;
+    - build/tests pass.
+
+- [ ] ZOKUL-UI-004 Soft light theme polish
+  - Status: Accepted
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/layout/AppLayout.tsx`
+    - `client/src/components/HomePage.tsx`
+    - `client/src/components/chat/ChatList.tsx`
+    - `client/src/components/chat/ChatView.tsx`
+    - `client/src/components/chat/MessageInput.tsx`
+  - Goal: Replace harsh bright light theme surfaces with a calm blue-gray messenger palette.
+  - Scope: color-only polish for light theme surfaces, borders, chat rows, bubbles, composer, and popovers.
+  - Out of scope: dark redesign, avatar viewer, search, settings, calls/video, read receipts, backend.
+  - Acceptance criteria:
+    - light theme is not pure white/harsh;
+    - dark theme is not regressed;
+    - no new controls or features are added;
+    - build/tests pass.
+
+- [ ] ZOKUL-UI-005 Light theme balance fix
+  - Status: Accepted
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Goal: Rebalance light theme after visual QA so the sidebar is not a gray block and the chat area is not a white blank field.
+  - Scope: color-only correction for existing light theme surfaces, including sidebar, chat background, header, composer, incoming bubble, and relevant popovers.
+  - Out of scope: avatar viewer, new controls, backend, dark redesign, layout restructuring.
+  - Acceptance criteria:
+    - right chat area no longer looks plain white;
+    - left and right zones feel cohesive;
+    - header/composer have intentional contrast;
+    - dark theme not regressed;
+    - build/tests pass.
+
+- [ ] ZOKUL-UI-006 Participant avatar viewer
+  - Status: Accepted
+  - Priority: P2
+  - Owner: Governor/Executor
+  - Goal: Allow a user to view another participant's avatar image from existing chat UI.
+  - Scope idea:
+    - click/tap participant avatar in chat header or message area;
+    - open an image viewer/modal for the participant avatar when an avatar URL exists;
+    - keep fallback initials non-clickable or show a simple profile/avatar placeholder only if already supported.
+  - Out of scope:
+    - profile pages;
+    - social features;
+    - editing another user's avatar;
+    - backend schema changes unless code discovery proves avatar URL is not available on the client.
+  - Notes:
+    - This is intentionally separate from light theme balance to avoid mixed UI/functionality scope.
+    - Reuse existing `ImageViewer`; do not add backend/profile/social scope.
+
 ## P2: Product Experience
 
 - [ ] ZOKUL-PROD-001 Improve empty states and onboarding copy
@@ -85,6 +173,13 @@ Source commit: 96d5818
   - Priority: P2
   - Goal: Make timestamps, previews, selected state, and avatars easier to scan.
   - Out of scope: new unread logic unless already supported.
+
+- [ ] ZOKUL-PROD-003 View participant avatar
+  - Status: Idea captured - not part of current sidebar task
+  - Priority: P2
+  - Goal: Allow opening another participant's avatar/profile image from the chat UI.
+  - Scope idea: click avatar in chat header or participant surface to open existing/new image viewer.
+  - Out of scope for now: profile pages, social features, backend schema changes.
 
 ## P2: Administration
 

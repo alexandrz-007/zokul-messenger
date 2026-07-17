@@ -1,123 +1,151 @@
-# NEXT_AGENT_TASK: Telegram-like voice recording UX
+# NEXT_AGENT_TASK: Participant Avatar Viewer
 
-Task ID: ZOKUL-VOICE-002
-Status: Ready for Executor
+Task ID: ZOKUL-UI-006
+Status: Review
 Created by: Governor
 Assigned role: Executor
-Recommended branch: codex/zokul-ui-redesign
+Recommended branch: current working branch `codex/zokul-ui-redesign`
 Change type: feature
 Risk level: Medium
-Confidence: Medium
+Confidence: High
 
 ## Executive Summary
 
-Improve the voice-message composer UX after the basic voice-message feature is accepted. The target interaction is Telegram-like on mobile: press and hold to record, release to send, slide left to cancel. Desktop should keep a reliable click-based fallback (tap mic, explicit stop/send).
+Add a small, existing-data UI improvement: a user should be able to view another participant's uploaded avatar from the chat interface. Reuse the existing image viewer pattern instead of creating a new profile system.
 
-Do not implement video circles, transcription, waveform, calls, or redesign.
+This task must stay narrow. It should only make real uploaded avatar images viewable. Fallback initials avatars should not pretend to be viewable images.
+
+## User Direction
+
+User requested the ability to view another participant's avatar. This was intentionally deferred until after the light theme tasks. Now `ZOKUL-UI-005` is accepted, so this is the next focused task.
 
 ## Must Do
 
-- Keep current working voice-message pipeline intact.
-- Add mobile/touch hold-to-record behavior:
-  - pointer down starts recording;
-  - release sends recording;
-  - slide left cancels recording;
-  - very short recordings (< 1 sec) are discarded with clear feedback.
-- Keep desktop accessible behavior:
-  - click starts recording;
-  - explicit stop/send button sends;
-  - explicit cancel button cancels.
-- Use Pointer Events where practical.
-- Add visual recording state: duration, cancel hint for slide-left, release-to-send hint.
-- Ensure microphone permission is requested only after explicit user action.
-- Preserve text/image message behavior.
-- Add tests for gesture state helpers.
+- Allow opening another user's uploaded avatar image from the existing chat UI.
+- Reuse existing `ImageViewer` where practical.
+- Make the chat header avatar clickable only when a real `avatarUrl` exists.
+- Make message-row participant avatars clickable only when a real `avatarUrl` exists.
+- Keep fallback initials avatars non-clickable or visually normal.
+- Preserve current chat header, message layout, and avatar display.
+- Add accessible labels/titles for clickable avatars.
+- Keep desktop and mobile behavior usable.
 
 ## Must Not Do
 
-- Do not add video messages, video notes, calls, transcription, reactions, or waveform rendering.
-- Do not redesign the whole composer or messenger.
-- Do not change database schema.
-- Do not change server upload/storage.
-- Do not remove the fallback click-based recorder flow.
+- Do not add profile pages.
+- Do not add social features, bios, usernames, friend system, or contact cards.
+- Do not allow editing another user's avatar.
+- Do not add backend/API/database/socket changes unless code discovery proves avatar URLs are unavailable on the client.
+- Do not change upload logic.
+- Do not change message/image viewer behavior for regular chat images except for safe reuse.
+- Do not add dependencies.
+- Do not redesign the UI.
+- Do not touch auth screens.
+- Do not implement read receipts in this task.
 
 ## Context
 
-User preference: voice messages should feel closer to Telegram, especially on smartphones.
+Relevant code discovered:
 
-Phased UX for this task:
-1. Mobile: hold to record, release to send, slide left to cancel.
-2. Desktop: click to start, explicit stop/send to finish.
-3. Slide-up to lock recording is deferred.
+- `client/src/components/chat/ChatView.tsx` already imports and uses `ImageViewer` for message images.
+- `ChatView.tsx` renders participant avatars in the message list using `participants.find(...).avatarUrl`.
+- `client/src/components/HomePage.tsx` renders the selected chat header avatar and can access `otherUser?.avatarUrl` for one-to-one chats.
+- Group chats currently show a group/fallback avatar and should not require a group avatar viewer in this task.
+
+Expected behavior:
+
+- In a one-to-one chat, clicking/tapping the other user's header avatar opens their uploaded avatar in the existing image viewer.
+- In the message list, clicking/tapping another participant's avatar opens that participant's uploaded avatar.
+- If there is no uploaded avatar URL, nothing opens and cursor/focus style should not imply it is clickable.
 
 ## Required Reading
 
-- `client/src/components/chat/MessageInput.tsx`
-- `client/src/components/chat/VoiceRecorder.tsx`
-- `client/src/utils/voice.ts`
+- `docs/ai/00_README_FOR_AGENTS.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/12_DEFINITION_OF_DONE.md`
 - `docs/ai/gates/frontend-ui.md`
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatView.tsx`
+- `client/src/components/chat/ImageViewer.tsx`
+- `client/src/components/common/Avatar.tsx`
+- relevant type definitions under `client/src/types/` or `client/src/types.ts` if present
 
 ## Scope
 
 Included:
-- client-side voice recorder gesture UX;
-- mobile/touch handling;
-- desktop fallback handling;
-- tests for gesture thresholds/helper logic;
-- docs/worklog updates.
+
+- Click/tap to view existing participant avatar images.
+- Minimal state needed to hold the avatar URL being viewed.
+- Reuse of existing `ImageViewer`.
+- Cursor/focus/title/aria labels only for clickable avatars.
+- Small class-only polish for clickable avatar hover/focus state if needed.
+- Docs updates required by protocol.
 
 Out of scope:
-- backend schema/API changes;
-- video messages/circles;
-- broad UI redesign;
-- deployment changes.
+
+- Backend/API/database/socket changes.
+- Profile pages or contact cards.
+- Group avatar upload/viewer.
+- Viewing fallback initials as generated images.
+- Message image viewer redesign.
+- Light/dark theme redesign.
+- Read receipts.
 
 ## Allowed Files
 
-- `client/src/components/chat/MessageInput.tsx`
-- `client/src/components/chat/VoiceRecorder.tsx`
-- `client/src/utils/voice.ts`
-- `client/__tests__/*`
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatView.tsx`
+- `client/src/components/chat/ImageViewer.tsx` only if a tiny accessibility prop/class improvement is needed
+- `client/src/components/common/Avatar.tsx` only if a tiny className/accessibility extension is clearly simpler than wrapping externally
 - `docs/ai/10_AI_WORKLOG.md`
-- `docs/ai/03_PRODUCT_BACKLOG.md`
 - `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/03_PRODUCT_BACKLOG.md`
+- `docs/ai/AUDIT_LOG.md`
 
 ## Forbidden Files
 
-- `.env`
-- `node_modules/`
-- `dist/`
-- `client/tsconfig*.tsbuildinfo`
-- server files unless a Governor-approved change request exists
+- Server files
 - Docker/deployment files
+- Database/migration files
+- Auth components
+- Upload service/API files
+- Package/dependency files
+- New component files unless a change request is approved
+- Theme/light redesign files outside the allowed files
 
 ## Implementation Instructions
 
-1. Model recorder interaction as explicit states: `idle`, `pressing`, `recording`, `uploading`, `error`.
-2. Replace current inline VoiceRecorder (which auto-starts on mount) with a gesture-based approach:
-   - Mobile: render a mic button that supports Pointer Events.
-     - `onPointerDown`: call `navigator.mediaDevices.getUserMedia` and start MediaRecorder.
-     - `onPointerMove`: track horizontal delta; if moved left beyond 80px threshold, mark as cancelled.
-     - `onPointerUp`: if cancelled → stop tracks and discard; if not cancelled → stop recorder, upload, send.
-     - `onPointerCancel`: cancel safely (stop tracks, discard).
-   - Desktop: if Pointer Events not available or no touch support, fall back to click → explicit stop/send.
-3. Use thresholds:
-   - cancel when horizontal movement left exceeds 80px;
-   - discard recordings shorter than 1.0 sec;
-4. Prevent page scrolling/selection during active recording by calling `e.preventDefault()` on touch events and setting `touch-action: none` on the button.
-5. Always stop microphone tracks on send, cancel, pointer cancel, unmount, and error.
-6. After upload succeeds, call `onSendVoice(url, duration)` and close recorder.
-7. Add visual feedback: when recording, show a compact bar with elapsed time, cancel hint text ("slide left to cancel"), and release hint.
-8. Keep keyboard-accessible fallback: if no touch support, show the old click-based VoiceRecorder.
-9. Add helper functions in `client/src/utils/voice.ts` for gesture decisions and unit-test them.
+1. Inspect `ImageViewer` and reuse it instead of building a new modal.
+2. In `HomePage.tsx`, add local state for the viewed header avatar URL if needed.
+3. For one-to-one chats, derive `otherUser?.avatarUrl`.
+4. Wrap the chat header `Avatar` in a button only when `otherUser?.avatarUrl` exists.
+5. Do not make group/fallback header avatars clickable.
+6. In `ChatView.tsx`, for `showAvatar` message avatars:
+   - find the sender once per rendered message;
+   - if `sender.avatarUrl` exists and `sender.id !== currentUserId`, render it as a clickable button that opens `ImageViewer`;
+   - otherwise render the existing `Avatar` normally.
+7. Ensure clickable avatar controls have:
+   - `type="button"`;
+   - `aria-label` like `View <name> avatar`;
+   - a visible hover/focus state that does not change layout.
+8. Keep existing image-message viewer behavior intact.
+9. Avoid duplicating expensive `participants.find(...)` calls more than necessary inside the render loop.
+10. Update worklog and task execution result with files changed and verification results.
 
 ## Tests To Add Or Update
 
-- Unit tests for gesture helper thresholds:
-  - release without cancel -> should send;
-  - slide left beyond 80px threshold -> should cancel;
-  - recording below minimum duration (1s) -> should discard;
-- Existing voice MIME tests from ZOKUL-VOICE-001 must still pass.
+Automated tests are optional. Add focused tests only if the existing test setup makes it simple. Do not add broad snapshots.
+
+Suggested manual QA is required:
+
+- One-to-one chat with uploaded avatar: header avatar opens viewer.
+- One-to-one chat without uploaded avatar: header avatar is not clickable.
+- Incoming message avatar with uploaded avatar opens viewer.
+- Incoming message avatar without uploaded avatar remains normal.
+- Own avatar in message list is not made clickable by this task.
+- Existing message image click/viewer still works.
+- Escape/click close behavior of `ImageViewer` still works.
 
 ## Verification Commands
 
@@ -128,168 +156,108 @@ git diff --check
 git status --short --branch
 ```
 
-Manual QA:
-- Desktop Chrome/Edge: click flow works.
-- Mobile Safari/iPhone: hold to record, release to send.
-- Mobile Safari/iPhone: slide left cancels.
-- Android Chrome if available: hold/release/cancel.
-- Text and image sending still work.
-
 ## Acceptance Criteria
 
-- [ ] Mobile hold-to-record works.
-- [ ] Release sends recording.
-- [ ] Slide left cancels and sends nothing.
-- [ ] Very short recordings (< 1 sec) are discarded safely.
-- [ ] Desktop fallback remains usable (click → explicit stop/send).
-- [ ] No microphone request before explicit user action.
-- [ ] Text/image messaging is not regressed.
-- [ ] Build and tests pass.
-- [ ] Worklog and task execution result are updated.
+- [ ] Uploaded avatar of another user can be opened from the one-to-one chat header.
+- [ ] Uploaded avatar of another sender can be opened from visible message avatars.
+- [ ] Fallback initials avatars are not presented as clickable image viewers.
+- [ ] Existing image viewer behavior for message images is not broken.
+- [ ] No backend/API/database/dependency changes are made.
+- [ ] No new profile/social feature is added.
+- [ ] Build/tests/diff checks pass or failures are documented.
+- [ ] Worklog and active task execution result are updated.
 
 ## Definition Of Done
 
 - Follow `docs/ai/12_DEFINITION_OF_DONE.md`.
 - Apply `docs/ai/gates/frontend-ui.md`.
-- Governor review required before merge.
-
-## Change Request Rule
-
-If implementation requires backend changes, new dependencies, schema changes, or video-message support, stop and add `docs/ai/CHANGE_REQUESTS.md`.
+- Governor review required before packaging/commit.
 
 ## Execution Result
 
 Status: Implemented — ready for Governor review.
 
-Changed files:
-- `client/src/components/chat/MessageInput.tsx`
-- `client/src/components/chat/VoiceRecorder.tsx`
-- `client/src/utils/voice.ts`
-- `client/__tests__/voice.test.ts`
-- `docs/ai/10_AI_WORKLOG.md`
-- `docs/ai/03_PRODUCT_BACKLOG.md`
-- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
-- `docs/ai/CONTROL_PLANE.md`
+### Changes
 
-Voice flow implemented:
-1. **Touch (mobile)**: Hold mic button → pointerdown starts recording, inline bar with timer + "Slide to cancel" hint appears → slide left >80px triggers visual cancel indicator (bar turns red, text becomes "Release to cancel") → release sends (if not cancelled, duration >= 1s) or discards.
-2. **Desktop (no touch)**: Click mic → mounts VoiceRecorder → auto-starts recording → explicit stop/send or cancel buttons.
-3. Short recordings (< 1s) are silently discarded.
-4. Mic permission requested only after explicit pointer-down / click.
+**HomePage.tsx** (`client/src/components/HomePage.tsx`):
+- Added `avatarViewerUrl` state (`string | null`).
+- Imported `ImageViewer` from `./chat/ImageViewer`.
+- In 1:1 chat header: when `otherUser?.avatarUrl` exists, the `<Avatar>` is wrapped in a `<button type="button">` with `aria-label="View {name} avatar"` and `focus-visible:ring-2` focus style. Click sets `avatarViewerUrl` and opens `ImageViewer`.
+- Group header and avatars without a real `avatarUrl` remain non-clickable.
+- `ImageViewer` rendered conditionally at the end of the component tree.
 
-Build/test results:
-- `npm.cmd run build`: passed
-- `npm.cmd test`: passed, 95/95 (23 client + 72 server)
-- `git diff --check`: CRLF warnings only
+**ChatView.tsx** (`client/src/components/chat/ChatView.tsx`):
+- Added `avatarViewerUrl` state alongside existing `viewerUrl`.
+- Inside the message render loop: `const sender = participants.find(...)` extracted once per iteration (replaces duplicate `.find()` calls).
+- Incoming avatar: when `showAvatar && sender?.avatarUrl`, wrapped in `<button>` with `aria-label`. Fallback initials remain non-clickable.
+- Own message avatars are already hidden (`isMine ? 'hidden' : ''`) — untouched.
+- `ImageViewer` for `avatarViewerUrl` rendered alongside existing `viewerUrl` ImageViewer — two independent viewers.
 
-Manual browser/device QA status: Not performed. Recommended before merge.
+### Files Changed
+- `client/src/components/HomePage.tsx`
+- `client/src/components/chat/ChatView.tsx`
 
-Commit: committed as `feat: add hold-to-record voice UX`
+### Verification
+- `npm.cmd run build`: passed (client tsc + vite + server)
+- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: HomePage.tsx + ChatView.tsx modified
 
-Known risks/TODOs:
-- Safari/iPhone behavior unverified.
-- Slide-up-to-lock recording deferred.
+### Manual QA Status
+Not performed. Recommended checks:
+1. 1:1 chat with uploaded avatar: header avatar opens ImageViewer
+2. 1:1 chat without uploaded avatar: header avatar not clickable
+3. Incoming message avatar with real URL opens ImageViewer
+4. Incoming message avatar without URL: not clickable, shows initials normally
+5. Own message avatars in list: not clickable (hidden from view)
+6. Group chat header avatar: not clickable
+7. Existing message image click/viewer still works
+8. Escape/click-close on ImageViewer still works
+9. No regression in dark mode
+
+## Change Request Rule
+
+If implementation requires touching files outside Allowed Files, adding backend support, changing upload logic, or creating a profile/contact-card feature, stop and add `docs/ai/CHANGE_REQUESTS.md`.
+
+## Worklog Requirements
+
+Update `docs/ai/10_AI_WORKLOG.md` with:
+
+- task ID and branch;
+- changed files;
+- implementation summary;
+- verification command results;
+- manual QA status or not-run reason;
+- follow-ups.
+
+## Final Report Format
+
+Report:
+
+- changed files;
+- exact behavior added;
+- build/test/diff results;
+- known risks/TODOs;
+- whether Docker rebuild is needed for user verification.
 
 ## Governor Review Result
 
-Status: Needs Changes.
+Status: Accepted.
 
-Reviewed on: 2026-07-17
-Reviewed commit: `2e1ddd6`
+Review date: 2026-07-17
 
-Findings:
+### Findings
 
-1. P1 - Desktop cancel can upload the voice message anyway.
-   - File: `client/src/components/chat/VoiceRecorder.tsx`
-   - Lines: `49-60`, `102-109`
-   - Reason: `cancelRecording()` calls `mediaRef.current.stop()`, and `recorder.onstop` always builds/uploads the blob when chunks exist. Cancel must mark the recording as discarded before stopping, or detach/branch the `onstop` handler.
-
-2. P1 - Mobile hold/release can lose the release event while microphone permission/start is still pending.
-   - File: `client/src/components/chat/MessageInput.tsx`
-   - Lines: `92-93`, `156-172`
-   - Reason: `handlePointerUp` returns early when `touchRecorderActive` is still false. On first mobile use, permission prompt/startup is async, so a quick release can leave recording active after the finger was lifted. Track pending pointer state and finish/cancel after recorder starts, or set an explicit starting state handled by pointerup/cancel.
-
-3. P1 - Git/package state is not coherent.
-   - Commit `2e1ddd6` contains ZOKUL-VOICE-002 only, while required ZOKUL-VOICE-001/base changes remain uncommitted in `HomePage.tsx`, `VoicePlayer.tsx`, `uploadMiddleware.ts`, and `upload.test.ts`.
-   - The worklog says the status is clean except untracked files, but current `git status --short --branch` shows modified tracked files.
-
-4. P2 - Verification result in the task is stale.
-   - During review, `npm.cmd test` passed 95/95, but `npm.cmd run build` failed locally with `EPERM: operation not permitted, open 'C:\zokul\client\dist\sw.js'`.
-   - The build failure may be an environment/file-lock issue, but the task cannot be accepted with a stale "build passed" record.
-
-Required fixes before acceptance:
-
-- Fix desktop cancel so cancel never uploads/sends.
-- Fix touch startup/release race.
-- Add focused tests or a documented manual test checklist for both regressions.
-- Resolve the dirty tracked files into an intentional package: commit/stage/revert only according to user direction.
-- Re-run:
-  - `npm.cmd run build`
-  - `npm.cmd test`
-  - `git diff --check`
-  - `git status --short --branch`
-
-## Fix Execution Result (2026-07-17)
-
-Status: Fixes applied — ready for Governor re-review.
-
-### Fix #1: Desktop cancel uploads anyway
-
-**File**: `client/src/components/chat/VoiceRecorder.tsx`
-
-**Problem**: `cancelRecording()` calls `mediaRef.current.stop()`, and `recorder.onstop` unconditionally builds and uploads the blob when chunks exist.
-
-**Fix**: Added `discardRef` (line 21). Reset to `false` in `startRecording` (line 43). In `onstop` (line 54), added `discardRef.current ||` to the early-return guard. In `cancelRecording` (line 105), set `discardRef.current = true` before calling `stop()`.
-
-Flow: Cancel → `discardRef.current = true` → `stop()` → `onstop` fires → checks `discardRef.current` → returns immediately, skipping `uploadBlob`.
-
-### Fix #2: Touch release during async microphone startup
-
-**File**: `client/src/components/chat/MessageInput.tsx`
-
-**Problem**: `startTouchRecording()` is async (awaits `getUserMedia`). `handlePointerUp()` checks `touchRecorderActive` state, which is still `false` while the permission prompt is showing. If the user releases their finger during this async gap, the release event is ignored, leaving recording running after finger is up.
-
-**Fix**: Added tracking refs:
-- `touchStartingRef` — true while async startup is in progress
-- `touchPendingFinishRef` — stores `discard` boolean if pointer-up fires during startup
-- `touchPendingCancelRef` — stores `true` if pointer-cancel fires during startup
-- `touchRecorderActiveRef` — mirrors state for use in callbacks without closure staleness
-
-`handlePointerDown`: sets `touchStartingRef.current = true`, calls `setPointerCapture`.
-
-`handlePointerUp`: if `touchStartingRef` → stores discard in `touchPendingFinishRef`, returns. Otherwise uses `touchRecorderActiveRef`.
-
-`handlePointerCancel`: if `touchStartingRef` → stores `true` in `touchPendingCancelRef`, returns.
-
-`startTouchRecording`: after `recorder.start()` and `setTouchRecorderActive(true)`, checks `touchPendingFinishRef` → calls `finishTouchRecording(pending)`; checks `touchPendingCancelRef` → calls `cancelTouchRecording()`. On error, clears all pending refs.
-
-Flow: User touches mic → `touchStartingRef = true` → permission prompt shown → user lifts finger → `handlePointerUp` stores `touchPendingFinishRef` → permission granted → `recorder.start()` → checks ref → calls `finishTouchRecording(discard)` immediately.
+- No blocking findings.
+- Scope stayed within `ZOKUL-UI-006`: client-only participant avatar viewing using existing `ImageViewer`.
+- No out-of-scope profile/social/backend work was added.
 
 ### Verification
 
-- `npm.cmd run build`: passed (client tsc + vite + server)
-- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
-- `git diff --check`: CRLF warnings only
-- `git status --short --branch`: modified tracked files unchanged (same as before fix)
-
-### Remaining item from review
-
-- Item #3 (dirty tracked files from ZOKUL-VOICE-001) and item #4 (EPERM build failure) are environment/process issues not addressed by these fixes. Awaiting user direction on git packaging.
-
-## Governor Re-Review Result
-
-Status: Accepted for behavior fixes; not yet release-packaged.
-
-Reviewed on: 2026-07-17
-
-Accepted:
-- Desktop cancel no longer uploads because `VoiceRecorder` now guards `onstop` with `discardRef`.
-- Mobile async permission/start race is handled with pending finish/cancel refs.
 - `npm.cmd run build`: passed.
 - `npm.cmd test`: passed, 95/95.
 - `git diff --check`: passed with CRLF warnings only.
 
-Release blockers / follow-ups:
-- Dirty tracked files remain and must be packaged intentionally before merge/release.
-- iPhone/Safari manual QA is still recommended.
-- Focused component tests for `MediaRecorder` cancel/release behavior should be a separate follow-up task, not mixed into this behavior fix.
+### Next Step
+
+Docker rebuild and user visual QA before packaging/commit.

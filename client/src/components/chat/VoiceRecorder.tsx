@@ -114,7 +114,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
 
   if (error) {
     return (
-      <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2">
+      <div className="flex items-center gap-2 bg-[#E1EAF4] dark:bg-gray-800 rounded-2xl px-4 py-2">
         <span className="text-xs text-red-500 flex-1">{error}</span>
         <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 shrink-0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
@@ -127,7 +127,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
 
   if (uploading) {
     return (
-      <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2">
+      <div className="flex items-center gap-2 bg-[#E1EAF4] dark:bg-gray-800 rounded-2xl px-4 py-2">
         <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         <span className="text-sm text-gray-500">Uploading...</span>
       </div>
@@ -135,7 +135,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
   }
 
   return (
-    <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2 select-none">
+    <div className="flex items-center gap-3 bg-[#E1EAF4] dark:bg-gray-800 rounded-2xl px-4 py-2 select-none">
       <button type="button" onClick={cancelRecording} className="text-gray-400 hover:text-gray-600 shrink-0" aria-label="Cancel recording">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -145,7 +145,7 @@ export default function VoiceRecorder({ onSend, onCancel, isCancelling }: VoiceR
       <span className="text-sm font-medium tabular-nums">
         {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')}
       </span>
-      <div className="flex-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+      <div className="flex-1 h-1 bg-[#C9D6E4] dark:bg-gray-600 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${isCancelling ? 'bg-red-500 w-full' : 'bg-primary w-1/2 animate-pulse'}`} />
       </div>
       {typeof isCancelling !== 'undefined' ? (
