@@ -15,7 +15,7 @@ function Resolve-TargetPath([string]$PathValue, [string]$BaseDir) {
 }
 
 function Remove-TargetContentsExceptRuntime([string]$TargetDir) {
-  $preserveNames = @("ssl", ".env")
+  $preserveNames = @(".git", "ssl", ".env")
   if (-not (Test-Path -LiteralPath $TargetDir)) {
     New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
     return

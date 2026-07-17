@@ -636,6 +636,29 @@ Correct the AI development protocol after the current agent improperly moved fro
 - Current-agent implementation requires explicit user permission or `Execution owner: current agent`.
 - Ambiguous UI wording must be mapped to exact component/file names before code edits.
 
+## 2026-07-17 - Release packaging script fix
+
+Role: Release Agent
+Agent: Codex
+Task ID: ZOKUL-RELEASE-002
+Branch: master
+Commit: (not committed)
+
+### Intent
+
+Fix `scripts/prepare-release.ps1` after release packaging failed while refreshing `C:\zokul-deploy` because the target folder contained an existing `.git` directory.
+
+### Actions
+
+- Updated `Remove-TargetContentsExceptRuntime()` to preserve `.git` alongside `.env` and `ssl`.
+- This keeps repeated release package refreshes safe when the target folder has Git metadata.
+
+### Verification
+
+- `powershell -ExecutionPolicy Bypass -File scripts\prepare-release.ps1 -Target C:\zokul-deploy`: passed with elevated filesystem access.
+- Release package ready at `C:\zokul-deploy`.
+- Script verification included build/test/diff checks.
+
 ## 2026-07-17 - Release Package Preparation (ZOKUL-RELEASE-001)
 
 Role: Governor / Release

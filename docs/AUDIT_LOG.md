@@ -43,3 +43,4 @@
 | 2026-07-17 | Governor | Created executor task | ZOKUL-VOICE-003 | master | | Mobile tap-to-record and safe-area polish scoped; backend/deploy forbidden |
 | 2026-07-17 | Executor | Implemented mobile voice UX polish | ZOKUL-VOICE-003 | master | | Tap-to-start/tap-to-stop voice recording on touch devices; main-menu bottom safe-area padding; build/test passed |
 | 2026-07-17 | Governor | Corrected AI protocol guardrails | ZOKUL-PROTOCOL-001 | master | | Added handoff barrier, execution owner requirement, and ambiguous UI-area clarification rule |
+| 2026-07-17 | Release Agent | Fixed release packaging script | ZOKUL-RELEASE-002 | master | | `prepare-release.ps1` now preserves target `.git` metadata during package refresh |
