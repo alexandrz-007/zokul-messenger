@@ -1,62 +1,50 @@
-# NEXT_AGENT_TASK: Participant Avatar Viewer
+# NEXT_AGENT_TASK: Mobile Voice Tap Recording And Safe-Area Polish
 
-Task ID: ZOKUL-UI-006
-Status: Review
+Task ID: ZOKUL-VOICE-003
+Status: Implemented - ready for Governor review
 Created by: Governor
 Assigned role: Executor
-Recommended branch: current working branch `codex/zokul-ui-redesign`
-Change type: feature
+Execution owner: current agent
+Recommended branch: current `master`
+Change type: UX bugfix
 Risk level: Medium
 Confidence: High
 
 ## Executive Summary
 
-Add a small, existing-data UI improvement: a user should be able to view another participant's uploaded avatar from the chat interface. Reuse the existing image viewer pattern instead of creating a new profile system.
+Adjust the existing mobile voice-message UX so smartphone users start recording with one tap on the microphone and stop/send with a second tap. Also fix the main menu bottom buttons being too low under the mobile browser viewport/safe area.
 
-This task must stay narrow. It should only make real uploaded avatar images viewable. Fallback initials avatars should not pretend to be viewable images.
+This task must stay narrow: client UI behavior only. Do not change voice upload, backend APIs, sockets, database, Docker, or deployment.
 
 ## User Direction
 
-User requested the ability to view another participant's avatar. This was intentionally deferred until after the light theme tasks. Now `ZOKUL-UI-005` is accepted, so this is the next focused task.
+User requested:
+
+- On smartphone, voice recording should not require holding the microphone button.
+- Recording should start on tap and stop/send on the next tap.
+- Bottom main-menu buttons on smartphone currently sit too low and should be lifted so create chat, theme, and logout remain visible.
 
 ## Must Do
 
-- Allow opening another user's uploaded avatar image from the existing chat UI.
-- Reuse existing `ImageViewer` where practical.
-- Make the chat header avatar clickable only when a real `avatarUrl` exists.
-- Make message-row participant avatars clickable only when a real `avatarUrl` exists.
-- Keep fallback initials avatars non-clickable or visually normal.
-- Preserve current chat header, message layout, and avatar display.
-- Add accessible labels/titles for clickable avatars.
-- Keep desktop and mobile behavior usable.
+- Change touch/mobile voice recording from hold-to-record to tap-to-start/tap-to-stop.
+- Keep desktop voice recorder behavior unchanged.
+- Keep the existing cancel button while recording so a user can discard a recording.
+- Keep minimum-duration behavior for very short recordings.
+- Update labels/text so UI no longer says "hold" or "slide" on mobile tap mode.
+- Improve mobile viewport/safe-area handling so bottom main-menu/sidebar action buttons are not hidden under the browser bottom area.
+- Keep existing voice upload/send/playback behavior.
+- Update docs/worklog per protocol.
 
 ## Must Not Do
 
-- Do not add profile pages.
-- Do not add social features, bios, usernames, friend system, or contact cards.
-- Do not allow editing another user's avatar.
-- Do not add backend/API/database/socket changes unless code discovery proves avatar URLs are unavailable on the client.
-- Do not change upload logic.
-- Do not change message/image viewer behavior for regular chat images except for safe reuse.
+- Do not change backend/API/database/socket logic.
+- Do not change upload endpoint behavior.
 - Do not add dependencies.
-- Do not redesign the UI.
+- Do not add calls/video/circles/transcription/waveforms.
+- Do not redesign the messenger.
+- Do not change desktop voice recorder behavior except for shared safe-area layout if necessary.
 - Do not touch auth screens.
-- Do not implement read receipts in this task.
-
-## Context
-
-Relevant code discovered:
-
-- `client/src/components/chat/ChatView.tsx` already imports and uses `ImageViewer` for message images.
-- `ChatView.tsx` renders participant avatars in the message list using `participants.find(...).avatarUrl`.
-- `client/src/components/HomePage.tsx` renders the selected chat header avatar and can access `otherUser?.avatarUrl` for one-to-one chats.
-- Group chats currently show a group/fallback avatar and should not require a group avatar viewer in this task.
-
-Expected behavior:
-
-- In a one-to-one chat, clicking/tapping the other user's header avatar opens their uploaded avatar in the existing image viewer.
-- In the message list, clicking/tapping another participant's avatar opens that participant's uploaded avatar.
-- If there is no uploaded avatar URL, nothing opens and cursor/focus style should not imply it is clickable.
+- Do not push or deploy.
 
 ## Required Reading
 
@@ -64,39 +52,36 @@ Expected behavior:
 - `docs/CONTROL_PLANE.md`
 - `docs/12_DEFINITION_OF_DONE.md`
 - `docs/gates/frontend-ui.md`
+- `client/src/components/chat/MessageInput.tsx`
 - `client/src/components/HomePage.tsx`
-- `client/src/components/chat/ChatView.tsx`
-- `client/src/components/chat/ImageViewer.tsx`
-- `client/src/components/common/Avatar.tsx`
-- relevant type definitions under `client/src/types/` or `client/src/types.ts` if present
+- `client/src/components/layout/AppLayout.tsx`
+- `client/src/utils/voice.ts`
+- `client/__tests__/voice.test.ts`
 
 ## Scope
 
 Included:
 
-- Click/tap to view existing participant avatar images.
-- Minimal state needed to hold the avatar URL being viewed.
-- Reuse of existing `ImageViewer`.
-- Cursor/focus/title/aria labels only for clickable avatars.
-- Small class-only polish for clickable avatar hover/focus state if needed.
-- Docs updates required by protocol.
+- Mobile/touch recording interaction in `MessageInput.tsx`.
+- Mobile viewport/safe-area class polish in app shell/sidebar bottom action bar.
+- Focused utility/test update only if an existing gesture helper becomes obsolete.
+- Required protocol docs.
 
 Out of scope:
 
-- Backend/API/database/socket changes.
-- Profile pages or contact cards.
-- Group avatar upload/viewer.
-- Viewing fallback initials as generated images.
-- Message image viewer redesign.
-- Light/dark theme redesign.
-- Read receipts.
+- Voice upload protocol changes.
+- MediaRecorder MIME changes.
+- Server validation changes.
+- New UI features.
+- Production packaging.
 
 ## Allowed Files
 
+- `client/src/components/chat/MessageInput.tsx`
 - `client/src/components/HomePage.tsx`
-- `client/src/components/chat/ChatView.tsx`
-- `client/src/components/chat/ImageViewer.tsx` only if a tiny accessibility prop/class improvement is needed
-- `client/src/components/common/Avatar.tsx` only if a tiny className/accessibility extension is clearly simpler than wrapping externally
+- `client/src/components/layout/AppLayout.tsx`
+- `client/src/utils/voice.ts`
+- `client/__tests__/voice.test.ts`
 - `docs/10_AI_WORKLOG.md`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
@@ -109,43 +94,37 @@ Out of scope:
 - Docker/deployment files
 - Database/migration files
 - Auth components
-- Upload service/API files
 - Package/dependency files
 - New component files unless a change request is approved
-- Theme/light redesign files outside the allowed files
 
 ## Implementation Instructions
 
-1. Inspect `ImageViewer` and reuse it instead of building a new modal.
-2. In `HomePage.tsx`, add local state for the viewed header avatar URL if needed.
-3. For one-to-one chats, derive `otherUser?.avatarUrl`.
-4. Wrap the chat header `Avatar` in a button only when `otherUser?.avatarUrl` exists.
-5. Do not make group/fallback header avatars clickable.
-6. In `ChatView.tsx`, for `showAvatar` message avatars:
-   - find the sender once per rendered message;
-   - if `sender.avatarUrl` exists and `sender.id !== currentUserId`, render it as a clickable button that opens `ImageViewer`;
-   - otherwise render the existing `Avatar` normally.
-7. Ensure clickable avatar controls have:
-   - `type="button"`;
-   - `aria-label` like `View <name> avatar`;
-   - a visible hover/focus state that does not change layout.
-8. Keep existing image-message viewer behavior intact.
-9. Avoid duplicating expensive `participants.find(...)` calls more than necessary inside the render loop.
-10. Update worklog and task execution result with files changed and verification results.
+1. In `MessageInput.tsx`, replace the mobile/touch hold handlers with a tap toggle:
+   - first tap starts `startTouchRecording()`;
+   - second tap calls `finishTouchRecording(false)`;
+   - if the user taps stop while microphone startup is still pending, store a pending finish and send/discard according to the existing minimum duration rule after startup completes.
+2. Preserve `cancelTouchRecording()` and the cancel button in the recording bar.
+3. Remove mobile "Slide to cancel" / "Release to cancel" language from the tap-mode UI.
+4. Keep desktop path (`setShowVoiceRecorder(true)`) unchanged.
+5. Update or remove obsolete gesture helper usage/tests if the helper is no longer used by product code.
+6. Add viewport/safe-area polish:
+   - prefer dynamic viewport height for the app shell;
+   - add bottom safe-area padding to the main-menu/sidebar bottom action bar so mobile browser UI does not cover create/theme/logout controls.
+7. Run verification commands.
+8. Update worklog and execution result.
 
 ## Tests To Add Or Update
 
-Automated tests are optional. Add focused tests only if the existing test setup makes it simple. Do not add broad snapshots.
+Automated tests are optional for React pointer behavior unless current test setup makes it simple. If `shouldCancelGesture` becomes unused, remove or adjust its tests so the test suite reflects current code.
 
-Suggested manual QA is required:
+Required manual QA notes:
 
-- One-to-one chat with uploaded avatar: header avatar opens viewer.
-- One-to-one chat without uploaded avatar: header avatar is not clickable.
-- Incoming message avatar with uploaded avatar opens viewer.
-- Incoming message avatar without uploaded avatar remains normal.
-- Own avatar in message list is not made clickable by this task.
-- Existing message image click/viewer still works.
-- Escape/click close behavior of `ImageViewer` still works.
+- Smartphone/touch mode: tap mic starts recording.
+- Smartphone/touch mode: tap mic again stops and sends if duration is long enough.
+- Smartphone/touch mode: cancel button discards recording.
+- Desktop mode: click mic still opens the existing recorder UI.
+- Bottom sidebar action buttons are visible on mobile.
+- Composer controls are not intentionally changed by this task.
 
 ## Verification Commands
 
@@ -158,12 +137,13 @@ git status --short --branch
 
 ## Acceptance Criteria
 
-- [ ] Uploaded avatar of another user can be opened from the one-to-one chat header.
-- [ ] Uploaded avatar of another sender can be opened from visible message avatars.
-- [ ] Fallback initials avatars are not presented as clickable image viewers.
-- [ ] Existing image viewer behavior for message images is not broken.
+- [ ] Mobile voice recording starts by tapping the microphone once.
+- [ ] Mobile voice recording stops/sends by tapping the microphone again.
+- [ ] Mobile cancel button still discards the recording.
+- [ ] Mobile UI no longer instructs the user to hold or slide.
+- [ ] Desktop voice recording behavior is preserved.
+- [ ] Bottom main-menu controls are lifted above the browser safe area.
 - [ ] No backend/API/database/dependency changes are made.
-- [ ] No new profile/social feature is added.
 - [ ] Build/tests/diff checks pass or failures are documented.
 - [ ] Worklog and active task execution result are updated.
 
@@ -179,85 +159,54 @@ Status: Implemented - ready for Governor review.
 
 ### Changes
 
-**HomePage.tsx** (`client/src/components/HomePage.tsx`):
-- Added `avatarViewerUrl` state (`string | null`).
-- Imported `ImageViewer` from `./chat/ImageViewer`.
-- In 1:1 chat header: when `otherUser?.avatarUrl` exists, the `<Avatar>` is wrapped in a `<button type="button">` with `aria-label="View {name} avatar"` and `focus-visible:ring-2` focus style. Click sets `avatarViewerUrl` and opens `ImageViewer`.
-- Group header and avatars without a real `avatarUrl` remain non-clickable.
-- `ImageViewer` rendered conditionally at the end of the component tree.
+**MessageInput.tsx** (`client/src/components/chat/MessageInput.tsx`):
+- Replaced mobile/touch hold-to-record pointer handlers with tap toggle behavior.
+- First tap starts `startTouchRecording()`.
+- Second tap stops and sends via `finishTouchRecording(false)`.
+- A second tap during async microphone startup is stored as a pending finish and handled after startup.
+- Existing cancel button still discards the active recording.
+- Mobile tap-mode copy now says `Tap mic to send`; hold/slide language was removed from the mobile path.
+- Desktop recorder path remains `setShowVoiceRecorder(true)` and is unchanged.
 
-**ChatView.tsx** (`client/src/components/chat/ChatView.tsx`):
-- Added `avatarViewerUrl` state alongside existing `viewerUrl`.
-- Inside the message render loop: `const sender = participants.find(...)` extracted once per iteration (replaces duplicate `.find()` calls).
-- Incoming avatar: when `showAvatar && sender?.avatarUrl`, wrapped in `<button>` with `aria-label`. Fallback initials remain non-clickable.
-- Own message avatars are already hidden (`isMine ? 'hidden' : ''`) - untouched.
-- `ImageViewer` for `avatarViewerUrl` rendered alongside existing `viewerUrl` ImageViewer - two independent viewers.
+**HomePage.tsx** (`client/src/components/HomePage.tsx`):
+- Added bottom safe-area padding to the main-menu/sidebar action bar containing create chat, theme, and logout.
+
+**AppLayout.tsx** (`client/src/components/layout/AppLayout.tsx`):
+- Changed app shell height from `h-screen` to `h-[100dvh] min-h-screen` so mobile browser viewport chrome is handled better.
+
+**voice.ts / voice.test.ts**:
+- Removed obsolete slide-to-cancel gesture helper and tests because product code no longer uses slide cancellation.
+- Kept MIME, extension, touch-device, and minimum-duration tests.
 
 ### Files Changed
+
+- `client/src/components/chat/MessageInput.tsx`
 - `client/src/components/HomePage.tsx`
-- `client/src/components/chat/ChatView.tsx`
-
-### Verification
-- `npm.cmd run build`: passed (client tsc + vite + server)
-- `npm.cmd test`: passed, 95/95 (client 23 + server 72)
-- `git diff --check`: CRLF warnings only (Windows expected)
-- `git status --short --branch`: HomePage.tsx + ChatView.tsx modified
-
-### Manual QA Status
-Not performed. Recommended checks:
-1. 1:1 chat with uploaded avatar: header avatar opens ImageViewer
-2. 1:1 chat without uploaded avatar: header avatar not clickable
-3. Incoming message avatar with real URL opens ImageViewer
-4. Incoming message avatar without URL: not clickable, shows initials normally
-5. Own message avatars in list: not clickable (hidden from view)
-6. Group chat header avatar: not clickable
-7. Existing message image click/viewer still works
-8. Escape/click-close on ImageViewer still works
-9. No regression in dark mode
-
-## Change Request Rule
-
-If implementation requires touching files outside Allowed Files, adding backend support, changing upload logic, or creating a profile/contact-card feature, stop and add `docs/CHANGE_REQUESTS.md`.
-
-## Worklog Requirements
-
-Update `docs/10_AI_WORKLOG.md` with:
-
-- task ID and branch;
-- changed files;
-- implementation summary;
-- verification command results;
-- manual QA status or not-run reason;
-- follow-ups.
-
-## Final Report Format
-
-Report:
-
-- changed files;
-- exact behavior added;
-- build/test/diff results;
-- known risks/TODOs;
-- whether Docker rebuild is needed for user verification.
-
-## Governor Review Result
-
-Status: Accepted.
-
-Review date: 2026-07-17
-
-### Findings
-
-- No blocking findings.
-- Scope stayed within `ZOKUL-UI-006`: client-only participant avatar viewing using existing `ImageViewer`.
-- No out-of-scope profile/social/backend work was added.
+- `client/src/components/layout/AppLayout.tsx`
+- `client/src/utils/voice.ts`
+- `client/__tests__/voice.test.ts`
+- `docs/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/CONTROL_PLANE.md`
+- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AUDIT_LOG.md`
 
 ### Verification
 
 - `npm.cmd run build`: passed.
-- `npm.cmd test`: passed, 95/95.
+- `npm.cmd test`: passed, 91/91.
 - `git diff --check`: passed with CRLF warnings only.
+- `git status --short --branch`: modified files listed above.
 
-### Next Step
+### Manual QA Status
 
-Docker rebuild and user visual QA before packaging/commit.
+Not performed in a real smartphone browser in this turn. Required user QA:
+
+1. Open the main menu/sidebar on smartphone and confirm create/theme/logout buttons are visible.
+2. In a chat on smartphone, tap mic once to start recording.
+3. Tap mic again to stop/send after at least 1 second.
+4. Start recording and tap cancel to confirm it discards.
+5. On desktop, confirm mic still opens the existing recorder UI.
+
+### Known Risks
+
+- iPhone/Safari MediaRecorder support remains device-dependent; this task changes interaction mechanics, not browser codec support.

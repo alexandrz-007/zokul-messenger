@@ -5,21 +5,22 @@ Source commit: fd5b6eb
 
 ## Current State
 
-State: Cleanup
+State: Review
 
 Allowed next states:
 
-- Commit
-- Release Check
-- Deploy Approval
+- Verification
+- Commit Approval
+- User QA
 
 ## Active Work
 
-- Active task: Public repository cleanup
-- Task ID: ZOKUL-DOC-002
+- Active task: Mobile voice tap recording and safe-area polish
+- Task ID: ZOKUL-VOICE-003
 - Branch: master
-- Owner role: Governor / Documentation
-- Risk: Low
+- Owner role: Governor Review
+- Execution owner: current agent
+- Risk: Medium
 - Confidence: High
 
 ## Latest Accepted Work
@@ -33,6 +34,14 @@ Allowed next states:
 - ZOKUL-UI-006: Participant avatar viewer accepted.
 
 ## Latest Review
+
+- ZOKUL-VOICE-003: Implemented and ready for Governor/user review. Build and 91/91 tests pass.
+- Changes:
+  - **Mobile voice recording**: touch/mobile mic button is now tap-to-start and tap-to-stop/send.
+  - **Cancel**: existing cancel button remains available while recording.
+  - **Main menu buttons**: create/theme/logout bottom action bar now includes mobile safe-area bottom padding.
+  - **Viewport**: app shell uses dynamic viewport height (`100dvh`) with `min-h-screen` fallback.
+- No backend, API, socket, upload, dependency, Docker, or auth changes.
 
 - ZOKUL-UI-006: Accepted after Governor review. Build and 95/95 tests pass.
 - Changes:
@@ -69,4 +78,4 @@ Allowed next states:
 
 ## Next Action
 
-Wait for user review. Do not commit or push until the user approves the final cleaned structure.
+User should QA `ZOKUL-VOICE-003` on smartphone. Do not push or deploy until accepted.

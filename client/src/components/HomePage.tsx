@@ -192,7 +192,7 @@ function HomePageInner() {
             unreadCount={unreadCount}
             onDelete={handleDeleteChat}
           />
-          <div className="border-t border-[#C9D6E4] dark:border-gray-800 px-4 py-2.5 flex items-center justify-around gap-1">
+          <div className="border-t border-[#C9D6E4] dark:border-gray-800 px-4 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] flex items-center justify-around gap-1">
             <div className="relative">
               <button
                 onClick={() => setShowCreateMenu((v) => !v)}

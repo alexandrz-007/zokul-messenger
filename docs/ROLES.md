@@ -32,6 +32,12 @@ Must not:
 - mark planned features as implemented;
 - delete useful historical docs without approval.
 
+Handoff barrier:
+
+- if the user says `по протоколу`, `по скиллу`, `создай задачу`, or asks for another agent, Governor must prepare the handoff and stop;
+- Governor cannot silently become Executor;
+- implementation requires explicit user approval or `Execution owner: current agent` in the active task.
+
 Output:
 
 - updated docs;
@@ -64,6 +70,13 @@ Must not:
 - expand scope;
 - edit decisions/architecture/process unless explicitly allowed;
 - push/deploy without explicit request.
+
+Required before code:
+
+- active task exists;
+- active task allows the exact files being edited;
+- `CONTROL_PLANE.md` permits execution;
+- user or task explicitly assigns execution to the current agent.
 
 Output:
 

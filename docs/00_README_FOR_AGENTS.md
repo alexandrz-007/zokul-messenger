@@ -24,6 +24,21 @@ If docs conflict with code, trust code and update docs.
 
 ## Roles
 
+## Protocol Mode Barrier
+
+When the user says `по протоколу`, `по скиллу`, `создай задачу`, `дай задачу агенту`, `подготовь для другого агента`, or otherwise frames the work as AI-managed planning, the default mode is **Governor handoff only**.
+
+In that mode:
+
+- do not edit product code;
+- create or update `tasks/active/NEXT_AGENT_TASK.md`;
+- update `CONTROL_PLANE.md`, backlog, worklog, and audit as needed;
+- stop after the handoff and ask for explicit execution approval.
+
+The current agent may become Executor only after an explicit user phrase such as `реализуй сам`, `можешь кодить`, `вноси изменения в код`, or `исполняй эту задачу сам`.
+
+If the task is an urgent narrow hotfix, the agent must explicitly label it as a hotfix exception before editing code and still update docs in the same turn.
+
 ### Governor
 
 Use this role for architecture, planning, backlog, task writing, and review.
@@ -48,6 +63,10 @@ Output:
 - `tasks/active/NEXT_AGENT_TASK.md`;
 - review result.
 
+Hard stop:
+
+- after creating an executor handoff, stop unless the user explicitly authorizes this same agent to implement it.
+
 ### Executor
 
 Use this role for implementation.
@@ -60,6 +79,11 @@ Read:
 4. `06_QA_CHECKLIST.md`
 5. `12_DEFINITION_OF_DONE.md`
 6. `CONTROL_PLANE.md`
+
+Required precondition:
+
+- `CONTROL_PLANE.md` state is `Ready for Execution` or `In Execution`;
+- active task has `Execution owner: current agent` or the user explicitly asked this agent to implement.
 
 Do not read archives unless the task asks for them.
 

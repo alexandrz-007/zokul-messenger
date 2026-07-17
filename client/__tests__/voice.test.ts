@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { getExtension, getSupportedMimeType, shouldCancelGesture, CANCEL_THRESHOLD, MIN_DURATION_MS, isTouchDevice } from '../src/utils/voice';
+import { getExtension, getSupportedMimeType, MIN_DURATION_MS, isTouchDevice } from '../src/utils/voice';
 
 beforeAll(() => {
   vi.stubGlobal('MediaRecorder', {
@@ -54,31 +54,6 @@ describe('getSupportedMimeType', () => {
     MediaRecorder.isTypeSupported = vi.fn(() => false);
     const result = getSupportedMimeType();
     expect(result).toBe('');
-  });
-});
-
-describe('shouldCancelGesture', () => {
-  it('returns false when movement is within threshold', () => {
-    expect(shouldCancelGesture(100, 100)).toBe(false);
-    expect(shouldCancelGesture(100, 50)).toBe(false);
-    expect(shouldCancelGesture(100, 21)).toBe(false);
-  });
-
-  it('returns true when movement left exceeds threshold', () => {
-    expect(shouldCancelGesture(100, 19)).toBe(true);
-    expect(shouldCancelGesture(100, 0)).toBe(true);
-    expect(shouldCancelGesture(100, -50)).toBe(true);
-  });
-
-  it('returns false when moved right (positive direction)', () => {
-    expect(shouldCancelGesture(100, 150)).toBe(false);
-    expect(shouldCancelGesture(100, 200)).toBe(false);
-  });
-});
-
-describe('CANCEL_THRESHOLD', () => {
-  it('is 80 pixels', () => {
-    expect(CANCEL_THRESHOLD).toBe(80);
   });
 });
 

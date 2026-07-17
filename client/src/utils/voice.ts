@@ -20,13 +20,8 @@ export function getExtension(mimeType: string): string {
   return '.webm';
 }
 
-export const CANCEL_THRESHOLD = 80;
 export const MIN_DURATION_MS = 1000;
 
 export function isTouchDevice(): boolean {
   return typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-}
-
-export function shouldCancelGesture(startX: number, currentX: number): boolean {
-  return startX - currentX > CANCEL_THRESHOLD;
 }

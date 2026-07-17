@@ -28,6 +28,25 @@ Source commit: 96d5818
     - unsupported browsers fail gracefully;
     - build/tests pass.
 
+- [ ] ZOKUL-VOICE-003 Mobile tap-to-record voice UX
+  - Status: Implemented - ready for review
+  - Priority: P1
+  - Owner: Governor/Executor
+  - Files:
+    - `client/src/components/chat/MessageInput.tsx`
+    - `client/src/components/HomePage.tsx`
+    - `client/src/components/layout/AppLayout.tsx`
+  - Goal: On smartphones, start voice recording with one mic tap and stop/send with the next tap; lift main-menu controls above mobile browser safe areas.
+  - Scope: mobile/touch voice interaction and bottom safe-area polish only.
+  - Out of scope: backend, upload protocol, sockets, calls, video circles, broad redesign.
+  - Acceptance criteria:
+    - first mobile mic tap starts recording;
+    - second mobile mic tap stops/sends when duration is valid;
+    - cancel still discards;
+    - desktop voice recorder behavior remains unchanged;
+    - main-menu bottom controls remain visible on mobile;
+    - build/tests pass.
+
 ## P1: UI Polish
 
 - [x] ZOKUL-UI-LEGACY-001 Messenger visual redesign

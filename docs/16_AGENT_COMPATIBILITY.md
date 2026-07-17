@@ -20,6 +20,11 @@ Expected output:
 - active executor task;
 - review result.
 
+Hard rule:
+
+- when the owner asks to work by protocol, this role prepares the handoff and stops;
+- it does not implement the handoff unless the owner explicitly assigns execution to the current agent.
+
 ## OpenCode / Executor Agent
 
 Best for:
@@ -40,6 +45,7 @@ Rules:
 - do not expand scope;
 - update worklog;
 - create change request if blocked.
+- do not execute if the active task is missing `Execution owner: current agent` and the user did not explicitly assign this agent to implement.
 
 ## Human Owner
 

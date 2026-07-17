@@ -40,3 +40,6 @@
 | 2026-07-17 | Governor | Accepted executor work | ZOKUL-UI-006 | codex/zokul-ui-redesign | | Build/test passed; participant avatar viewer accepted for Docker visual QA |
 | 2026-07-17 | Governor | Prepared release package | ZOKUL-RELEASE-001 | codex/zokul-ui-redesign | | `C:\zokul-deploy` prepared; runtime `ssl/` and `.env` preserved; Docker prod build passed; deploy not started |
 | 2026-07-17 | Governor | Prepared public repository package | ZOKUL-PUBLIC-001 | master | | README showcase, screenshots, single `docs/` structure, generated/runtime artifacts excluded |
+| 2026-07-17 | Governor | Created executor task | ZOKUL-VOICE-003 | master | | Mobile tap-to-record and safe-area polish scoped; backend/deploy forbidden |
+| 2026-07-17 | Executor | Implemented mobile voice UX polish | ZOKUL-VOICE-003 | master | | Tap-to-start/tap-to-stop voice recording on touch devices; main-menu bottom safe-area padding; build/test passed |
+| 2026-07-17 | Governor | Corrected AI protocol guardrails | ZOKUL-PROTOCOL-001 | master | | Added handoff barrier, execution owner requirement, and ambiguous UI-area clarification rule |

@@ -40,6 +40,25 @@ Then:
 - Do not mix UI, security, docs, and infra changes unless task explicitly says so.
 - Create `CHANGE_REQUESTS.md` entry if scope must change.
 
+## Handoff Barrier
+
+If the user asks to work `по протоколу`, `по скиллу`, or asks to prepare work for another agent, the current agent must default to Governor mode:
+
+1. create/update `docs/tasks/active/NEXT_AGENT_TASK.md`;
+2. set `CONTROL_PLANE.md` to `Ready for Execution`;
+3. update backlog/worklog/audit if needed;
+4. stop and ask for execution approval.
+
+Do not edit product code in Governor mode.
+
+The same agent may implement only when one of these is true:
+
+- user explicitly says `реализуй сам`, `можешь кодить`, `вноси изменения в код`, or equivalent;
+- active task says `Execution owner: current agent`;
+- the agent explicitly declares a narrow hotfix exception before code edits.
+
+If the area is ambiguous, especially UI wording such as "нижние кнопки", "панель", "меню", or "зона", map it to exact component/file names before editing. Ask a clarification question if the mapping is not obvious.
+
 ## Before Final
 
 Run task-specific checks and, when applicable:

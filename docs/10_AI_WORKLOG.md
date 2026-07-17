@@ -533,6 +533,109 @@ Polish only the messenger left sidebar / chat list to move Zokul closer to the a
 - Governor review required.
 - Manual QA on desktop and mobile before merge.
 
+## 2026-07-17 - Mobile tap-to-record voice UX and main menu safe area
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-VOICE-003
+Branch: master
+Commit: (not committed)
+
+### Intent
+
+Change smartphone voice recording from hold-to-record to tap-to-start/tap-to-stop, and lift the main-menu bottom buttons so create chat, theme, and logout remain visible on mobile browsers.
+
+### Actions
+
+- **MessageInput.tsx**:
+  - Replaced mobile pointer hold handlers with a tap toggle.
+  - First tap starts recording; second tap stops/sends.
+  - Preserved pending finish handling during async microphone startup.
+  - Preserved cancel button for discarding a recording.
+  - Removed mobile "Slide to cancel" / "Release to cancel" messaging from the touch path.
+  - Desktop recorder path remains unchanged.
+- **HomePage.tsx**:
+  - Added safe-area bottom padding to the sidebar/main-menu bottom action bar.
+- **AppLayout.tsx**:
+  - Switched app shell to `h-[100dvh] min-h-screen` for better mobile viewport behavior.
+- **voice.ts / voice.test.ts**:
+  - Removed obsolete slide-to-cancel gesture helper and tests.
+
+### Changed Files
+
+- `client/src/components/chat/MessageInput.tsx`
+- `client/src/components/HomePage.tsx`
+- `client/src/components/layout/AppLayout.tsx`
+- `client/src/utils/voice.ts`
+- `client/__tests__/voice.test.ts`
+- `docs/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/CONTROL_PLANE.md`
+- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AUDIT_LOG.md`
+- `docs/10_AI_WORKLOG.md`
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 91/91.
+- `git diff --check`: passed with CRLF warnings only.
+- `git status --short --branch`: modified files listed in task scope.
+
+### Manual QA Status
+
+Not performed on a real smartphone in this turn. Required user QA:
+
+1. Open sidebar/main menu on smartphone and confirm create/theme/logout buttons are visible.
+2. Tap mic once to start recording.
+3. Tap mic again to stop/send after at least 1 second.
+4. Tap cancel during recording and confirm no voice message is sent.
+5. Check desktop mic still opens the existing recorder UI.
+
+### Decisions / Notes
+
+- Composer safe-area padding was not changed after user clarified the hidden controls are in the main menu, not inside the dialog.
+- No backend, upload, socket, Docker, dependency, or auth changes.
+
+### Follow-ups
+
+- User smartphone QA required before commit/release packaging.
+
+## 2026-07-17 - Protocol guardrail correction
+
+Role: Governor
+Agent: Codex
+Task ID: ZOKUL-PROTOCOL-001
+Branch: master
+Commit: (not committed)
+
+### Intent
+
+Correct the AI development protocol after the current agent improperly moved from Governor planning into code execution when the user asked to work by protocol.
+
+### Actions
+
+- Added a `Protocol Mode Barrier` to `docs/00_README_FOR_AGENTS.md`.
+- Added a `Handoff Barrier` to `docs/05_DEVELOPMENT_PROCESS.md`.
+- Updated `docs/ROLES.md` to forbid Governor from silently becoming Executor.
+- Updated `docs/16_AGENT_COMPATIBILITY.md` with cross-agent execution ownership rules.
+- Added `Execution owner: current agent` to the active task and control plane for the current already-implemented exception.
+- Updated local `project-governor` and `project-executor` skills outside the repository:
+  - Governor now defaults `по протоколу` / `по скиллу` / another-agent wording to handoff-only mode.
+  - Governor must stop after handoff unless explicitly authorized to implement.
+  - Executor must confirm execution authorization before code edits.
+  - Handoff template now requires `Execution owner`.
+
+### Verification
+
+- `quick_validate.py` for `project-governor`: passed.
+- `quick_validate.py` for `project-executor`: passed.
+
+### Decisions / Notes
+
+- Default protocol behavior is now: plan, write handoff, stop.
+- Current-agent implementation requires explicit user permission or `Execution owner: current agent`.
+- Ambiguous UI wording must be mapped to exact component/file names before code edits.
+
 ## 2026-07-17 - Release Package Preparation (ZOKUL-RELEASE-001)
 
 Role: Governor / Release

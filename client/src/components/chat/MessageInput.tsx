@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { useChatContext } from '../../contexts/ChatContext';
 import ReplyQuote from './ReplyQuote';
 import VoiceRecorder from './VoiceRecorder';
-import { isTouchDevice, shouldCancelGesture, getSupportedMimeType, getExtension, MIN_DURATION_MS } from '../../utils/voice';
+import { isTouchDevice, getSupportedMimeType, getExtension, MIN_DURATION_MS } from '../../utils/voice';
 
 interface MessageInputProps {
   onSend: (text: string) => void;
@@ -27,7 +27,6 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const [pendingImages, setPendingImages] = useState<{ file: File; preview: string }[]>([]);
   const [touchRecorderActive, setTouchRecorderActive] = useState(false);
   const [touchDuration, setTouchDuration] = useState(0);
-  const [touchCancelling, setTouchCancelling] = useState(false);
   const [touchUploading, setTouchUploading] = useState(false);
   const [touchError, setTouchError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,10 +37,8 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   const touchChunksRef = useRef<Blob[]>([]);
   const touchStreamRef = useRef<MediaStream | null>(null);
   const touchTimerRef = useRef<ReturnType<typeof setInterval>>();
-  const touchStartXRef = useRef(0);
   const touchStartTimeRef = useRef(0);
   const touchModeRef = useRef(isTouchDevice());
-  const touchPointerDownRef = useRef(false);
   const touchStartingRef = useRef(false);
   const touchPendingFinishRef = useRef<boolean | null>(null);
   const touchPendingCancelRef = useRef(false);
@@ -88,7 +85,6 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
       touchMediaRef.current = recorder;
       touchChunksRef.current = [];
       setTouchDuration(0);
-      setTouchCancelling(false);
       setTouchError('');
       touchStartTimeRef.current = Date.now();
 
@@ -183,45 +179,19 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
   finishTouchRecordingRef.current = finishTouchRecording;
   cancelTouchRecordingRef.current = cancelTouchRecording;
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    touchPointerDownRef.current = true;
+  const handleTouchRecordToggle = useCallback(() => {
+    if (touchUploading) return;
+    if (touchStartingRef.current) {
+      touchPendingFinishRef.current = false;
+      return;
+    }
+    if (touchRecorderActiveRef.current) {
+      finishTouchRecording(false);
+      return;
+    }
     touchStartingRef.current = true;
-    touchStartXRef.current = e.clientX;
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     startTouchRecording();
-  }, [startTouchRecording]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!touchRecorderActiveRef.current) return;
-    setTouchCancelling(shouldCancelGesture(touchStartXRef.current, e.clientX));
-  }, []);
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    touchPointerDownRef.current = false;
-    if (touchStartingRef.current) {
-      touchPendingFinishRef.current = shouldCancelGesture(touchStartXRef.current, e.clientX);
-      touchStartingRef.current = false;
-      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
-      return;
-    }
-    if (!touchRecorderActiveRef.current) return;
-    e.preventDefault();
-    const discard = shouldCancelGesture(touchStartXRef.current, e.clientX);
-    finishTouchRecording(discard);
-  }, [finishTouchRecording]);
-
-  const handlePointerCancel = useCallback((e: React.PointerEvent) => {
-    touchPointerDownRef.current = false;
-    if (touchStartingRef.current) {
-      touchPendingCancelRef.current = true;
-      touchStartingRef.current = false;
-      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
-      return;
-    }
-    if (!touchRecorderActiveRef.current) return;
-    cancelTouchRecording();
-  }, [cancelTouchRecording]);
+  }, [finishTouchRecording, startTouchRecording, touchUploading]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -363,15 +333,18 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
           )}
         </button>
         {showVoiceButton && touchModeRef.current && !showVoiceRecorder && (
-          <div style={{ touchAction: 'none' }}>
+          <div>
             <button
               type="button"
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerCancel}
-              className="w-9 h-9 self-center text-gray-400 hover:text-primary dark:hover:text-primary transition-colors flex items-center justify-center shrink-0"
-              aria-label="Hold to record voice message"
+              onClick={handleTouchRecordToggle}
+              disabled={touchUploading}
+              className={`w-9 h-9 self-center transition-colors flex items-center justify-center shrink-0 disabled:opacity-50 ${
+                touchRecorderActive || touchStartingRef.current
+                  ? 'text-primary'
+                  : 'text-gray-400 hover:text-primary dark:hover:text-primary'
+              }`}
+              aria-label={touchRecorderActive ? 'Stop and send voice message' : 'Start voice message recording'}
+              title={touchRecorderActive ? 'Stop and send' : 'Start recording'}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5" strokeWidth={2}>
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -424,7 +397,7 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
                 <span className="text-sm text-gray-500">Uploading...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-3 bg-[#E1EAF4] dark:bg-gray-800 rounded-2xl px-4 py-2 select-none" style={{ touchAction: 'none' }}>
+              <div className="flex items-center gap-3 bg-[#E1EAF4] dark:bg-gray-800 rounded-2xl px-4 py-2 select-none">
                 <button type="button" onClick={cancelTouchRecording} className="text-gray-400 hover:text-gray-600 shrink-0" aria-label="Cancel recording">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -435,10 +408,10 @@ export default function MessageInput({ onSend, onEdit, onSendImage, onSendImages
                   {Math.floor(touchDuration / 60)}:{(touchDuration % 60).toString().padStart(2, '0')}
                 </span>
                 <div className="flex-1 h-1 bg-[#C9D6E4] dark:bg-gray-600 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${touchCancelling ? 'bg-red-500 w-full' : 'bg-primary w-1/2 animate-pulse'}`} />
+                  <div className="h-full rounded-full transition-all bg-primary w-1/2 animate-pulse" />
                 </div>
-                <span className={`text-[10px] whitespace-nowrap transition-colors ${touchCancelling ? 'text-red-500' : 'text-gray-400'}`}>
-                  {touchCancelling ? 'Release to cancel' : 'Slide to cancel'}
+                <span className="text-[10px] whitespace-nowrap text-gray-400">
+                  Tap mic to send
                 </span>
               </div>
             )
