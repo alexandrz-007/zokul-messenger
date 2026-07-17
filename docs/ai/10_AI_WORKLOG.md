@@ -149,3 +149,78 @@ Redesign Zokul messenger UI in a calm premium dark-first style. Mobile-first, no
 
 - Governor review required.
 - User to decide on commit.
+
+## 2026-07-17 - UI redesign Governor review fix request
+
+Role: Governor
+Agent: Codex
+Task ID: ZOKUL-UI-001-R1
+Branch: codex/zokul-ui-redesign
+Commit:
+
+### Intent
+
+Convert Governor review findings for the UI redesign into a protocol handoff that another executor agent can implement safely.
+
+### Actions
+
+- Added `Governor Review Fix Request (ZOKUL-UI-001-R1)` to the active task file.
+- Marked the active state as `Needs Changes` in the control plane.
+- Scoped the follow-up to review fixes only: chat list HTML/mobile delete access, send button disabled logic, task whitespace, and git hygiene.
+
+### Changed Files
+
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/ai/CONTROL_PLANE.md`
+- `docs/ai/10_AI_WORKLOG.md`
+
+### Verification
+
+- Documentation-only handoff update.
+- Product build/tests were not required for this planning change.
+
+### Decisions / Notes
+
+- The executor must continue the existing UI branch and must not restart the redesign.
+- Backend and unrelated dirty files remain out of scope.
+
+### Follow-ups
+
+- Executor should implement `ZOKUL-UI-001-R1`, run required checks, and return for Governor review.
+
+## 2026-07-17 03:52 - UI redesign review fix execution
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-UI-001-R1
+Branch: codex/zokul-ui-redesign
+Commit: (pending)
+
+### Intent
+
+Fix Governor review findings: nested buttons in chat list, mobile delete accessibility, send button enabled state, task file whitespace.
+
+### Changed Files
+
+- `client/src/components/chat/ChatList.tsx` — restructured to div + sibling buttons, always-visible delete, 40px touch target, aria-label
+- `client/src/components/chat/MessageInput.tsx` — `hasContent` no longer includes `replyTo` or `editingMessage`; only text/pendingImages enable send
+- `docs/ai/tasks/active/NEXT_AGENT_TASK.md` — removed trailing whitespace on lines 363-365, fixed EOF
+
+### Verification
+
+- `npm.cmd run build`: passed (client + server)
+- `npm.cmd test`: passed, 78/78 (7 client + 71 server)
+- `git diff --check HEAD`: no whitespace errors (CRLF warnings only, expected)
+- `git status --short --branch`: 3 UI/doc files modified; 3 pre-existing dirty files untouched
+
+### Decisions / Notes
+
+- ChatList outer wrapper changed from `<button>` to `<div>` to fix invalid HTML nesting.
+- Delete button now always visible (no hover-gate), with 40×40 touch target and `aria-label="Delete chat"`.
+- `hasContent` simplified to `text.trim().length > 0 || pendingImages.length > 0`.
+- Task file trailing whitespace removed from committed Execution Result section.
+- Governor Review Fix Request section preserved and updated.
+
+### Follow-ups
+
+- Awaiting Governor review to accept or request further changes.
