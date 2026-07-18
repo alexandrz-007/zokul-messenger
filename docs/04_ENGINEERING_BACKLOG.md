@@ -5,6 +5,15 @@ Source commit: 96d5818
 
 ## Done / Recently Completed
 
+- [x] ZOKUL-CHAT-UX-001 Fix chat opening, scroll, and delete placement
+  - Status: Accepted
+  - Priority: P1
+  - Result:
+    - Nested delete button removed from ChatList (chat rows are clean `<button>`)
+    - Delete action moved to selected-chat header `⋮` menu with confirmation modal
+    - Scroll logic tracks by `chatId`, not message count — works for short chats
+    - Build/tests passed; User QA confirmed on real phone
+
 - [x] ZOKUL-SEC-001 Harden Socket.IO chat access
   - Status: Done
   - Priority: P0
@@ -75,6 +84,12 @@ Source commit: 96d5818
   - Out of scope: do not introduce a migration framework in a mixed security/UI task.
 
 ## P2: Observability
+
+- [ ] ZOKUL-INC-001 Production runtime identity and push recovery
+  - Status: Ready for Executor
+  - Priority: P0
+  - Evidence: public bundle is older than `origin/production`; existing browser push subscriptions are not re-posted after database data is cleared.
+  - Goal: add deploy/runtime verification and reliable subscription reconciliation without exposing secrets.
 
 - [ ] ZOKUL-OPS-001 Add runtime observability plan
   - Status: Todo

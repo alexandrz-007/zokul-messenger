@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { usePresence } from '../../hooks/usePresence';
 import { Chat } from '../../types';
 import Avatar from '../common/Avatar';
@@ -12,7 +11,6 @@ interface ChatListProps {
   loading: boolean;
   error: string;
   unreadCount?: (chatId: string) => number;
-  onDelete?: (chatId: string) => void;
 }
 
 function formatTime(dateStr: string): string {
@@ -87,23 +85,12 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
-export default function ChatList({ chats, selectedId, currentUserId, onSelect, loading, error, unreadCount, onDelete }: ChatListProps) {
+export default function ChatList({ chats, selectedId, currentUserId, onSelect, loading, error, unreadCount }: ChatListProps) {
   const { isOnline } = usePresence();
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorState message={error} />;
   if (chats.length === 0) return <EmptyState />;
-
-  const handleDeleteRequest = (e: React.MouseEvent, chatId: string) => {
-    e.stopPropagation();
-    setDeleteTarget(deleteTarget === chatId ? null : chatId);
-  };
-
-  const handleConfirmDelete = (chatId: string) => {
-    setDeleteTarget(null);
-    onDelete?.(chatId);
-  };
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -153,35 +140,7 @@ export default function ChatList({ chats, selectedId, currentUserId, onSelect, l
                   )}
                 </div>
               </div>
-              <button
-                onClick={(e) => handleDeleteRequest(e, chat.id)}
-                className="shrink-0 p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity text-gray-400 hover:text-red-500 rounded-md hover:bg-[#C9D6E4] dark:hover:bg-gray-700/50"
-                title="Delete chat"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
-                  <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                </svg>
-              </button>
             </button>
-            {deleteTarget === chat.id && (
-              <div className="absolute right-2 top-10 z-10 bg-[#F8FAFD] dark:bg-gray-800 border border-[#D5DEE9] dark:border-gray-700 rounded-lg shadow-lg p-2">
-                <p className="text-xs text-gray-500 mb-2 px-1">Delete this chat?</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setDeleteTarget(null)}
-                    className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleConfirmDelete(chat.id)}
-                    className="px-3 py-1.5 text-xs bg-red-500 text-white rounded-md hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         );
       })}

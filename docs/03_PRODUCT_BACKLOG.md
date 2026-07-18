@@ -48,7 +48,7 @@ Source commit: 96d5818
     - build/tests pass.
 
 - [ ] ZOKUL-MOBILE-001 Mobile browser layout and tap voice fix
-  - Status: Ready for Executor
+  - Status: Source implementation completed; production QA invalidated by runtime drift
   - Priority: P1
   - Owner: Governor/Executor
   - Files:
@@ -70,6 +70,24 @@ Source commit: 96d5818
     - cancel discards;
     - desktop voice behavior remains unchanged;
     - build/tests pass.
+
+- [ ] ZOKUL-INC-001 Repair production drift and push subscription recovery
+  - Status: Runtime drift repaired manually; push work moved to planned hardening
+  - Priority: P0
+  - Goal: Prove production runs the intended client bundle, then make push subscription registration self-healing after server data loss.
+  - Scope: runtime verification, client re-registration of existing subscriptions, server upsert/error handling, focused tests.
+  - Out of scope: a new mobile UI/voice implementation, VAPID rotation, schema changes, Docker/NGINX behavior changes.
+
+- [x] ZOKUL-CHAT-UX-001 One-tap chat opening, initial bottom scroll, and in-chat delete action
+  - Status: Accepted
+  - Priority: P1
+  - Goal: A chat row opens on the first tap, an opened dialog starts at newest messages, and deletion moves from the list row to a confirmed action menu in the open chat header.
+  - Scope: `ChatList`, `ChatView`, `HomePage`, `useChat`, and focused client tests only.
+
+- [ ] ZOKUL-PUSH-001 Push subscription recovery hardening
+  - Status: Planned - notifications currently arrive, but recovery after database subscription loss is not reliable
+  - Priority: P1
+  - Goal: Re-register existing browser subscriptions, refresh stale keys, and retain transiently failing subscriptions.
 
 ## P1: UI Polish
 

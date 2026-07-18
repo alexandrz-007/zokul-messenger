@@ -1,11 +1,11 @@
 # AI Control Plane
 
 Last updated: 2026-07-17
-Source commit: b12b629
+Source commit: d61adcf
 
 ## Current State
 
-State: User QA
+State: Ready for Execution
 
 Allowed next states:
 
@@ -16,12 +16,12 @@ Allowed next states:
 
 ## Active Work
 
-- Active task: Mobile browser layout and tap voice fix
-- Task ID: ZOKUL-MOBILE-001
+- Active task: Fix chat opening, initial position, and delete placement
+- Task ID: ZOKUL-CHAT-UX-001
 - Branch: master
-- Owner role: User QA
+- Owner role: Governor / external Executor
 - Execution owner: external agent
-- Risk: Medium
+- Risk: High
 - Confidence: High
 
 ## Latest Accepted Work
@@ -33,6 +33,15 @@ Allowed next states:
 - ZOKUL-UI-004: Soft light theme polish accepted.
 - ZOKUL-UI-005: Light theme balance fix accepted.
 - ZOKUL-UI-006: Participant avatar viewer accepted.
+
+## Incident Finding
+
+- Public production is serving an older client bundle (`index-DWolPdvT.js`) despite `origin/production` containing the later mobile source.
+- The served bundle has legacy `Slide to cancel`, `Release to cancel`, and `min-h-screen` markers, and lacks `Tap mic to send`, `startupToken`, and safe-area-bottom markers.
+- Therefore prior production mobile QA is invalid: the VPS client image must be rebuilt/recreated and verified before assigning further mobile code work.
+- Push subscriptions are not restored after the database is cleared because the client returns early when the browser already has a Push API subscription.
+- Push notifications are currently observed as working again; the recovery defect remains a planned hardening item, not a confirmed live outage.
+- Chat rows nest deletion inside the open-chat button, and initial message scroll does not reliably reach the newest messages.
 
 ## Latest Review
 
@@ -106,4 +115,4 @@ Allowed next states:
 
 ## Next Action
 
-User should QA `ZOKUL-MOBILE-001` on iPhone/Android. Do not push or deploy until accepted.
+Executor must implement `ZOKUL-CHAT-UX-001`. `ZOKUL-PUSH-001` remains planned hardening after this user-visible UX task is accepted.

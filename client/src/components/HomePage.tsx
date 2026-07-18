@@ -32,8 +32,11 @@ function HomePageInner() {
   const [showProfile, setShowProfile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [showChatActions, setShowChatActions] = useState(false);
+  const [deleteConfirmChatId, setDeleteConfirmChatId] = useState<string | null>(null);
   const [avatarViewerUrl, setAvatarViewerUrl] = useState<string | null>(null);
   const createMenuRef = useRef<HTMLDivElement>(null);
+  const chatActionsRef = useRef<HTMLDivElement>(null);
   const { chats, loading: chatsLoading, error: chatsError, reload: reloadChats } = useChats();
   const { messages, loading: msgsLoading, error: msgsError, sendMessage, sendImage, sendImages, sendVoice, editMessage, deleteMessage, prependMessages } = useMessages(selectedChat?.id || null);
   const { loadMore, loadingMore, hasMore, reset: resetPagination } = usePagination(selectedChat?.id || null);
@@ -54,6 +57,7 @@ function HomePageInner() {
   const prevChatRefForSocket = useRef<string | null>(null);
 
   const handleSelectChat = useCallback((chat: Chat) => {
+    setShowChatActions(false);
     if (prevChatRefForSocket.current && prevChatRefForSocket.current !== chat.id) {
       socket?.emit('chat:leave', { chatId: prevChatRefForSocket.current });
     }
@@ -143,6 +147,24 @@ function HomePageInner() {
   }, [showCreateMenu]);
 
   useEffect(() => {
+    if (!showChatActions) return;
+    const handler = (e: MouseEvent) => {
+      if (chatActionsRef.current && !chatActionsRef.current.contains(e.target as Node)) {
+        setShowChatActions(false);
+      }
+    };
+    const escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowChatActions(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('keydown', escapeHandler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', escapeHandler);
+    };
+  }, [showChatActions]);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const chatId = params.get('chat');
     if (chatId && chats.length > 0) {
@@ -190,7 +212,6 @@ function HomePageInner() {
             loading={chatsLoading}
             error={chatsError}
             unreadCount={unreadCount}
-            onDelete={handleDeleteChat}
           />
           <div className="border-t border-[#C9D6E4] dark:border-gray-800 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom,0.625rem))] flex items-center justify-around gap-1">
             <div className="relative">
@@ -303,6 +324,34 @@ function HomePageInner() {
                     {isGroupChat ? `${selectedChat.participants.length} members` : (otherOnline ? 'Online' : 'Offline')}
                   </div>
                 </div>
+                <div className="relative" ref={chatActionsRef}>
+                  <button
+                    onClick={() => setShowChatActions((v) => !v)}
+                    className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-[#C9D6E4] dark:hover:bg-gray-700/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    title="Chat actions"
+                    aria-label="Chat actions"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <circle cx="12" cy="5" r="1.5" />
+                      <circle cx="12" cy="12" r="1.5" />
+                      <circle cx="12" cy="19" r="1.5" />
+                    </svg>
+                  </button>
+                  {showChatActions && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-[#F8FAFD] dark:bg-gray-800 border border-[#D5DEE9] dark:border-gray-700 rounded-xl shadow-lg overflow-hidden z-20">
+                      <button
+                        onClick={() => { setShowChatActions(false); setDeleteConfirmChatId(selectedChat?.id || null); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#DFEAF5] dark:hover:bg-gray-700 transition-colors text-left"
+                        role="menuitem"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5 text-red-500 shrink-0">
+                          <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        </svg>
+                        <span className="text-sm font-medium text-red-500">Delete chat</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <ChatView
                 messages={messages}
@@ -356,6 +405,32 @@ function HomePageInner() {
       />
       {avatarViewerUrl && (
         <ImageViewer src={avatarViewerUrl} onClose={() => setAvatarViewerUrl(null)} />
+      )}
+      {deleteConfirmChatId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteConfirmChatId(null)}>
+          <div className="bg-[#F8FAFD] dark:bg-gray-800 border border-[#D5DEE9] dark:border-gray-700 rounded-xl shadow-xl p-5 w-72" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Delete chat?</p>
+            <p className="text-xs text-gray-500 mb-4">This cannot be undone.</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setDeleteConfirmChatId(null)}
+                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleDeleteChat(deleteConfirmChatId);
+                  setDeleteConfirmChatId(null);
+                  setShowChatActions(false);
+                }}
+                className="px-4 py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AppLayout>
   );

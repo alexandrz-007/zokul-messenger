@@ -1,5 +1,45 @@
 # AI Worklog
 
+## 2026-07-17 - Production/mobile/push incident investigation
+
+Role: Governor
+Agent: Codex
+Task ID: ZOKUL-INC-001
+Branch: master
+Commit: d61adcf (source), e7749a3 (production branch)
+
+### Evidence
+
+- External HTTPS checks returned `200 OK` for the public URL and `{"status":"ok"}` for `/api/health`.
+- Public HTML referenced `/assets/index-DWolPdvT.js`.
+- Downloaded public bundle contained legacy `Slide to cancel`, `Release to cancel`, and `min-h-screen` markers, while required current markers `Tap mic to send`, `startupToken`, and `safe-area-inset-bottom` were absent.
+- `origin/production` source contains the current tap-to-start/tap-to-stop implementation. The VPS is therefore running an older client image/bundle than the production branch source.
+- `usePushSubscription.ts` returns when `pushManager.getSubscription()` finds an existing browser subscription. After DB data is cleared, this leaves `push_subscriptions` empty forever for that browser. `saveSubscription()` also uses `ON CONFLICT DO NOTHING`, preserving stale keys; `sendPushNotification()` silently deletes subscriptions on every error.
+
+### Decision
+
+- Do not redesign or reimplement mobile voice/UI before deployment runtime identity is repaired and verified.
+- Created `ZOKUL-INC-001` for runtime proof plus scoped push subscription recovery and observability.
+
+## 2026-07-17 - Chat navigation and notification follow-up investigation
+
+Role: Governor
+Agent: Codex
+Task ID: ZOKUL-CHAT-UX-001
+Branch: master
+
+### Findings
+
+- `ChatList.tsx` contains a delete button inside the chat-selection button. This invalid nested-button structure explains the first-tap ambiguity on touch devices.
+- `ChatView.tsx` initial scroll does not reliably reach the newest messages — it depends on the new result having more messages than the prior list.
+- The messages API returns newest-first while older pagination is prepended in client state; older messages must be appended to preserve chronological display after `ChatView` reverses for rendering.
+- Push notifications are currently observed arriving again. The earlier subscription recovery defect remains valid after a future subscription-table reset, but is no longer treated as the immediate outage.
+
+### Decision
+
+- Queue `ZOKUL-CHAT-UX-001` as the active focused executor task.
+- Keep push recovery as a separate planned hardening task to avoid mixing UI interaction, scrolling, and backend notification work.
+
 ## 2026-07-17 02:20 - Realtime hardening review
 
 Role: Reviewer
@@ -1567,12 +1607,81 @@ Re-review the executor's follow-up fixes for the startup cancel race, mobile vie
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/10_AI_WORKLOG.md`
 
+## 2026-07-18 — Implemented chat UX fixes (ZOKUL-CHAT-UX-001)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-CHAT-UX-001
+Branch: master
+Commit:
+
+### Intent
+
+Fix three linked chat UX defects:
+1. Remove nested delete button from ChatList (chat row opens on first tap).
+2. Move delete action to header actions menu with confirmation modal.
+3. Fix initial scroll to bottom by chatId instead of message count growth.
+
+### Changes Made
+
+**`client/src/components/chat/ChatList.tsx`**
+- Removed `onDelete` prop, `deleteTarget` state, `handleDeleteRequest`, `handleConfirmDelete`.
+- Removed nested trash button and confirmation popover from the chat row JSX.
+- Chat rows are now simple buttons with no nested interactive elements.
+
+**`client/src/components/HomePage.tsx`**
+- Removed `onDelete={handleDeleteChat}` from `<ChatList>` props.
+- Added `⋮` (vertical ellipsis) actions button in the selected-chat header.
+- Added popover with "Delete chat" option (trash icon + red text).
+- Added confirmation modal overlay (`deleteConfirmChatId` state) with Cancel/Delete.
+- Added `chatActionsRef` and outside-click + Escape handler for the actions menu.
+- Added `setShowChatActions(false)` in `handleSelectChat` to close menu on chat switch.
+
+**`client/src/components/chat/ChatView.tsx`**
+- Replaced `prevCountRef` + `chatIdRef` scroll tracking with `scrolledChatRef` (tracks by chatId).
+- New logic: on first non-empty render for a new chat → `scrollIntoView({ behavior: 'instant' })`.
+- Subsequent renders: smooth scroll only for live messages (< 2 seconds old).
+- Fixes the case where a chat with fewer messages than the previous one would not scroll.
+
+**`docs/tasks/active/NEXT_AGENT_TASK.md`**
+- Instruction #5 marked as N/A (prepend order confirmed correct per user).
+- Test for pagination order marked as N/A.
+
+### Verification
+
+- `npm.cmd run build`: passed.
+- `npm.cmd test`: passed, 19/19.
+- `git diff --check`: passed (CRLF warnings only — Windows line ending noise).
+- `git status --short --branch`: dirty with intended changes only.
+
+### Changed Files (code)
+
+- `client/src/components/chat/ChatList.tsx` — delete removal from list
+- `client/src/components/HomePage.tsx` — header actions menu + confirm modal
+- `client/src/components/chat/ChatView.tsx` — chatId-based scroll tracking
+
+### Changed Files (docs)
+
+- `docs/tasks/active/NEXT_AGENT_TASK.md` — corrected instruction #5 and test line
+- `docs/10_AI_WORKLOG.md` — this entry
+- `docs/AUDIT_LOG.md` — updated
+
+### Risks
+
+- Delete confirmation modal is a simple overlay, not a styled dialog; relies on fixed positioning.
+- Header actions menu uses the same outside-click pattern as the create-chat menu.
+- No server, auth, socket, or database changes.
+
 ### Next Action
 
-User should test on iPhone/Android:
+User should:
 
-1. Main screen bottom create/theme/logout buttons visible.
-2. Chat composer and voice bubbles not clipped.
-3. First mic tap starts and keeps recording.
-4. Second mic tap stops/sends after at least one second.
-5. Cancel discards.
+1. Rebuild Docker container locally: `docker compose build` / `docker compose up -d`.
+2. Test on desktop:
+   - Verify first tap on a chat row opens it immediately (no nested button intercept).
+   - Open a chat, tap ⋮ → "Delete chat" → Cancel/Delete works.
+   - Delete a chat, verify it disappears and selected chat is cleared.
+3. Test on mobile:
+   - Same scenarios on a narrow viewport.
+   - Verify header actions menu is not clipped.
+4. If Device QA is satisfied, Governor should accept ZOKUL-CHAT-UX-001.

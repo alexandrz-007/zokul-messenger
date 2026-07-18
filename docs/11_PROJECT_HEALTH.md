@@ -1,7 +1,7 @@
 ﻿# Project Health
 
 Last reviewed: 2026-07-17
-Source commit: fd5b6eb
+Source commit: d61adcf
 Reviewed by: Governor
 
 ## Current Branch State
@@ -23,20 +23,20 @@ Known dirty/untracked items at migration time:
 
 | Check | Status | Last run | Notes |
 |---|---|---|---|
-| Build | Passed | 2026-07-17 | `npm.cmd run build` passed after repository cleanup |
-| Tests | Passed | 2026-07-17 | `npm.cmd test` passed, 95/95 after repository cleanup |
-| Release package | Passed | 2026-07-17 | `scripts/prepare-release.ps1 -FreshServerData -SkipChecks` rebuilt `C:\zokul-deploy` |
-| Docker build | Passed | 2026-07-17 | `docker compose -f docker-compose.prod.yml build` passed from `C:\zokul-deploy` |
-| Lint | Unknown |  | Not run during docs migration |
+| Build | Passed | 2026-07-18 | `npm.cmd run build` passed (ZOKUL-CHAT-UX-001) |
+| Tests | Passed | 2026-07-18 | `npm.cmd test` passed, 19/19 |
+| Release package | Pending | 2026-07-18 | Will run `prepare-release.ps1` after commit |
+| Docker build | Passed | 2026-07-18 | `docker compose -f docker-compose.local.yml build` passed |
+| Lint | Unknown |  | Not run during chat UX fixes |
 | Security review | Partial | 2026-07-17 | Realtime/upload/auth hardening reviewed |
-| Docs freshness | Current | 2026-07-17 | Protocol documentation consolidated into one `docs/` tree |
+| Docs freshness | Current | 2026-07-18 | Protocol docs updated; chat UX task accepted |
 
 ## Active Task
 
-- Task: Public repository cleanup
-- Status: In progress
-- Owner role: Reviewer
-- Risk: Low
+- Task: ZOKUL-CHAT-UX-001 Fix chat opening, initial position, and delete placement
+- Status: Accepted — User QA passed on real Pixel 9 phone
+- Owner role: Executor
+- Risk: Medium
 - Confidence: High
 
 ## Known Risks
@@ -45,8 +45,10 @@ Known dirty/untracked items at migration time:
 - Build may continue to modify tracked/generated client files.
 - Runtime DB migration approach is acceptable for MVP but should move toward versioned migrations later.
 - Uploads are local-disk based; object storage/CDN is future scaling work.
+- Push notifications currently arrive, but subscription recovery after a DB reset and delivery-error observability remain hardening gaps.
 
 ## Next Recommended Action
 
-1. Verify the new `docs/` structure.
-2. Ask user approval before commit or push.
+1. Push hardening — ZOKUL-PUSH-001: make subscription registration self-healing after DB reset.
+2. Integration tests — ZOKUL-TEST-002: real Socket.IO client/server tests.
+3. Runtime observability — ZOKUL-OPS-001: metrics/logging for production readiness.
