@@ -1612,8 +1612,10 @@ Re-review the executor's follow-up fixes for the startup cancel race, mobile vie
 Role: Executor
 Agent: Codex
 Task ID: ZOKUL-CHAT-UX-001
-Branch: master
+Branch: master (dev) / production (deploy)
 Commit:
+- master: 4c79dff
+- production: 1c4631f (force push from zokul-deploy)
 
 ### Intent
 
@@ -1654,7 +1656,12 @@ Fix three linked chat UX defects:
 - `git diff --check`: passed (CRLF warnings only — Windows line ending noise).
 - `git status --short --branch`: dirty with intended changes only.
 
-### Changed Files (code)
+### ### Git
+
+- `master` pushed to `origin/master` (4c79dff)
+- `C:\zokul-deploy` committed as new root and force-pushed to `origin/production` (1c4631f)
+
+Changed Files (code)
 
 - `client/src/components/chat/ChatList.tsx` — delete removal from list
 - `client/src/components/HomePage.tsx` — header actions menu + confirm modal
@@ -1665,6 +1672,11 @@ Fix three linked chat UX defects:
 - `docs/tasks/active/NEXT_AGENT_TASK.md` — corrected instruction #5 and test line
 - `docs/10_AI_WORKLOG.md` — this entry
 - `docs/AUDIT_LOG.md` — updated
+
+### Git
+
+- `master` pushed to `origin/master` (4c79dff)
+- `C:\zokul-deploy` committed as new root (1c4631f) and force-pushed to `origin/production`
 
 ### Risks
 
