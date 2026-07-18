@@ -56,7 +56,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
   const scrolledChatRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (messages.length === 0 || loading) return;
     if (scrolledChatRef.current !== chatId) {
       scrolledChatRef.current = chatId;
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50);
@@ -67,7 +67,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages, chatId]);
+  }, [messages, chatId, loading]);
 
   useEffect(() => {
     if (!socket || !chatId) return;

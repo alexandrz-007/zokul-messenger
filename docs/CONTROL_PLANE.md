@@ -1,7 +1,7 @@
 # AI Control Plane
 
-Last updated: 2026-07-17
-Source commit: d61adcf
+Last updated: 2026-07-18
+Source commit: (HEAD)
 
 ## Current State
 
@@ -16,12 +16,12 @@ Allowed next states:
 
 ## Active Work
 
-- Active task: Fix chat opening, initial position, and delete placement
-- Task ID: ZOKUL-CHAT-UX-001
-- Branch: master
+- Active task: Fix chat opening scroll regression
+- Task ID: ZOKUL-CHAT-UX-002
+- Branch: codex/fix-chat-scroll-loading
 - Owner role: Governor / external Executor
 - Execution owner: external agent
-- Risk: High
+- Risk: Low
 - Confidence: High
 
 ## Latest Accepted Work
@@ -33,6 +33,7 @@ Allowed next states:
 - ZOKUL-UI-004: Soft light theme polish accepted.
 - ZOKUL-UI-005: Light theme balance fix accepted.
 - ZOKUL-UI-006: Participant avatar viewer accepted.
+- ZOKUL-CHAT-UX-001: Chat UX fixes (ChatList delete removed, header actions + confirm, chatId-based scroll). User QA identified scroll regression on chat switch.
 
 ## Incident Finding
 
@@ -41,7 +42,7 @@ Allowed next states:
 - Therefore prior production mobile QA is invalid: the VPS client image must be rebuilt/recreated and verified before assigning further mobile code work.
 - Push subscriptions are not restored after the database is cleared because the client returns early when the browser already has a Push API subscription.
 - Push notifications are currently observed as working again; the recovery defect remains a planned hardening item, not a confirmed live outage.
-- Chat rows nest deletion inside the open-chat button, and initial message scroll does not reliably reach the newest messages.
+- ZOKUL-CHAT-UX-001 scroll fix has a regression: chat switching opens at oldest message if `loading` is not checked. New task ZOKUL-CHAT-UX-002 created.
 
 ## Latest Review
 
@@ -115,4 +116,4 @@ Allowed next states:
 
 ## Next Action
 
-Executor must implement `ZOKUL-CHAT-UX-001`. `ZOKUL-PUSH-001` remains planned hardening after this user-visible UX task is accepted.
+Executor must implement `ZOKUL-CHAT-UX-002` (scroll regression fix). `ZOKUL-PUSH-001` remains planned hardening after the scroll regression is resolved.

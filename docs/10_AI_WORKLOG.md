@@ -1690,10 +1690,87 @@ User should:
 
 1. Rebuild Docker container locally: `docker compose build` / `docker compose up -d`.
 2. Test on desktop:
-   - Verify first tap on a chat row opens it immediately (no nested button intercept).
-   - Open a chat, tap ⋮ → "Delete chat" → Cancel/Delete works.
-   - Delete a chat, verify it disappears and selected chat is cleared.
+    - Verify first tap on a chat row opens it immediately (no nested button intercept).
+    - Open a chat, tap ⋮ → "Delete chat" → Cancel/Delete works.
+    - Delete a chat, verify it disappears and selected chat is cleared.
 3. Test on mobile:
-   - Same scenarios on a narrow viewport.
-   - Verify header actions menu is not clipped.
+    - Same scenarios on a narrow viewport.
+    - Verify header actions menu is not clipped.
 4. If Device QA is satisfied, Governor should accept ZOKUL-CHAT-UX-001.
+
+## 2026-07-18 — Detected scroll regression in ZOKUL-CHAT-UX-001
+
+Role: Governor
+Agent: Codex
+Task ID: ZOKUL-CHAT-UX-002
+Branch: master
+Commit:
+
+### Intent
+
+Create a scoped executor task to fix the chat-opening scroll regression reported by the user after ZOKUL-CHAT-UX-001 deployment.
+
+### Root Cause
+
+`ChatView.tsx:58-70` scroll effect does not check `loading`. When switching chats:
+
+1. `chatId` changes, but `messages` still has stale data from the previous chat.
+2. Effect fires: sees `messages.length > 0` and `scrolledChatRef.current !== chatId` → prematurely sets `scrolledChatRef.current = newChatId` and scrolls with stale layout.
+3. Real messages for the new chat arrive.
+4. Effect fires: `scrolledChatRef.current === chatId` → else branch → checks `isRecent` → false (historical) → **no scroll**.
+
+### Fix
+
+Add `|| loading` to the early return guard, and `loading` to the dependency array.
+
+### Actions
+
+- Replaced active task with `ZOKUL-CHAT-UX-002`.
+- Updated control plane to `Ready for Execution`.
+- Created full handoff with implementation instructions, scope, allowed files, verification commands, and acceptance criteria.
+
+### Verification
+
+- Documentation-only handoff; no product build required.
+- `git status --short --branch`: clean.
+
+### Follow-ups
+
+- Exector implemented the 2-line fix; build + tests passed. Awaiting user QA.
+
+## 2026-07-18 — Implemented scroll regression fix (ZOKUL-CHAT-UX-002)
+
+Role: Executor
+Agent: Codex
+Task ID: ZOKUL-CHAT-UX-002
+Branch: master
+Commit: (not committed — awaiting user direction)
+
+### Intent
+
+Fix the chat-opening scroll regression: when switching chats, the dialog opened at the top instead of the bottom due to a missing `loading` guard in the scroll effect.
+
+### Changes
+
+- `client/src/components/chat/ChatView.tsx:59`: `if (messages.length === 0) return;` → `if (messages.length === 0 || loading) return;`
+- `client/src/components/chat/ChatView.tsx:70`: `}, [messages, chatId]);` → `}, [messages, chatId, loading]);`
+
+### Verification
+
+- `npm.cmd run build` (client): passed
+- `npm.cmd test` (client): passed, 19/19 (4 files)
+- `git diff --check`: CRLF warnings only (Windows expected)
+- `git status --short --branch`: master, dirty with intended changes
+
+### Changed Files
+
+- `client/src/components/chat/ChatView.tsx`
+- `docs/tasks/active/NEXT_AGENT_TASK.md`
+- `docs/CONTROL_PLANE.md`
+- `docs/10_AI_WORKLOG.md`
+- `docs/AUDIT_LOG.md`
+
+### Follow-ups
+
+- User QA on desktop/mobile to confirm scroll behavior.
+- Commit after user approval.
