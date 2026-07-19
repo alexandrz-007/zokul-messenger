@@ -2134,3 +2134,66 @@ pm run build (client) | Passed | tsc+vite exit 0, sw.js = killer (master inherit
 ### Follow-ups
 - Deploy: merge feature/read-receipts into master, then production deploy (killer PWA retained).
 - Manual Safari/iPhone verification of read ticks (deferred to deploy step).
+
+## 2026-07-19 - ZOKUL-SCROLL-001 - Fix auto-scroll on chat switch
+
+Role: Governor / Executor
+Task ID: ZOKUL-SCROLL-001
+Branch: feature/scroll-fix (NOT merged to production)
+
+### Problem
+Switching chats sometimes opened the message list in the middle, not at the bottom. Root causes in client/src/components/chat/ChatView.tsx:
+1. useLayoutEffect([messages, chatId, loading]) returned early on loading and called scrollIntoView synchronously before images/avatars rendered -> intermediate scrollHeight -> mid-list position.
+2. No key={chatId} on the scroll container -> React reused the DOM node across chats, preserving stale scrollTop.
+
+### Changed
+- ChatView.tsx: added scrollContainerRef on the lex-1 overflow-y-auto div; added key={chatId} (remounts container, resets stale scroll).
+- Replaced scroll effect: on chat switch (scrolledChatRef.current !== chatId) set el.scrollTop = el.scrollHeight + equestAnimationFrame re-apply (waits for image layout). No early return on loading; requires messages.length > 0.
+- Added isNearBottom() (<=120px threshold) and scrollToBottom(behavior).
+- Added effect: when chat already open and a new message arrives, auto-scroll only if isNearBottom() (smooth); reading older messages is not yanked.
+- client/__tests__/chatScroll.test.tsx: 2 tests (open scrolls bottom; switching chat scrolls bottom) via mocked socket + ChatProvider.
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| 
+pm test (client) | Passed | 24/24, incl. 2 new scroll tests |
+| 
+pm run build (client) | Passed | tsc+vite exit 0; sw.js = killer |
+
+### Follow-ups
+- Merge to master + production deploy (killer PWA retained); manual Safari/iPhone verification.
+
+## 2026-07-19 - ZOKUL-SCROLL-002 - Stabilize auto-scroll via ResizeObserver
+
+Role: Governor (handoff) / Executor (impl)
+Task ID: ZOKUL-SCROLL-002
+Branch: feature/scroll-fix
+
+### Problem (residual from ZOKUL-SCROLL-001)
+Even WITHOUT images/avatars the list sometimes opened mid-list. Root cause: useLayoutEffect set
+scrollTop = scrollHeight once + single rAF, but messages for the new chat arrive/re-render AFTER that
+rAF (text reflow, async load, fonts, emojis) -> container grows -> stale scrollTop -> mid-list. A separate
+useEffect also reset scrolledChatRef AFTER the layout scroll, causing a race.
+
+### Changed
+- ChatView.tsx:
+  - Added ResizeObserver on scrollContainerRef; while scrolledChatRef.current === chatId re-pin
+    scrollTop = scrollHeight on any size change (catches ANY growth, not just images).
+  - Removed reset useEffect; in useLayoutEffect([messages, chatId]) set scrolledChatRef.current = chatId
+    BEFORE stickToBottom() so observer + later renders keep us pinned.
+  - Added handleScroll: if user scrolls up away from bottom (<=120px) set scrolledChatRef.current = null
+    (exit auto-scroll mode, stop forcing bottom).
+- client/__tests__/chatScroll.test.tsx: 4 tests (switch->bottom; height-grows-after->bottom via ResizeObserver
+  polyfill + rerender; near-bottom gating; user-scroll-up disables auto-scroll).
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| 
+pm test (client) | Passed | 26/26 (incl. 4 scroll) |
+| 
+pm run build (client) | Passed | tsc+vite exit 0; sw.js = killer |
+
+### Follow-ups
+- Re-audit (project-auditor); merge to master + production deploy (killer PWA); manual Safari/iPhone verify.

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSocket } from '../../contexts/SocketContext';
 import { useChatContext } from '../../contexts/ChatContext';
 import { Message, ReplyPreview, User } from '../../types';
@@ -52,26 +52,52 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
   const { socket } = useSocket();
   const { setReplyTo, setEditingMessage } = useChatContext();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const scrolledChatRef = useRef<string | null>(null);
+
+  const isNearBottom = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  }, []);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    if (behavior === 'smooth') {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    } else {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, []);
 
   useEffect(() => {
     scrolledChatRef.current = null;
   }, [chatId]);
 
   useLayoutEffect(() => {
-    if (messages.length === 0 || loading) return;
+    if (messages.length === 0) return;
     if (scrolledChatRef.current !== chatId) {
       scrolledChatRef.current = chatId;
-      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
-    } else {
-      const newest = messages[0];
-      const isRecent = Date.now() - new Date(newest.createdAt).getTime() < 2000;
-      if (isRecent) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const el = scrollContainerRef.current;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        });
       }
     }
-  }, [messages, chatId, loading]);
+  }, [messages, chatId]);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (scrolledChatRef.current === chatId) {
+      if (isNearBottom()) {
+        scrollToBottom('smooth');
+      }
+    }
+  }, [messages, chatId, isNearBottom, scrollToBottom]);
 
   useEffect(() => {
     if (!socket || !chatId) return;
@@ -195,7 +221,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-3">
+    <div ref={scrollContainerRef} key={chatId} className="flex-1 overflow-y-auto px-4 py-3">
       <div className="px-1 sm:px-2">
         <div ref={sentinelRef} />
         {loadingMore && (
