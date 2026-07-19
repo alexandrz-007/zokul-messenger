@@ -2,20 +2,19 @@
 
 Protocol version: 1.0
 Mode: standard
-State: Accepted
-Active task: None
+State: Ready for Execution
+Active task: PWA-EMERGENCY-001
 Active review: None
-Owner: project-governor
+Owner: project-executor
 Last updated: 2026-07-19
 
 ## Current Focus
 
-Rate limit fix accepted. Ready for production deploy.
+Phase 1: Emergency SW self-destruct to fix stale cache after deploy.
 
 ## Next Required Action
 
-1. Archive ZOKUL-RATE-001 task and review.
-2. Deploy: on server `git pull origin production && docker compose -f docker-compose.prod.yml up -d --build`
+Implement PWA-EMERGENCY-001: replace sw.ts with emergency self-destruct, build, test, deploy.
 
 ## Blockers
 

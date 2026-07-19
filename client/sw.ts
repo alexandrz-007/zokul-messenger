@@ -2,39 +2,26 @@
 declare const self: ServiceWorkerGlobalScope;
 
 import { precacheAndRoute } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
-import { NetworkFirst } from 'workbox-strategies';
-import { ExpirationPlugin } from 'workbox-expiration';
 
+// Required by vite-plugin-pwa injectManifest build
 precacheAndRoute(self.__WB_MANIFEST);
 
-registerRoute(
-  /^https?:\/\/.*\/api\/.*/i,
-  new NetworkFirst({
-    cacheName: 'api-cache',
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 300 }),
-    ],
-  })
-);
-
-self.addEventListener('push', (event) => {
-  const data = event.data?.json();
-  if (!data) return;
-  const { title, body, data: extra } = data;
-  event.waitUntil(
-    self.registration.showNotification(title || 'Zokul', {
-      body: body || '',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      data: extra,
-    })
-  );
+// Emergency: activate immediately
+self.addEventListener('install', () => {
+  self.skipWaiting();
 });
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const chatId = event.notification.data?.chatId;
-  const url = chatId ? `/?chat=${chatId}` : '/';
-  event.waitUntil(clients.openWindow(url));
+// Emergency: delete ALL caches, claim clients, unregister, reload windows
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((names) => Promise.all(names.map((n) => caches.delete(n))))
+      .then(() => self.clientsClaim())
+      .then(() => self.registration.unregister())
+      .then(() =>
+        self.clients.matchAll({ type: 'window' }).then((clients) => {
+          clients.forEach((client) => client.navigate(client.url));
+        })
+      )
+  );
 });

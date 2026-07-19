@@ -1,4 +1,4 @@
-# Next Agent Task: ZOKUL-RATE-001 - Fix backend rate limit blocking auth endpoints
+# Next Agent Task: PWA-EMERGENCY-001 - Emergency SW self-destruct to fix stale cache
 
 Protocol version: 1.0
 Task type: hotfix
@@ -8,118 +8,103 @@ State required before execution: Ready for Execution
 
 ## Goal
 
-Remove the blanket `authLimiter` (10 req/15min) from all `/api/auth/*` routes, keep endpoint-specific brute-force protection on login/register/change-password, so GET /api/auth/me never returns 429 during normal PWA usage.
+Emergency-fix: make the Service Worker self-destruct (delete all caches, skip waiting, claim clients, unregister, reload windows) so the site works as a plain web app after deploy, until a proper PWA strategy is implemented in Phase 2.
 
 ## Current State
 
-- `server/src/index.ts:56` — `app.use('/api/auth', authLimiter, authRoutes)` applies a 10 req/15min limiter to ALL auth routes.
-- `server/src/middleware/rateLimit.ts` — defines `authLimiter` (10/15min) and `uploadLimiter` (100/15min).
-- `server/src/middleware/rateLimitMiddleware.ts` — defines `loginLimiter` (5/15min), `registerLimiter` (3/60min), `apiLimiter` (100/15min).
-- `server/src/routes/authRoutes.ts` — applies `loginLimiter` on POST /login, `registerLimiter` on POST /register; no limiter on GET /me or POST /change-password.
-- `server/__tests__/rateLimit.test.ts` — only tests that limiters are defined, not their behavior.
+- `client/sw.ts` uses `precacheAndRoute()`, caches `/api/*` via `NetworkFirst`, has no `skipWaiting`/`clientsClaim`.
+- After deploy, old SW serves stale precached `index.html` and stale API cache → app broken on refresh.
+- User must append `?v=clean3` to bypass cache.
 
 ## Allowed Files
 
-- `server/src/index.ts`
-- `server/src/middleware/rateLimit.ts`
-- `server/src/middleware/rateLimitMiddleware.ts`
-- `server/src/routes/authRoutes.ts`
-- `server/__tests__/rateLimit.test.ts`
+- `client/sw.ts`
 
 ## Forbidden Files
 
 - `.env`
 - `node_modules/`
 - `dist/`
-- `server/src/config/`
-- Any client/ files
+- `server/`
+- `client/vite.config.ts`
+- `client/vite.config.js`
+- `client/vite.config.d.ts`
 
 ## Must Do
 
-- [ ] Remove `authLimiter` from `server/src/index.ts` (both import and `app.use('/api/auth', ...)`).
-- [ ] Remove `authLimiter` export from `server/src/middleware/rateLimit.ts` — it has no other consumers.
-- [ ] Add `changePasswordLimiter` (5 req/15min) to `server/src/middleware/rateLimitMiddleware.ts`.
-- [ ] Wire `changePasswordLimiter` on `POST /api/auth/change-password` in `server/src/routes/authRoutes.ts` — put `authMiddleware` before the limiter.
-- [ ] Rewrite `server/__tests__/rateLimit.test.ts` with behavioral tests:
-  - `loginLimiter`: 5 calls pass, 6th returns 429.
-  - `registerLimiter`: 3 calls pass, 4th returns 429.
-  - `changePasswordLimiter`: 5 calls pass, 6th returns 429.
-  - Limiter isolation: exhausting `loginLimiter` does not affect `registerLimiter`.
-  - Keep `uploadLimiter` export check.
-- [ ] Run `npm.cmd test` and confirm all tests pass (including other test files).
-- [ ] Update docs.
+- [ ] Replace entire `client/sw.ts` with emergency self-destruct SW:
+  ```typescript
+  /// <reference lib="webworker" />
+  declare const self: ServiceWorkerGlobalScope;
+
+  self.addEventListener('install', () => { self.skipWaiting(); });
+
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches.keys()
+        .then((names) => Promise.all(names.map((n) => caches.delete(n))))
+        .then(() => self.clientsClaim())
+        .then(() => self.registration.unregister())
+        .then(() => {
+          // Reload all open windows/tabs
+          self.clients.matchAll({ type: 'window' }).then((clients) => {
+            clients.forEach((client) => client.navigate(client.url));
+          });
+        })
+    );
+  });
+  ```
+- [ ] Run `npm.cmd run build` to confirm SW compiles.
+- [ ] Run `npm.cmd test` to confirm no regressions.
+- [ ] **Do NOT change** `vite.config.ts` or any other file.
 
 ## Must Not Do
 
-- [ ] Do not change Socket.IO, chat routes, message routes, group routes, or upload limiter.
-- [ ] Do not change the rate limit config values (windowMs/max).
-- [ ] Do not refactor unrelated code.
+- [ ] Do not implement any proper PWA strategy in this task (reserved for Phase 2).
+- [ ] Do not change `vite.config.ts`, `sw.ts` registration in main app, or any server/client code.
 
 ## Acceptance Criteria
 
-- [ ] `GET /api/auth/me` has no rate limiter — never returns 429.
-- [ ] `POST /api/auth/login` block `POST /api/auth/me` returns 200 or 401, never 429.
-- [ ] `POST /api/auth/login` blocks after 5 failed attempts (429).
-- [ ] `POST /api/auth/register` blocks after 3 failed attempts (429).
-- [ ] `POST /api/auth/change-password` blocks after 5 failed attempts (429).
-- [ ] `authLimiter` is fully removed (no dead code).
+- [ ] Built `dist/sw.js` exists and contains `skipWaiting`, `clientsClaim`, `unregister`, `caches.delete`.
+- [ ] `npm.cmd run build` passes (client + server).
 - [ ] `npm.cmd test` passes.
+- [ ] Docker build passes.
+- [ ] After deploy: open site in fresh tab → no stale cache, works without `?v=clean3`.
 
 ## Test Requirements
 
 | Type | Required | Scope |
 | --- | --- | --- |
-| Unit | yes | Each limiter middleware: within-limit passes, over-limit returns 429. |
-| Integration | no | Behaviors covered by unit tests with mocked req/res. |
-| Manual | yes | After deploy: refresh page 10+ times without VPN, verify auth/me not 429. |
+| Build | yes | `npm.cmd run build` must compile SW |
+| Manual | yes | After deploy, test on iPhone/Safari/PC without VPN |
 
 ## Verification Commands
 
 | Command | Required | Expected |
 | --- | --- | --- |
-| `cd server && npx jest --forceExit --detectOpenHandles __tests__/rateLimit.test.ts --verbose` | yes | All 5 tests pass |
-| `cd server && npx jest --forceExit --detectOpenHandles` | yes | All tests pass (no regressions) |
-| `del server\dist /q /s 2>$null; cd server && npx tsc --noEmit` | yes | TypeScript compiles without errors |
+| `cd client && npx tsc --noEmit` | yes | No type errors |
+| `cd client && npm run build` | yes | `dist/sw.js` built |
+| `cd .. && npm test` | yes | All tests pass |
+| `docker compose -f docker-compose.prod.yml build` | yes | Images build |
 
 ## Documentation Updates Required
 
-- [ ] `docs/AI_WORKLOG.md` — append entry
-- [ ] `docs/CONTROL_PLANE.md` — set to `Ready for Audit` after implementation
-- [ ] `docs/AUDIT_LOG.md` — record task creation
+- [ ] `docs/AI_WORKLOG.md`
+- [ ] `docs/CONTROL_PLANE.md`
+- [ ] `docs/DEPLOY_GUIDE.md` — add PWA emergency steps
 
 ## Stop Conditions
 
-- Stop if a required file is outside Allowed Files.
-- Stop if tests fail in other test files (potential regressions).
-- Stop if express-rate-limit version compatibility prevents behavioral testing.
+- Stop if SW build fails.
+- Stop if tests fail.
+- Stop if changes required outside `client/sw.ts`.
 
 ## Notes
 
-- express-rate-limit v8.5.2 requires `req.app.get('trust proxy')`, `res.setHeader()`, `res.send()` on mock objects. See `__tests__/rateLimit.test.ts` mock.
-- The middleware is async — calls must be `await`ed in tests.
-- Some edits are already partially applied to source files (authLimiter removed from index.ts/rateLimit.ts, changePasswordLimiter added to middleware/routes, test rewritten). The Executor must verify and complete the test so it passes.
+- Phase 1 only — Phase 2 (proper PWA) will be a separate task after user confirms emergency fix works.
+- Emergency SW has NO push notification support. Push will be restored in Phase 2.
+- After unregister + navigate, all windows reload with fresh server content.
 
 ## Execution Result
 
-Status: Ready for Audit
-Implemented by: project-executor
-Date: 2026-07-19
-
-### Changed files
-- `server/src/index.ts` — removed `authLimiter` import (line 25) and `app.use('/api/auth', authLimiter, authRoutes)` (line 56)
-- `server/src/middleware/rateLimit.ts` — removed `authLimiter` export (dead code, no other consumers)
-- `server/src/middleware/rateLimitMiddleware.ts` — added `changePasswordLimiter` (5 req/15min)
-- `server/src/routes/authRoutes.ts` — added `changePasswordLimiter` import, wired on POST /change-password with `authMiddleware` before limiter
-- `server/__tests__/rateLimit.test.ts` — fully rewritten: 5 behavioral tests (isolation, login, register, change-password, upload export check)
-
-### Verification
-| Command | Result | Evidence |
-| --- | --- | --- |
-| `npx jest __tests__/rateLimit.test.ts --verbose` | Passed | 5/5 tests pass |
-| `npx jest --forceExit --detectOpenHandles` | Passed | 75/75 tests pass (up from 72) |
-| `npx tsc --noEmit` | Passed | No type errors |
-
-### Notes
-- Each describe block uses a unique IP prefix (127.0.0.10-13) to avoid state leakage across limiter instances.
-- Mock must include `app.get`, `setHeader`, `send`, `writableEnded` for express-rate-limit v8.5.2 compatibility.
-- Acceptance criteria covered: GET /me never 429; login/register/change-password endpoint-specific protection intact.
+Status: Not started
