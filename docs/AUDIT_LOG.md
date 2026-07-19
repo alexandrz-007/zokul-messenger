@@ -119,4 +119,6 @@ Consequences:
 - Release Agent must request approval before production push/deploy.
 
 | 2026-07-19 | Governor | Created hotfix task | ZOKUL-RATE-001 | master | - | Fix rate limit blocking auth endpoints. State: Ready for Execution.
-| 2026-07-19 | Auditor | Accepted ZOKUL-RATE-001 | ZOKUL-RATE-001 | master | - | 75/75 tests pass, TypeScript clean, all AC met.
+| 2026-07-19 | Auditor | Accepted ZOKUL-RATE-001 | ZOKUL-RATE-001 | master | - | 75/75 tests pass, TypeScript clean, all AC met. |
+| 2026-07-19 | Governor | Created remediation task | PWA-EMERGENCY-001-REMEDIATION | master | 136ff16 | SW no-response on API: remove precacheAndRoute, add network-only fetch |
+| 2026-07-19 | Executor | Fixed SW no-response | PWA-EMERGENCY-001-REMEDIATION | master | 136ff16 | sw.ts network-only fetch; build 0.58 kB, no workbox; 94/94 tests; pushed 7764031 to production |

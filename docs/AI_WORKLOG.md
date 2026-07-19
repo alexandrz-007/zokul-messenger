@@ -1983,3 +1983,29 @@ State: Ready for Execution -> Ready for Audit
 ### Follow-ups
 - User to test on iPhone/Safari/PC after server deploy
 - Phase 2 (proper PWA) after confirmation
+
+## 2026-07-19 - PWA-EMERGENCY-001-REMEDIATION - Executor
+
+State: Needs Remediation -> Ready for Audit
+
+### Problem
+After PWA-EMERGENCY-001 deploy, browser console showed:
+`Failed to load 'https://zokul.zhichkin.space/api/auth/me'. ServiceWorker passed a promise to FetchEvent.respondWith() which rejected with error 'Error: no-response'`.
+Root cause: `precacheAndRoute(self.__WB_MANIFEST)` from workbox-precaching registered a fetch handler. In `activate`, caches were deleted before `unregister()`, so between `clientsClaim()` and `unregister()` workbox intercepted `/api/*` and rejected with no-response (empty precache).
+Server API was confirmed working (POST /api/auth/login and /register return 200).
+
+### Changed
+- `client/sw.ts`: removed `import { precacheAndRoute } from 'workbox-precaching'` and `precacheAndRoute()` call; kept `self.__WB_MANIFEST` reference via `console.log` (survives minification, required by vite-plugin-pwa injectManifest); added `self.addEventListener('fetch', e => e.respondWith(fetch(e.request)))` (network-only); kept skipWaiting + deleteAllCaches + clientsClaim + unregister + navigate.
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `npm run build` | Passed | SW 0.58 kB (was 43.6 kB), precache 7 entries, no workbox |
+| `npm test` | Passed | 94/94 |
+| `docker compose build` | Passed | Both images |
+| Built SW grep | Passed | `respondWith(fetch` present; `precacheAndRoute`/`workbox-precaching` absent |
+| Push to production | Done | `b70d25d..7764031` |
+
+### Follow-ups
+- User redeploy on server, then confirm no no-response on /api/auth/me
+- Phase 2 (proper PWA) after confirmation

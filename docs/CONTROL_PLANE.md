@@ -2,7 +2,7 @@
 
 Protocol version: 1.0
 Mode: standard
-State: Needs Remediation
+State: Ready for Audit
 Active task: PWA-EMERGENCY-001-REMEDIATION
 Active review: None
 Owner: project-executor
@@ -14,8 +14,8 @@ Phase 1: Emergency SW self-destruct — fix "no-response" error on API requests 
 
 ## Next Required Action
 
-Fix sw.ts: remove precacheAndRoute, add network-only fetch handler. Build, test, deploy, audit.
+Auditor verifies: built dist/sw.js has no precacheAndRoute/workbox, contains network-only respondWith(fetch). User redeploys server (git reset --hard origin/production + docker compose up -d --build), then confirms no no-response on /api/auth/me.
 
 ## Blockers
 
-- None
+- Server redeploy requires user (no SSH access from agent).
