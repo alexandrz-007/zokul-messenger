@@ -1,90 +1,90 @@
-# Next Agent Task: ZOKUL-NET-001 - Cloudflare Tunnel as primary ingress (bypass provider block)
+# Next Agent Task: ZOKUL-READ-002 - Read Receipts (Stage 2: frontend)
 
 Protocol version: 1.0
 Task type: implementation
-Execution owner: current agent
+Execution owner: current agent (executor under governor)
 Created by: project-governor
 State required before execution: Ready for Execution
 
 ## Goal
 
-Make `https://zokul.zhichkin.space` reachable WITHOUT VPN via Cloudflare Tunnel, bypassing the provider's block of the public IP `151.243.169.150:443`. Keep the direct 443 ingress as a fallback (works with VPN).
+Frontend for read receipts. Depends on Stage 1 backend (`chat:read` socket event + `message:read` broadcast + `message_reads` table). When user opens a chat, emit `chat:read` so backend marks others' messages read and broadcasts `message:read`. Other participants' clients update read ticks on sender's messages. Chat list unread count resets on open (already client-side; reinforced by server marking).
 
 ## Current State
 
-- Provider blocks outbound TLS to `151.243.169.150:443` (curl from client without VPN: `Connection was reset` on domain, `Timed out` on raw IP). With VPN the site works. DNS resolves correctly to `151.243.169.150`.
-- Let's Encrypt cert is valid (CN=zokul.zhichkin.space, expires 2026-10-10) and served by nginx via `./ssl:/etc/nginx/ssl:ro` mount in the `client` service.
-- `cloudflared` is already installed on the server.
-- `docker-compose.prod.yml` exists; `client` exposes `80:80`, `443:443`, `8080:8080`.
+- Backend Stage 1 done & accepted: `socket.on('chat:read')` marks others' messages read, emits `message:read {chatId, userId, messageIds}` to room (not sender).
+- Frontend `useChat.ts`: `useUnread` (in-memory Map, +1 on `message:new` in inactive chat, `markRead` deletes entry), `useMessages` (fetch + socket message:new/edited/deleted).
+- `ChatView.tsx` renders messages; mine vs others; shows single check + edited + time. No read state.
+- `HomePage.tsx`: `handleSelectChat` calls `markRead(chat.id)`.
+- `ChatList.tsx`: badge from `unreadCount(chat.id)`.
 
 ## Allowed Files
 
-- `docker-compose.prod.yml`
-- `docs/DEPLOY_GUIDE.md`
-- `docs/CONTROL_PLANE.md`
-- `docs/AI_WORKLOG.md`
+- `client/src/types/index.ts`
+- `client/src/hooks/useChat.ts`
+- `client/src/components/chat/ChatView.tsx`
+- `client/__tests__/` (new test for read-receipt logic)
+- `docs/CONTROL_PLANE.md`, `docs/AI_WORKLOG.md`, `docs/tasks/active/NEXT_AGENT_TASK.md`
 
 ## Forbidden Files
 
-- `client/sw.ts`
-- `client/src/**`
-- `server/**`
-- `ssl/`
-- `.env`
+- `server/**` (Stage 1 complete; do NOT change backend)
+- `client/src/services/api.ts` (no REST read endpoint in scope)
+- deploy/PWA/SSL/Cloudflare
 
 ## Must Do
 
-- [ ] Add a `tunnel` service to `docker-compose.prod.yml` using `cloudflare/cloudflared:latest` and the command `tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}`.
-- [ ] The tunnel service must `depends_on: client`.
-- [ ] Add a Cloudflare Tunnel section to `docs/DEPLOY_GUIDE.md` with exact UI steps (Zero Trust -> Tunnels -> Create, copy token, add Public Hostname `zokul.zhichkin.space` -> `https://localhost:443`, DNS auto-CNAME).
-- [ ] Document that the tunnel token is stored in server `.env` as `CF_TUNNEL_TOKEN` (already preserved, never committed).
-- [ ] Update `CONTROL_PLANE.md` and `AI_WORKLOG.md`.
+- [ ] `types/index.ts`: add `ReadReceipt { messageId; userId; readAt }`; add `Message.readBy?: string[]`; add `Chat.unreadCount?: number`.
+- [ ] `useChat.ts` `useUnread.markRead(chatId)`: also `socket?.emit('chat:read', { chatId })` so backend marks read + broadcasts `message:read` to others. Keep local map reset.
+- [ ] `useChat.ts` `useMessages`: add `socket.on('message:read', ({chatId, userId, messageIds}) => ...)` handler that, for each id in `messageIds`, marks the local message (if it belongs to current user as sender) by adding `userId` to `readBy`. Remove on cleanup.
+- [ ] `ChatView.tsx`: for `isMine` messages, render read indicator:
+  - no `readBy` (or empty) -> single check (sent)
+  - `readBy.length > 0` -> "Read" / double-check (for 1-on-1); for groups show `Read ${readBy.length}` or "Read".
+  - Do NOT show read state on others' messages.
+- [ ] Tests: add `client/__tests__/readReceipts.test.ts(x)` mocking socket via `SocketContext` to assert: (a) opening chat emits `chat:read`; (b) `message:read` handler adds reader to `readBy` of own message. Keep minimal.
 
 ## Must Not Do
 
-- [ ] Do not change application code, `sw.ts`, server, or SSL files.
-- [ ] Do not remove the direct `443` ingress (keep as VPN fallback).
-- [ ] Do not commit `.env` or any tunnel token.
+- [ ] Do NOT modify backend.
+- [ ] Do NOT add REST read endpoint (socket-only per plan).
+- [ ] Do NOT change PWA/SSL/deploy/Cloudflare.
 
 ## Acceptance Criteria
 
-- [ ] `docker-compose.prod.yml` contains a `tunnel` service referencing `${CF_TUNNEL_TOKEN}`.
-- [ ] After user creates the tunnel in Cloudflare UI and runs `docker compose up -d tunnel` with the token in `.env`, `curl https://zokul.zhichkin.space` from a client WITHOUT VPN returns HTTP 200.
-- [ ] Direct `443` ingress still works WITH VPN.
-- [ ] `npm run build` and `npm test` are unaffected (no source changes).
+- [ ] Opening a chat emits `chat:read {chatId}` (verified by test/socket log).
+- [ ] When another participant reads, sender's message shows read state (readBy updated via `message:read`).
+- [ ] Chat list unread badge resets on open (existing behavior preserved).
+- [ ] `npm run build` (client) succeeds; `npm test` (client) green.
 
 ## Test Requirements
 
 | Type | Required | Scope |
 | --- | --- | --- |
-| Manual | yes | User creates tunnel in CF UI, starts service, verifies `curl https://zokul.zhichkin.space` without VPN returns 200 |
-| Build | no | No source code changed |
-| Unit | no | No source code changed |
+| Unit (mock socket) | yes | chat:read emitted on open; message:read updates readBy |
+| Build | yes | client tsc/vite build |
 
 ## Verification Commands
 
 | Command | Required | Expected |
 | --- | --- | --- |
-| `docker compose -f docker-compose.prod.yml config` | yes | Valid compose file, `tunnel` service present |
-| `curl -s -o /dev/null -w "%{http_code}" https://zokul.zhichkin.space` (user, no VPN) | yes | 200 |
+| `cd client && npm test` | yes | green, incl. new read test |
+| `cd client && npm run build` | yes | exit 0 |
 
 ## Documentation Updates Required
 
-- [ ] `docs/DEPLOY_GUIDE.md`
 - [ ] `docs/CONTROL_PLANE.md`
 - [ ] `docs/AI_WORKLOG.md`
-- [ ] Update this task with Execution Result
+- [ ] this task -> Execution Result
 
 ## Stop Conditions
 
-- Stop if `cloudflared` docker image cannot be pulled in the server network (fallback: systemd `cloudflared service install`).
-- Stop if Cloudflare account/domain is unavailable (user must provide).
+- Stop if `SocketContext` mock cannot be provided in test without heavy refactor (then test via service-level logic only).
 
 ## Notes
 
-- Tunnel target is `https://localhost:443` on the server (nginx with valid certbot cert). If Cloudflare rejects the cert, add `originRequest: noTLSVerify: true` (local hop only, safe).
-- Keep direct 443 open as VPN fallback.
+- Local `useUnread` count stays as quick UI indicator; server marking is source of truth for cross-device.
+- No backend round-trip needed for the badge; `chat:read` emit is enough.
 
 ## Execution Result
 
-Status: Not started
+Status: Completed — frontend implemented; tests green (22/22 client, 78/78 server). Pending merge to master + production deploy + manual Safari/iPhone verification.

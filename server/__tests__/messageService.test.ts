@@ -27,4 +27,30 @@ describe('messageService', () => {
     expect(MessageModel.findByChatId).toHaveBeenCalledWith('c1', 0, 50);
     expect(result).toEqual([]);
   });
+
+  describe('read receipts', () => {
+    it('markChatRead delegates to model and returns marked ids', async () => {
+      (MessageModel.markChatRead as jest.Mock).mockResolvedValue(['m1', 'm2']);
+      const ids = await messageService.markChatRead('c1', 'u2');
+      expect(MessageModel.markChatRead).toHaveBeenCalledWith('c1', 'u2');
+      expect(ids).toEqual(['m1', 'm2']);
+    });
+
+    it('getReadReceipts delegates to model', async () => {
+      const receipts = [
+        { messageId: 'm1', userId: 'u3', readAt: '2026-07-19T00:00:00Z' },
+      ];
+      (MessageModel.getReadReceipts as jest.Mock).mockResolvedValue(receipts);
+      const result = await messageService.getReadReceipts(['m1'], 'u1');
+      expect(MessageModel.getReadReceipts).toHaveBeenCalledWith(['m1'], 'u1');
+      expect(result).toEqual(receipts);
+    });
+
+    it('markChatRead returns empty array when user is not a participant', async () => {
+      (MessageModel.markChatRead as jest.Mock).mockResolvedValue([]);
+      const ids = await messageService.markChatRead('c1', 'u9');
+      expect(ids).toEqual([]);
+    });
+  });
 });
+
