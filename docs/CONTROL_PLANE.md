@@ -2,30 +2,34 @@
 
 Protocol version: 1.0
 Mode: standard
-State: Accepted
-Active task: ZOKUL-READ-002
-Active review: ZOKUL-READ-002 (Stage 2) - Accepted
+State: Accepted (Read Receipts done; pending production deploy)
+Active task: None (last: ZOKUL-READ-002, Accepted)
+Active review: None (last: ZOKUL-READ-002, Accepted)
 Owner: project-executor
 Last updated: 2026-07-19
 
 ## Current Focus
 
-Read Receipts COMPLETE (Stage 1 backend + Stage 2 frontend, both Accepted). Branch `feature/read-receipts` ready to merge to master then production (killer PWA retained). Manual Safari/iPhone verification deferred to deploy step.
+Read Receipts COMPLETE and merged to master (Stage 1 backend + Stage 2 frontend, both auditor-Accepted). Next: deploy to production (killer PWA retained), then manual Safari/iPhone verification of read ticks.
 
-## Current Focus
+## Recently Completed
 
-ZOKUL-READ-001 (Stage 1): Read receipts backend. Add `message_reads` table (per-message), `markChatRead`/`getReadReceipts` in Message model+service, `chat:read` socket listener emitting `message:read` to room (excluding sender). Frontend is Stage 2 (deferred). Production stays on killer PWA; no deploy/PWA/SSL/Cloudflare changes.
-
-## Secondary incident (2026-07-19): SSL cert mismatch on direct IP — RESOLVED
-
-- Symptom: Firefox "potential security risk" / HSTS screen; without VPN browser hung on loading.
-- Root cause: `~/zokul/ssl/fullchain.pem` contained a self-signed `CN=localhost` cert (notAfter Jul 20), not the Let's Encrypt cert.
-- Resolution: copied `/etc/letsencrypt/live/zokul.zhichkin.space/{fullchain,privkey}.pem` into `~/zokul/ssl/`, restarted `client`. Verified `CN = zokul.zhichkin.space`, notAfter Oct 10 2026.
+- **ZOKUL-READ-001** (Stage 1, backend) — `message_reads` table, `markChatRead` (participant-checked, `ON CONFLICT DO NOTHING`), `getReadReceipts`, `chat:read` socket -> `message:read`. Accepted.
+- **ZOKUL-READ-002** (Stage 2, frontend) — `chat:read` emitted on chat open; `message:read` updates `readBy`; ChatView read ticks; types + tests. Accepted. Merged to master (9cbede6).
+- **PWA-PROPER-001** — split SW into build-time `sw.kill.ts`/`sw.pwa.ts` + `select-sw.mjs`. Branch `feature/pwa-proper` (NOT merged; killer stays production-default).
+- **PWA-EMERGENCY / SSL / ZOKUL-RATE-001 / ZOKUL-NET-001** — resolved/accepted earlier; production on killer PWA.
 
 ## Next Required Action
 
-Executor implements ZOKUL-NET-001: add `tunnel` service to docker-compose.prod.yml + DEPLOY_GUIDE tunnel section. User creates tunnel in Cloudflare UI, adds token to server .env, runs `docker compose up -d tunnel`, verifies `curl https://zokul.zhichkin.space` returns 200 without VPN.
+1. Deploy read-receipts to production: `prepare-release.ps1`, push `master:production --force`, server `git reset --hard origin/production && docker compose -f docker-compose.prod.yml up -d --build`.
+2. Verify `/api/health`, `message:read`/`chat:read` behavior, and (manual) Safari/iPhone read ticks.
+3. Keep production on killer SW (`sw.ts` = killer, inherited from master).
 
 ## Blockers
 
-- None. Tunnel token requires user action in Cloudflare UI.
+- None.
+
+## Notes
+
+- `feature/pwa-proper` remains separate; do NOT merge until manual Safari stability confirmed.
+- Cloudflare tunnel (ZOKUL-NET-001) is off per user; direct 443 + killer PWA only.
