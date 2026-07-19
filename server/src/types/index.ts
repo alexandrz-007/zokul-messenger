@@ -85,3 +85,9 @@ export interface ReplyPreview {
   text?: string;
   imageUrl?: string;
 }
+
+export interface ReadReceipt {
+  messageId: string;
+  userId: string;
+  readAt: string;
+}

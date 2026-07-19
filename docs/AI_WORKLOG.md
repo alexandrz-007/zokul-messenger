@@ -2070,3 +2070,40 @@ Add Cloudflare Tunnel as the primary ingress so clients reach the site via Cloud
 ### Follow-ups
 - User creates tunnel in Cloudflare UI, adds `CF_TUNNEL_TOKEN` to server `.env`, runs `docker compose up -d tunnel`.
 - Verify site loads without VPN; direct 443 still works with VPN.
+
+## 2026-07-19 - ZOKUL-READ-001 (Stage 1) - Read receipts backend
+
+Role: Governor / Executor
+Task ID: ZOKUL-READ-001
+Branch: feature/read-receipts (NOT merged to production)
+
+### Goal
+Backend read receipts: opening a chat marks other participants' unread messages read; others get message:read socket event. Frontend deferred to Stage 2.
+
+### Decisions (user-confirmed)
+- Per-message table message_reads(message_id, user_id, read_at), PK(message_id,user_id), FK cascade.
+- Trigger = opening chat -> client emits chat:read {chatId}.
+- Groups via same table, no separate logic.
+- markChatRead must verify userId is a participant (forbid marking foreign chats).
+- Use INSERT ... SELECT ... ON CONFLICT (message_id,user_id) DO NOTHING RETURNING message_id (race-safe, no NOT IN).
+- chat:read emits message:read ONLY via socket.to('chat:'+chatId) (not current socket); no ack to sender.
+
+### Changed
+- server/src/config/db.ts: added message_reads table + index (idempotent CREATE).
+- server/src/types/index.ts: added ReadReceipt.
+- server/src/models/Message.ts: isParticipant, markChatRead (participant check + INSERT...ON CONFLICT DO NOTHING), getReadReceipts.
+- server/src/services/messageService.ts: markChatRead, getReadReceipts.
+- server/src/socket/index.ts: chat:read listener (ensureChatParticipant + markChatRead + emit message:read to room).
+- server/__tests__/messageService.test.ts: extended with read-receipts tests.
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| 
+pm test (server) | Passed | 78/78, incl. new read tests |
+| 
+pm run build (server) | Passed | tsc exit 0 |
+
+### Follow-ups
+- Stage 2 (frontend): emit chat:read on chat open, consume message:read for ticks, show backend unreadCount in chat list. Not started.
+- Manual socket verification after deploy (deferred).

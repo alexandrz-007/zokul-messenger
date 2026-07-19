@@ -77,6 +77,17 @@ export async function migrate(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_messages_text_search ON messages USING GIN(text_search_vector);
     `);
     await client.query(`
+      CREATE TABLE IF NOT EXISTS message_reads (
+        message_id UUID REFERENCES messages(id) ON DELETE CASCADE NOT NULL,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+        read_at TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (message_id, user_id)
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_message_reads_user ON message_reads(user_id);
+    `);
+    await client.query(`
       CREATE OR REPLACE FUNCTION messages_text_search_trigger() RETURNS trigger AS $$
       BEGIN
         NEW.text_search_vector := to_tsvector('english', COALESCE(NEW.text, ''));

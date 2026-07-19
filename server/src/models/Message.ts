@@ -1,5 +1,5 @@
 import { pool } from '../config/db';
-import { Message, ReplyPreview } from '../types';
+import { Message, ReadReceipt, ReplyPreview } from '../types';
 
 interface MessageRow {
   id: string; chat_id: string; sender_id: string;
@@ -116,8 +116,48 @@ export async function search(
   return result.rows.map(mapMessage);
 }
 
-async function getReplyPreview(messageId: string): Promise<ReplyPreview | undefined> {
+export async function isParticipant(chatId: string, userId: string): Promise<boolean> {
   const result = await pool.query(
+    `SELECT 1 FROM chat_participants WHERE chat_id = $1 AND user_id = $2 LIMIT 1`,
+    [chatId, userId]
+  );
+  return result.rows.length > 0;
+}
+
+export async function markChatRead(chatId: string, userId: string): Promise<string[]> {
+  const participant = await isParticipant(chatId, userId);
+  if (!participant) return [];
+  const result = await pool.query(
+    `INSERT INTO message_reads (message_id, user_id)
+     SELECT id, $2 FROM messages
+     WHERE chat_id = $1 AND sender_id <> $2 AND deleted_at IS NULL
+     ON CONFLICT (message_id, user_id) DO NOTHING
+     RETURNING message_id`,
+    [chatId, userId]
+  );
+  return result.rows.map((r: { message_id: string }) => r.message_id);
+}
+
+export async function getReadReceipts(messageIds: string[], viewerUserId: string): Promise<ReadReceipt[]> {
+  if (messageIds.length === 0) return [];
+  const result = await pool.query(
+    `SELECT mr.message_id, mr.user_id, mr.read_at
+     FROM message_reads mr
+     JOIN messages m ON m.id = mr.message_id
+     WHERE mr.message_id = ANY($1)
+       AND mr.user_id <> m.sender_id
+       AND mr.user_id <> $2
+     ORDER BY mr.read_at ASC`,
+    [messageIds, viewerUserId]
+  );
+  return result.rows.map((r: { message_id: string; user_id: string; read_at: string }) => ({
+    messageId: r.message_id,
+    userId: r.user_id,
+    readAt: r.read_at,
+  }));
+}
+
+async function getReplyPreview(messageId: string): Promise<ReplyPreview | undefined> {  const result = await pool.query(
     `SELECT m.id, m.sender_id, m.text, m.image_url, u.name as sender_name
      FROM messages m
      JOIN users u ON u.id = m.sender_id

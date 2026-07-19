@@ -1,7 +1,7 @@
 import * as MessageModel from '../models/Message';
 import * as ChatModel from '../models/Chat';
 import * as UserModel from '../models/User';
-import { Message } from '../types';
+import { Message, ReadReceipt } from '../types';
 import { logger } from '../utils/logger';
 import { sendPushNotification } from './notificationService';
 
@@ -80,4 +80,12 @@ export async function deleteMessage(
   const deleted = await MessageModel.softDelete(messageId);
   if (!deleted) throw new Error('Message not found');
   return { chatId: msg.chatId };
+}
+
+export async function markChatRead(chatId: string, userId: string): Promise<string[]> {
+  return MessageModel.markChatRead(chatId, userId);
+}
+
+export async function getReadReceipts(messageIds: string[], viewerUserId: string): Promise<ReadReceipt[]> {
+  return MessageModel.getReadReceipts(messageIds, viewerUserId);
 }

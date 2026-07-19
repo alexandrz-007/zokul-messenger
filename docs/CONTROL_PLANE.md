@@ -2,15 +2,15 @@
 
 Protocol version: 1.0
 Mode: standard
-State: Ready for Execution
-Active task: ZOKUL-NET-001
+State: In Execution
+Active task: ZOKUL-READ-001
 Active review: None
 Owner: project-executor
 Last updated: 2026-07-19
 
 ## Current Focus
 
-ZOKUL-NET-001: Cloudflare Tunnel as primary ingress (bypass provider block of public IP 151.243.169.150:443). Direct 443 kept as VPN fallback.
+ZOKUL-READ-001 (Stage 1): Read receipts backend. Add `message_reads` table (per-message), `markChatRead`/`getReadReceipts` in Message model+service, `chat:read` socket listener emitting `message:read` to room (excluding sender). Frontend is Stage 2 (deferred). Production stays on killer PWA; no deploy/PWA/SSL/Cloudflare changes.
 
 ## Secondary incident (2026-07-19): SSL cert mismatch on direct IP — RESOLVED
 

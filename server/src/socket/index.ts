@@ -229,6 +229,26 @@ export function setupSocket(httpServer: HTTPServer): Server {
       });
     });
 
+    socket.on('chat:read', async (data: { chatId: string }) => {
+      try {
+        const allowed = await ensureChatParticipant(data.chatId, userId);
+        if (!allowed) {
+          socket.emit('error', { message: 'Forbidden' });
+          return;
+        }
+        const messageIds = await messageService.markChatRead(data.chatId, userId);
+        if (messageIds.length > 0) {
+          socket.to(`chat:${data.chatId}`).emit('message:read', {
+            chatId: data.chatId,
+            userId,
+            messageIds,
+          });
+        }
+      } catch (err: unknown) {
+        socket.emit('error', { message: err instanceof Error ? err.message : String(err) });
+      }
+    });
+
     socket.on('chat:created', async (data: { chatId: string }) => {
       const chat = await chatModel.findChatById(data.chatId);
       if (!chat) {
