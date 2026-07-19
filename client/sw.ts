@@ -18,17 +18,14 @@ self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-// Emergency: delete ALL caches, claim clients, unregister, reload windows
+// Emergency: delete ALL caches, claim clients, then unregister.
+// Do not auto-navigate clients here: the PWA registration script runs on every
+// page load, and Safari can get stuck in a register/unregister/reload loop.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((names) => Promise.all(names.map((n) => caches.delete(n))))
       .then(() => self.clientsClaim())
       .then(() => self.registration.unregister())
-      .then(() =>
-        self.clients.matchAll({ type: 'window' }).then((clients) => {
-          clients.forEach((client) => client.navigate(client.url));
-        })
-      )
   );
 });

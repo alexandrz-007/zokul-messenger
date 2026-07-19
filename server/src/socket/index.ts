@@ -16,8 +16,8 @@ const userSockets = new Map<string, Set<string>>();
 const messageRateLimits = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW = 1000;
 const RATE_LIMIT_MAX = 5;
-const CONNECT_RATE_LIMIT_WINDOW = 1000;
-const CONNECT_RATE_LIMIT_MAX = 3;
+const CONNECT_RATE_LIMIT_WINDOW = 10 * 1000;
+const CONNECT_RATE_LIMIT_MAX = 30;
 const connectRateLimits = new Map<string, number[]>();
 
 function checkRateLimit(userId: string): boolean {

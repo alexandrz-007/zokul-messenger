@@ -7,7 +7,13 @@ function mockReqRes(ip?: string) {
     headers: {},
     app: { get: () => false },
   };
-  const res: any = { status: jest.fn().mockReturnThis(), setHeader: jest.fn(), send: jest.fn(), writableEnded: false };
+  const res: any = {
+    status: jest.fn().mockReturnThis(),
+    setHeader: jest.fn(),
+    send: jest.fn(),
+    writableEnded: false,
+    once: jest.fn(),
+  };
   const next = jest.fn();
   return { req, res, next };
 }
@@ -16,7 +22,7 @@ describe('limiter isolation', () => {
   const ip = '127.0.0.10';
 
   it('login limiter and register limiter have independent counters', async () => {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       const { req, res, next } = mockReqRes(ip);
       await loginLimiter(req, res, next);
     }
@@ -38,8 +44,8 @@ describe('limiter isolation', () => {
 describe('loginLimiter', () => {
   const ip = '127.0.0.11';
 
-  it('allows 5 attempts then blocks the 6th', async () => {
-    for (let i = 0; i < 5; i++) {
+  it('allows 10 attempts then blocks the 11th', async () => {
+    for (let i = 0; i < 10; i++) {
       const { req, res, next } = mockReqRes(ip);
       await loginLimiter(req, res, next);
       expect(next).toHaveBeenCalled();
