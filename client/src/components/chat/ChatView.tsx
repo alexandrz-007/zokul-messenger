@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSocket } from '../../contexts/SocketContext';
 import { useChatContext } from '../../contexts/ChatContext';
 import { Message, ReplyPreview, User } from '../../types';
@@ -56,10 +56,14 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
   const scrolledChatRef = useRef<string | null>(null);
 
   useEffect(() => {
+    scrolledChatRef.current = null;
+  }, [chatId]);
+
+  useLayoutEffect(() => {
     if (messages.length === 0 || loading) return;
     if (scrolledChatRef.current !== chatId) {
       scrolledChatRef.current = chatId;
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50);
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
     } else {
       const newest = messages[0];
       const isRecent = Date.now() - new Date(newest.createdAt).getTime() < 2000;

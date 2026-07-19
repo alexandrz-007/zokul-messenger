@@ -22,7 +22,7 @@ import { uploadMiddleware } from './middleware/uploadMiddleware';
 import { processImage, processAvatar } from './middleware/processImage';
 import { authMiddleware, AuthRequest } from './middleware/authMiddleware';
 import { errorMiddleware } from './middleware/errorMiddleware';
-import { authLimiter, uploadLimiter } from './middleware/rateLimit';
+import { uploadLimiter } from './middleware/rateLimit';
 import { startCleanupScheduler, stopCleanupScheduler } from './services/cleanupService';
 import { setupSocket } from './socket';
 import { closeRedis } from './config/redis';
@@ -53,7 +53,7 @@ app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use('/api/health', healthRoutes);
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/chats', groupRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/chats', messageRoutes);

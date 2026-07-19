@@ -139,8 +139,8 @@ Prepare a scoped executor task to implement the fresh Zokul messenger interface.
 
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/03_PRODUCT_BACKLOG.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/BACKLOG.md`
+- `docs/AI_WORKLOG.md`
 
 ### Verification
 
@@ -206,7 +206,7 @@ Rollback all UI redesign changes after user review showed the interface became w
 
 - Reverted `b40070d fix: address ui redesign review findings`.
 - Reverted `50a7532 style: polish messenger interface`.
-- Restored `docs/03_PRODUCT_BACKLOG.md`, `docs/10_AI_WORKLOG.md`, and `docs/tasks/active/NEXT_AGENT_TASK.md` because the UI revert removed those protocol files from history.
+- Restored `docs/BACKLOG.md`, `docs/AI_WORKLOG.md`, and `docs/tasks/active/NEXT_AGENT_TASK.md` because the UI revert removed those protocol files from history.
 
 ### Verification
 
@@ -430,8 +430,8 @@ Improve voice-message composer UX with Telegram-like hold-to-record on mobile, k
 - `client/__tests__/voice.test.ts`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AI_WORKLOG.md`
+- `docs/BACKLOG.md`
 
 ### Verification
 
@@ -505,7 +505,7 @@ Fix two P1 bugs identified in the Governor review of the Telegram-like voice rec
 - `client/src/components/chat/MessageInput.tsx`
 - `docs/CONTROL_PLANE.md`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -550,8 +550,8 @@ Polish only the messenger left sidebar / chat list to move Zokul closer to the a
 - `client/src/components/chat/ChatList.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AI_WORKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -610,9 +610,9 @@ Change smartphone voice recording from hold-to-record to tap-to-start/tap-to-sto
 - `client/__tests__/voice.test.ts`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 
 ### Verification
 
@@ -655,9 +655,9 @@ Correct the AI development protocol after the current agent improperly moved fro
 ### Actions
 
 - Added a `Protocol Mode Barrier` to `docs/00_README_FOR_AGENTS.md`.
-- Added a `Handoff Barrier` to `docs/05_DEVELOPMENT_PROCESS.md`.
-- Updated `docs/ROLES.md` to forbid Governor from silently becoming Executor.
-- Updated `docs/16_AGENT_COMPATIBILITY.md` with cross-agent execution ownership rules.
+- Added a `Handoff Barrier` to `docs/00_README_FOR_AGENTS.md`.
+- Updated `docs/00_README_FOR_AGENTS.md` to forbid Governor from silently becoming Executor.
+- Updated `docs/00_README_FOR_AGENTS.md` with cross-agent execution ownership rules.
 - Added `Execution owner: current agent` to the active task and control plane for the current already-implemented exception.
 - Updated local `project-governor` and `project-executor` skills outside the repository:
   - Governor now defaults `по протоколу` / `по скиллу` / another-agent wording to handoff-only mode.
@@ -782,8 +782,8 @@ Restore group chat creation access without adding a fourth sidebar button, and e
 - `client/src/components/HomePage.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AI_WORKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -830,8 +830,8 @@ Refine the sidebar composition after user review of ZOKUL-UI-001. Fix profile lo
 - `client/src/components/chat/ChatList.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AI_WORKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -877,7 +877,7 @@ Result: Accepted for behavior fixes; release packaging still required
 
 - Package/commit the full voice/upload change set intentionally before merge/release.
 - Create a separate follow-up task for focused voice component tests with mocked `MediaRecorder`.
-- Admin panel idea captured in `03_PRODUCT_BACKLOG.md` as `ZOKUL-ADMIN-ROADMAP`.
+- Admin panel idea captured in `BACKLOG.md` as `ZOKUL-ADMIN-ROADMAP`.
 
 ## 2026-07-17 - Created sidebar UI polish handoff
 
@@ -904,7 +904,7 @@ Start the UI refresh as a small, reviewable task focused only on the left sideba
 - Archived accepted `ZOKUL-VOICE-002` active task.
 - Created new active task `ZOKUL-UI-001`.
 - Updated `CONTROL_PLANE.md`.
-- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `BACKLOG.md`.
 
 ### Next Action
 
@@ -959,7 +959,7 @@ Create the second small UI task after user visual review of `ZOKUL-UI-001`. The 
 - Archived accepted `ZOKUL-UI-001` active task.
 - Created new active task `ZOKUL-UI-002`.
 - Updated `CONTROL_PLANE.md`.
-- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `BACKLOG.md`.
 
 ### Next Action
 
@@ -1015,7 +1015,7 @@ Restore group chat creation without adding a fourth bottom action, and ensure th
 - Archived accepted `ZOKUL-UI-002` active task.
 - Created new active task `ZOKUL-UI-003`.
 - Updated `CONTROL_PLANE.md`.
-- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `BACKLOG.md`.
 
 ### Next Action
 
@@ -1096,7 +1096,7 @@ User likes the new UI direction, but the light theme is too bright. Create a sma
 - Archived accepted `ZOKUL-UI-003` active task.
 - Created new active task `ZOKUL-UI-004`.
 - Updated `CONTROL_PLANE.md`.
-- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `BACKLOG.md`.
 - Updated `AUDIT_LOG.md`.
 
 ### Queued Follow-up
@@ -1144,8 +1144,8 @@ Make the light theme softer and less eye-straining using a calm blue-gray palett
 - `client/src/components/chat/VoiceRecorder.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AI_WORKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -1214,7 +1214,7 @@ After user accepted the light theme balance, prepare the next focused UI task: a
 - Archived accepted `ZOKUL-UI-005` active task.
 - Created new active task `ZOKUL-UI-006`.
 - Updated `CONTROL_PLANE.md`.
-- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `BACKLOG.md`.
 - Updated `AUDIT_LOG.md`.
 
 ### Next Action
@@ -1244,7 +1244,7 @@ User visual QA showed the first light theme pass is unbalanced: the left sidebar
 - Archived accepted `ZOKUL-UI-004` active task.
 - Created new active task `ZOKUL-UI-005`.
 - Updated `CONTROL_PLANE.md`.
-- Updated `03_PRODUCT_BACKLOG.md`.
+- Updated `BACKLOG.md`.
 - Updated `AUDIT_LOG.md`.
 
 ### Next Action
@@ -1288,8 +1288,8 @@ Fix the visual imbalance where the left sidebar looked gray and the right chat a
 - `client/src/components/chat/VoiceRecorder.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AI_WORKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -1368,8 +1368,8 @@ Allow viewing another participant's uploaded avatar by clicking/tapping the avat
 - `client/src/components/chat/ChatView.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/AI_WORKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -1422,9 +1422,9 @@ Convert failed real-device QA into a focused executor task. User verified that t
 
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 
 ### Verification
 
@@ -1476,7 +1476,7 @@ Fix mobile browser layout (bottom bar visibility, composer safe-area, iPhone hea
 - `client/src/components/chat/VoicePlayer.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -1520,7 +1520,7 @@ Commit: (not committed)
 - `client/src/components/layout/AppLayout.tsx` — removed `min-h-screen`
 - `docs/tasks/active/NEXT_AGENT_TASK.md` — Execution Result + Allowed Files updated
 - `docs/CONTROL_PLANE.md` — already in Needs Changes state
-- `docs/10_AI_WORKLOG.md` — this entry
+- `docs/AI_WORKLOG.md` — this entry
 - `docs/AUDIT_LOG.md` — entry added
 - `docs/CHANGE_REQUESTS.md` — change request for index.css scope exception
 
@@ -1559,7 +1559,7 @@ Review executor work for `ZOKUL-MOBILE-001` against the active task, scope rules
 
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Verification
@@ -1605,7 +1605,7 @@ Re-review the executor's follow-up fixes for the startup cancel race, mobile vie
 - `docs/CHANGE_REQUESTS.md`
 - `docs/CONTROL_PLANE.md`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 
 ## 2026-07-18 — Implemented chat UX fixes (ZOKUL-CHAT-UX-001)
 
@@ -1670,7 +1670,7 @@ Changed Files (code)
 ### Changed Files (docs)
 
 - `docs/tasks/active/NEXT_AGENT_TASK.md` — corrected instruction #5 and test line
-- `docs/10_AI_WORKLOG.md` — this entry
+- `docs/AI_WORKLOG.md` — this entry
 - `docs/AUDIT_LOG.md` — updated
 
 ### Git
@@ -1767,10 +1767,200 @@ Fix the chat-opening scroll regression: when switching chats, the dialog opened 
 - `client/src/components/chat/ChatView.tsx`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ### Follow-ups
 
 - User QA on desktop/mobile to confirm scroll behavior.
 - Commit after user approval.
+
+## 2026-07-19 — Created handoff ZOKUL-CHAT-UX-003 (Governor)
+
+Role: Governor
+Agent: current agent
+Task ID: ZOKUL-CHAT-UX-003
+Branch: master
+
+### Intent
+
+Create a proper Governor handoff for the scroll-to-bottom bug: when returning to a previously opened chat, messages appear at the top instead of the bottom.
+
+### Changes
+
+- `docs/BACKLOG.md` — added ZOKUL-CHAT-UX-002 (existing) and ZOKUL-CHAT-UX-003 (new) entries
+- `docs/tasks/active/NEXT_AGENT_TASK.md` — replaced with canonical task template (protocol 1.0, bugfix type, allowed/forbidden files, acceptance criteria, test requirements, verification commands, stop conditions)
+- `docs/CONTROL_PLANE.md` — state `Ready for Execution`, active task ZOKUL-CHAT-UX-003
+- `docs/PROJECT_HEALTH.md` — updated active task info
+- `docs/AI_WORKLOG.md` — this entry
+
+### Verification
+
+- Documentation-only handoff; no product build required.
+- `git status --short --branch`: dirty with intended docs changes.
+
+### Follow-ups
+
+- Executor implemented the fix.
+- Auditor must verify.
+
+## 2026-07-19 — Implemented ZOKUL-CHAT-UX-003 scroll fix (Executor)
+
+Role: Executor
+Agent: current agent
+Task ID: ZOKUL-CHAT-UX-003
+Branch: master
+
+### Intent
+
+Add a useEffect that resets `scrolledChatRef` when `chatId` changes, so returning to a previously opened chat scrolls to bottom like the first visit.
+
+### Changes
+
+- `client/src/components/chat/ChatView.tsx` — added `useEffect(() => { scrolledChatRef.current = null; }, [chatId]);` before the existing scroll effect.
+
+### Verification
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `npm.cmd run build` | Passed | tsc compiled without errors |
+| `npm.cmd test` | Passed | 72/72 tests, 12 suites |
+| `git diff --check` | Passed | CRLF warnings only |
+| `git status --short --branch` | Passed | Only expected files dirty |
+
+### Follow-ups
+
+- Auditor reviewed and accepted ZOKUL-CHAT-UX-003.
+
+## 2026-07-19 — Archived UX-003 + created handoff ZOKUL-UX-007 (Governor)
+
+Role: Governor
+Agent: current agent
+Task ID: ZOKUL-UX-007
+Branch: master
+
+### Intent
+
+Archive accepted ZOKUL-CHAT-UX-003 (scroll ref reset). Create new handoff for two UX fixes: instant scroll without jump (useLayoutEffect) and real-time 1-on-1 chat notification (socket.emit chat:created).
+
+### Changes
+
+- `docs/tasks/archive/2026-07-19-001-zokul-chat-ux-003-scroll-ref-reset.md` — archived task
+- `docs/reviews/archive/2026-07-19-001-zokul-chat-ux-003-review.md` — archived review
+- `docs/BACKLOG.md` — ZOKUL-CHAT-UX-003 marked Accepted
+- `docs/tasks/active/NEXT_AGENT_TASK.md` — new task for ZOKUL-UX-007
+- `docs/CONTROL_PLANE.md` — Ready for Execution
+- `docs/PROJECT_HEALTH.md` — updated active task
+- `docs/AI_WORKLOG.md` — this entry
+
+### Verification
+
+- Documentation-only; no build required.
+
+### Follow-ups
+
+- Executor implemented the fixes.
+
+## 2026-07-19 — Implemented ZOKUL-UX-007 (Executor)
+
+Role: Executor
+Agent: current agent
+Task ID: ZOKUL-UX-007
+Branch: master
+
+### Intent
+
+Two UX fixes: (1) eliminate scroll jump by using useLayoutEffect before paint; (2) add socket.emit('chat:created') to CreateChatModal so 1-on-1 chats appear in real-time on the other participant's sidebar.
+
+### Changes
+
+- `client/src/components/chat/ChatView.tsx` — useLayoutEffect + removed setTimeout
+- `client/src/components/chat/CreateChatModal.tsx` — added socket prop + emit
+- `client/src/components/HomePage.tsx` — pass socket to CreateChatModal
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm.cmd run build` | Passed |
+| `npm.cmd test` | Passed, 72/72 |
+
+### Follow-ups
+
+- Auditor reviewed and accepted ZOKUL-UX-007.
+
+## 2026-07-19 — Archived UX-007 + created handoff ZOKUL-UX-008 (Governor)
+
+Role: Governor
+Agent: current agent
+Task ID: ZOKUL-UX-008
+Branch: master
+
+### Intent
+
+Archive accepted ZOKUL-UX-007. Create new handoff: only show 1-on-1 chat after first message. Remove socket.emit from CreateChatModal, move room-join logic to server message:send handler.
+
+### Changes
+
+- `docs/tasks/archive/2026-07-19-002-zokul-ux-007-*.md` — archived task
+- `docs/reviews/archive/2026-07-19-002-zokul-ux-007-*.md` — archived review
+- `docs/BACKLOG.md` — UX-007 marked Accepted, UX-008 added
+- `docs/tasks/active/NEXT_AGENT_TASK.md` — new task for ZOKUL-UX-008
+- `docs/CONTROL_PLANE.md` — Ready for Execution
+
+### Verification
+
+- Documentation-only; no build required.
+
+### Follow-ups
+
+- Executor implemented the fix.
+
+## 2026-07-19 — Implemented ZOKUL-UX-008 (Executor)
+
+Role: Executor
+Agent: current agent
+Task ID: ZOKUL-UX-008
+Branch: master
+
+### Intent
+
+Remove `socket.emit('chat:created')` from CreateChatModal (so 1-on-1 chats aren't announced on creation). Add room-join + `chat:new-room` logic to server `message:send` handler (so chat appears only after first message).
+
+### Changes
+
+- `client/src/components/chat/CreateChatModal.tsx` — removed socket.emit line
+- `server/src/socket/index.ts` — added participant room-join loop after messageService.createMessage()
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm.cmd run build` | Passed |
+| `npm.cmd test` | Passed, 72/72 |
+
+### Follow-ups
+
+- Auditor must review before acceptance.
+
+## 2026-07-19 - ZOKUL-RATE-001 - Executor
+
+State: Ready for Execution -> Ready for Audit
+
+### Changed
+- `server/src/index.ts`: Removed `authLimiter` import and `app.use` from `/api/auth` mount
+- `server/src/middleware/rateLimit.ts`: Removed unused `authLimiter` export
+- `server/src/middleware/rateLimitMiddleware.ts`: Added `changePasswordLimiter` (5/15min)
+- `server/src/routes/authRoutes.ts`: Wired `changePasswordLimiter` on POST /change-password (authMiddleware before limiter)
+- `server/__tests__/rateLimit.test.ts`: Rewrote from 2 stub tests to 5 behavioral tests (isolation, login, register, change-password, upload export)
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `npx jest __tests__/rateLimit.test.ts --verbose` | Passed | 5/5 |
+| `npx jest --forceExit --detectOpenHandles` | Passed | 75/75 (up from 72) |
+| `npx tsc --noEmit` | Passed | No errors |
+
+### Follow-ups
+- Deploy to production (`git pull + docker compose up -d --build`)
+- Manual verification: refresh page 10+ times without VPN

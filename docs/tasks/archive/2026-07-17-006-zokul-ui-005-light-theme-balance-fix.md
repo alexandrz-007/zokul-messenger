@@ -85,7 +85,7 @@ If unsure, skip the pattern and solve with surfaces/colors only.
 
 - `docs/00_README_FOR_AGENTS.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/12_DEFINITION_OF_DONE.md`
+- `docs/DEFINITION_OF_DONE.md`
 - `docs/gates/frontend-ui.md`
 - `client/src/components/layout/AppLayout.tsx`
 - `client/src/components/HomePage.tsx`
@@ -123,10 +123,10 @@ Out of scope:
 - `client/src/components/chat/ReplyQuote.tsx` only if quote color must be rebalanced
 - `client/src/components/chat/VoicePlayer.tsx` only if track color must be rebalanced
 - `client/src/components/chat/VoiceRecorder.tsx` only if recorder color must be rebalanced
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/BACKLOG.md`
 - `docs/AUDIT_LOG.md`
 
 ## Forbidden Files
@@ -187,7 +187,7 @@ Manual QA:
 
 ## Definition Of Done
 
-- Follow `docs/12_DEFINITION_OF_DONE.md`.
+- Follow `docs/DEFINITION_OF_DONE.md`.
 - Apply `docs/gates/frontend-ui.md`.
 - Governor review required before packaging/commit.
 

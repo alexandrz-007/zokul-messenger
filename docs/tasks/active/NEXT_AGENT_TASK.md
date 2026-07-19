@@ -1,173 +1,125 @@
-# NEXT_AGENT_TASK: Fix chat opening scroll regression
+# Next Agent Task: ZOKUL-RATE-001 - Fix backend rate limit blocking auth endpoints
 
-Task ID: ZOKUL-CHAT-UX-002
-Status: Implemented
-Created by: Governor
-Assigned role: Executor
-Execution owner: external agent
-Recommended branch: codex/fix-chat-scroll-loading
-Change type: bugfix
-Risk level: Low
-Confidence: High
+Protocol version: 1.0
+Task type: hotfix
+Execution owner: current agent
+Created by: project-governor
+State required before execution: Ready for Execution
 
-## Executive Summary
+## Goal
 
-Fix a regression introduced by ZOKUL-CHAT-UX-001: when switching chats, the dialog opens at the top (oldest messages) instead of at the bottom (newest messages). The scroll effect in `ChatView` fires on stale `messages` data from the previous chat before the new chat's messages are loaded, prematurely setting `scrolledChatRef.current`. When the real messages arrive, the effect enters the else branch which only scrolls for live messages (< 2s old) — so old/historical messages never trigger the scroll.
+Remove the blanket `authLimiter` (10 req/15min) from all `/api/auth/*` routes, keep endpoint-specific brute-force protection on login/register/change-password, so GET /api/auth/me never returns 429 during normal PWA usage.
 
-## Must Do
+## Current State
 
-- Add `loading` guard to the scroll `useEffect` in `ChatView.tsx` so it does not fire while data for the current chat is still loading.
-- Add `loading` to the effect's dependency array.
-
-## Must Not Do
-
-- Do not change the scroll mechanism itself (chatId-based tracking, instant vs smooth, `bottomRef`).
-- Do not change `ChatList`, `HomePage`, or any server code.
-- Do not change any other effect or logic in `ChatView.tsx`.
-
-## Context
-
-The root cause is a race condition in `client/src/components/chat/ChatView.tsx:58-70`:
-
-```ts
-useEffect(() => {
-    if (messages.length === 0) return;                    // ← no loading check
-    if (scrolledChatRef.current !== chatId) {
-      scrolledChatRef.current = chatId;
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50);
-    } else {
-      const newest = messages[0];
-      const isRecent = Date.now() - new Date(newest.createdAt).getTime() < 2000;
-      if (isRecent) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-}, [messages, chatId]);                                   // ← loading missing
-```
-
-When user switches from Chat A to Chat B:
-
-1. `chatId` → Chat B, but `messages` still has Chat A's data (API call in flight)
-2. Effect fires: `messages.length > 0`, `scrolledChatRef.current ("chatA") !== chatId ("chatB")` → scrolls with Chat A's layout, sets `scrolledChatRef.current = "chatB"`
-3. API returns Chat B's messages, `messages` updates
-4. Effect fires: `scrolledChatRef.current ("chatB") === chatId ("chatB")` → else branch
-5. Else: `isRecent` = false (historical messages) → **no scroll**
-
-The fix: `if (messages.length === 0 || loading) return;`
-
-The `loading` prop is already available in the component's props — it's destructured at `ChatView.tsx:47`.
-
-## Required Reading
-
-- `client/src/components/chat/ChatView.tsx` (lines 47-70)
-- `docs/12_DEFINITION_OF_DONE.md`
-- `docs/gates/frontend-ui.md`
+- `server/src/index.ts:56` — `app.use('/api/auth', authLimiter, authRoutes)` applies a 10 req/15min limiter to ALL auth routes.
+- `server/src/middleware/rateLimit.ts` — defines `authLimiter` (10/15min) and `uploadLimiter` (100/15min).
+- `server/src/middleware/rateLimitMiddleware.ts` — defines `loginLimiter` (5/15min), `registerLimiter` (3/60min), `apiLimiter` (100/15min).
+- `server/src/routes/authRoutes.ts` — applies `loginLimiter` on POST /login, `registerLimiter` on POST /register; no limiter on GET /me or POST /change-password.
+- `server/__tests__/rateLimit.test.ts` — only tests that limiters are defined, not their behavior.
 
 ## Allowed Files
 
-- `client/src/components/chat/ChatView.tsx`
-- `docs/tasks/active/NEXT_AGENT_TASK.md`
-- `docs/CONTROL_PLANE.md`
-- `docs/10_AI_WORKLOG.md`
-- `docs/AUDIT_LOG.md`
+- `server/src/index.ts`
+- `server/src/middleware/rateLimit.ts`
+- `server/src/middleware/rateLimitMiddleware.ts`
+- `server/src/routes/authRoutes.ts`
+- `server/__tests__/rateLimit.test.ts`
 
 ## Forbidden Files
 
-- `server/**`
-- `client/src/components/chat/ChatList.tsx`
-- `client/src/components/HomePage.tsx`
-- `.env*`, `ssl/**`, `docker-compose*.yml`
-- `dist/`, `node_modules/`, build caches
+- `.env`
+- `node_modules/`
+- `dist/`
+- `server/src/config/`
+- Any client/ files
 
-## Implementation Instructions
+## Must Do
 
-1. In `client/src/components/chat/ChatView.tsx`, change line 59 from:
-   `if (messages.length === 0) return;`
-   to:
-   `if (messages.length === 0 || loading) return;`
+- [ ] Remove `authLimiter` from `server/src/index.ts` (both import and `app.use('/api/auth', ...)`).
+- [ ] Remove `authLimiter` export from `server/src/middleware/rateLimit.ts` — it has no other consumers.
+- [ ] Add `changePasswordLimiter` (5 req/15min) to `server/src/middleware/rateLimitMiddleware.ts`.
+- [ ] Wire `changePasswordLimiter` on `POST /api/auth/change-password` in `server/src/routes/authRoutes.ts` — put `authMiddleware` before the limiter.
+- [ ] Rewrite `server/__tests__/rateLimit.test.ts` with behavioral tests:
+  - `loginLimiter`: 5 calls pass, 6th returns 429.
+  - `registerLimiter`: 3 calls pass, 4th returns 429.
+  - `changePasswordLimiter`: 5 calls pass, 6th returns 429.
+  - Limiter isolation: exhausting `loginLimiter` does not affect `registerLimiter`.
+  - Keep `uploadLimiter` export check.
+- [ ] Run `npm.cmd test` and confirm all tests pass (including other test files).
+- [ ] Update docs.
 
-2. In the same file, change line 70 from:
-   `}, [messages, chatId]);`
-   to:
-   `}, [messages, chatId, loading]);`
+## Must Not Do
 
-## Tests To Add Or Update
-
-No new tests needed. The existing scroll test (if any) should continue to pass. The change is a guard condition, not a logic restructure.
-
-## Verification Commands
-
-```powershell
-npm.cmd run build
-npm.cmd test
-git diff --check
-git status --short --branch
-```
+- [ ] Do not change Socket.IO, chat routes, message routes, group routes, or upload limiter.
+- [ ] Do not change the rate limit config values (windowMs/max).
+- [ ] Do not refactor unrelated code.
 
 ## Acceptance Criteria
 
-- [ ] Opening any chat scrolls to the newest message at the bottom
-- [ ] Switching between chats consistently scrolls each one to its newest message
-- [ ] Live messages (sent by you or another user while the chat is open) still auto-scroll smoothly
-- [ ] Loading older messages (pagination) does NOT jump the user to the bottom
-- [ ] Build, tests, and diff check pass
+- [ ] `GET /api/auth/me` has no rate limiter — never returns 429.
+- [ ] `POST /api/auth/login` block `POST /api/auth/me` returns 200 or 401, never 429.
+- [ ] `POST /api/auth/login` blocks after 5 failed attempts (429).
+- [ ] `POST /api/auth/register` blocks after 3 failed attempts (429).
+- [ ] `POST /api/auth/change-password` blocks after 5 failed attempts (429).
+- [ ] `authLimiter` is fully removed (no dead code).
+- [ ] `npm.cmd test` passes.
 
-## Definition Of Done
+## Test Requirements
 
-- Follow `docs/12_DEFINITION_OF_DONE.md`.
-- Apply `docs/gates/frontend-ui.md`.
-- Task-specific additions:
-  - [ ] Verify with a manual test: open Chat A → scroll up → switch to Chat B → confirm Chat B opens at bottom → switch back to Chat A → confirm Chat A opens at bottom
+| Type | Required | Scope |
+| --- | --- | --- |
+| Unit | yes | Each limiter middleware: within-limit passes, over-limit returns 429. |
+| Integration | no | Behaviors covered by unit tests with mocked req/res. |
+| Manual | yes | After deploy: refresh page 10+ times without VPN, verify auth/me not 429. |
 
-## Change Request Rule
+## Verification Commands
 
-If implementation requires touching files outside Allowed Files, changing behavior outside Scope, or taking a high-risk action, stop and add an entry to `docs/CHANGE_REQUESTS.md`.
+| Command | Required | Expected |
+| --- | --- | --- |
+| `cd server && npx jest --forceExit --detectOpenHandles __tests__/rateLimit.test.ts --verbose` | yes | All 5 tests pass |
+| `cd server && npx jest --forceExit --detectOpenHandles` | yes | All tests pass (no regressions) |
+| `del server\dist /q /s 2>$null; cd server && npx tsc --noEmit` | yes | TypeScript compiles without errors |
 
-## Worklog Requirements
+## Documentation Updates Required
 
-Update `docs/10_AI_WORKLOG.md` with:
+- [ ] `docs/AI_WORKLOG.md` — append entry
+- [ ] `docs/CONTROL_PLANE.md` — set to `Ready for Audit` after implementation
+- [ ] `docs/AUDIT_LOG.md` — record task creation
 
-- branch;
-- commit;
-- changed files;
-- verification results;
-- follow-ups.
+## Stop Conditions
 
-## Final Report Format
+- Stop if a required file is outside Allowed Files.
+- Stop if tests fail in other test files (potential regressions).
+- Stop if express-rate-limit version compatibility prevents behavioral testing.
 
-Report:
+## Notes
 
-- changed files;
-- tests/build results;
-- commit hash if committed;
-- known risks/TODOs.
+- express-rate-limit v8.5.2 requires `req.app.get('trust proxy')`, `res.setHeader()`, `res.send()` on mock objects. See `__tests__/rateLimit.test.ts` mock.
+- The middleware is async — calls must be `await`ed in tests.
+- Some edits are already partially applied to source files (authLimiter removed from index.ts/rateLimit.ts, changePasswordLimiter added to middleware/routes, test rewritten). The Executor must verify and complete the test so it passes.
 
 ## Execution Result
 
-**Status:** Implemented
-**Executed by:** Current agent (user requested: "давай реализуй по протоколу")
-**Branch:** master
+Status: Ready for Audit
+Implemented by: project-executor
+Date: 2026-07-19
 
-### Changed Files
-
-- `client/src/components/chat/ChatView.tsx` — 2-line change: added `|| loading` guard and `loading` to dependency array
+### Changed files
+- `server/src/index.ts` — removed `authLimiter` import (line 25) and `app.use('/api/auth', authLimiter, authRoutes)` (line 56)
+- `server/src/middleware/rateLimit.ts` — removed `authLimiter` export (dead code, no other consumers)
+- `server/src/middleware/rateLimitMiddleware.ts` — added `changePasswordLimiter` (5 req/15min)
+- `server/src/routes/authRoutes.ts` — added `changePasswordLimiter` import, wired on POST /change-password with `authMiddleware` before limiter
+- `server/__tests__/rateLimit.test.ts` — fully rewritten: 5 behavioral tests (isolation, login, register, change-password, upload export check)
 
 ### Verification
+| Command | Result | Evidence |
+| --- | --- | --- |
+| `npx jest __tests__/rateLimit.test.ts --verbose` | Passed | 5/5 tests pass |
+| `npx jest --forceExit --detectOpenHandles` | Passed | 75/75 tests pass (up from 72) |
+| `npx tsc --noEmit` | Passed | No type errors |
 
-- `npm.cmd run build` (client): passed (150 modules transformed, tsc + vite)
-- `npm.cmd test` (client): passed, 19/19 (4 test files)
-- `git diff --check`: CRLF warnings only (Windows expected)
-- `git status --short --branch`: master, dirty with intended docs/code changes
-
-### Acceptance Criteria
-
-- [x] Opening any chat scrolls to the newest message at the bottom
-- [x] Switching between chats consistently scrolls each one to its newest message
-- [x] Live messages (sent by you or another user while the chat is open) still auto-scroll smoothly
-- [x] Loading older messages (pagination) does NOT jump the user to the bottom
-- [x] Build and tests pass
-- [ ] Manual QA: user should verify on desktop and mobile (open Chat A → switch to Chat B → confirm scroll position)
-
-### Known Risks
-
-- None. The change is a minimal guard condition; the scroll mechanism itself (chatId-based tracking, instant vs smooth, bottomRef) is unchanged.
+### Notes
+- Each describe block uses a unique IP prefix (127.0.0.10-13) to avoid state leakage across limiter instances.
+- Mock must include `app.get`, `setHeader`, `send`, `writableEnded` for express-rate-limit v8.5.2 compatibility.
+- Acceptance criteria covered: GET /me never 429; login/register/change-password endpoint-specific protection intact.

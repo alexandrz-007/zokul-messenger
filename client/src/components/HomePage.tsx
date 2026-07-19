@@ -392,6 +392,7 @@ function HomePageInner() {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={handleChatCreated}
+        socket={socket}
       />
       <CreateGroupModal
         open={showGroup}

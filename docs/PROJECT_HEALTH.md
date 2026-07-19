@@ -33,10 +33,10 @@ Known dirty/untracked items at migration time:
 
 ## Active Task
 
-- Task: ZOKUL-CHAT-UX-001 Fix chat opening, initial position, and delete placement
-- Status: Accepted — User QA passed on real Pixel 9 phone
-- Owner role: Executor
-- Risk: Medium
+- Task: ZOKUL-UX-007 Fix instant scroll and real-time new chat for 1-on-1
+- Status: Ready for Planning
+- Owner role: Governor/Executor
+- Risk: Low
 - Confidence: High
 
 ## Known Risks
@@ -49,6 +49,18 @@ Known dirty/untracked items at migration time:
 
 ## Next Recommended Action
 
-1. Push hardening — ZOKUL-PUSH-001: make subscription registration self-healing after DB reset.
-2. Integration tests — ZOKUL-TEST-002: real Socket.IO client/server tests.
-3. Runtime observability — ZOKUL-OPS-001: metrics/logging for production readiness.
+1. Fix scroll jump by using useLayoutEffect instead of useEffect + setTimeout.
+2. Fix 1-on-1 chat real-time notification by adding socket.emit('chat:created') in CreateChatModal.
+3. Push hardening — ZOKUL-PUSH-001 after UX fixes.
+
+## Risk Matrix
+
+| Area | Risk | Impact | Likelihood | Owner | Mitigation | Status |
+|---|---|---|---:|---:|---|---|---|
+| Realtime | Socket handlers may lack true integration tests | Medium | Medium | Governor/Executor | Add real Socket.IO integration tests | Open |
+| Build hygiene | TypeScript/Vite generated files appear in working tree | Medium | High | Governor/Executor | Decide ignore/remove/tracking policy | Open |
+| Database | Runtime migrate function may drift as schema grows | Medium | Medium | Governor | Follow migration policy and plan versioned migrations | Open |
+| Uploads | Audio validation is MIME-based only | Medium | Medium | Security Agent | Consider content sniffing or stricter audio handling | Open |
+| Media storage | Local uploads do not scale well | Medium | Medium | Governor | Plan S3/R2/MinIO and CDN when usage grows | Planned |
+| Deployment | Production branch can be accidentally touched | High | Low | Release Agent | Human approval gate | Controlled |
+| Docs | Documentation path changes can break agent navigation | Medium | Medium | Documentation Agent | Keep one canonical `docs/` tree and update internal references | Controlled |

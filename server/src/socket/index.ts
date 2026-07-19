@@ -159,6 +159,18 @@ export function setupSocket(httpServer: HTTPServer): Server {
           data.replyToId,
           data.imageUrls
         );
+        for (const pid of chat.participantIds) {
+          if (pid === userId) continue;
+          const sockets = userSockets.get(pid);
+          if (!sockets) continue;
+          for (const sid of sockets) {
+            const s = io.sockets.sockets.get(sid);
+            if (s) {
+              s.join(`chat:${data.chatId}`);
+              s.emit('chat:new-room', { chatId: data.chatId });
+            }
+          }
+        }
         socket.to(`chat:${data.chatId}`).emit('message:new', message);
         socket.emit('message:new', message);
       } catch (err: unknown) {

@@ -56,3 +56,67 @@
 | 2026-07-18 | Executor | Implemented chat UX fixes | ZOKUL-CHAT-UX-001 | master | | Nested button removed from ChatList, header actions + delete confirm added, scroll-by-chatId implemented; build+test passed; prepend order preserved per user correction |
 | 2026-07-18 | Governor | Detected scroll regression, created executor task | ZOKUL-CHAT-UX-002 | master | | Scroll effect ignores loading prop — chat switch opens at top. Task handoff prepared with 2-line fix in ChatView.tsx |
 | 2026-07-18 | Executor | Implemented scroll regression fix | ZOKUL-CHAT-UX-002 | master | | Added loading guard in ChatView.tsx scroll effect. Build+test passed 19/19 |
+| 2026-07-19 | Governor | Created task handoff | ZOKUL-CHAT-UX-003 | master | | Scroll-to-bottom on returning to previously opened chat — reset scrolledChatRef on chatId change |
+| 2026-07-19 | Auditor | Accepted | ZOKUL-CHAT-UX-003 | master | | Scroll fix verified and accepted |
+| 2026-07-19 | Governor | Archived | ZOKUL-CHAT-UX-003 | master | | Task + review archived |
+| 2026-07-19 | Governor | Created task handoff | ZOKUL-UX-007 | master | | Instant scroll + real-time 1-on-1 chat notification |
+| 2026-07-19 | Auditor | Accepted | ZOKUL-UX-007 | master | | Reviewed by project-auditor, verdict Accepted |
+| 2026-07-19 | Governor | Archived | ZOKUL-UX-007 | master | | Task + review archived after QA |
+| 2026-07-19 | Governor | Created task handoff | ZOKUL-UX-008 | master | | Only show 1-on-1 chat after first message |
+
+## Architecture Decision Records
+
+### ADR-001 Use A Modular Monolith For Current Stage
+
+Date: 2026-07-17
+Status: Accepted
+
+Decision: Keep backend as a modular monolith with routes, controllers, services, models, and socket modules.
+
+Reason: The project is a messenger MVP/early production candidate. A modular monolith is easier to develop and deploy than premature microservices while still allowing future extraction.
+
+Consequences:
+- Keep module boundaries clear.
+- Avoid adding microservices until metrics or operational needs justify them.
+
+### ADR-002 Use Markdown/Mermaid As Architecture Source Of Truth
+
+Date: 2026-07-17
+Status: Accepted
+
+Decision: Keep architecture maps in `ARCHITECTURE.md` using Mermaid.
+
+Reason: Markdown lives in git and can be updated by agents. FigJam is useful for visual review but should not be the canonical source.
+
+Consequences:
+- Update Mermaid maps when architecture changes.
+- External diagrams may be regenerated from docs.
+
+### ADR-003 Split AI Work Into Governor And Executor Roles
+
+Date: 2026-07-17
+Status: Accepted
+
+Decision: Use `project-governor` for planning/review and `project-executor` for scoped implementation.
+
+Reason: This keeps strategic decisions separate from implementation and allows different tools/models to cooperate through `docs`.
+
+Consequences:
+- Executor follows `NEXT_AGENT_TASK.md`.
+- Governor reviews and accepts work.
+
+### ADR-004 Production Branch Requires Explicit Approval
+
+Date: 2026-07-17
+Status: Accepted
+
+Decision: Do not touch `production` unless the user explicitly asks.
+
+Reason: `production` is a deploy/fresh code branch and should not receive documentation or experimental changes by accident.
+
+Consequences:
+- Work normally happens on `master` or `codex/*`.
+- Release Agent must request approval before production push/deploy.
+
+| 2026-07-19 | Governor | Created hotfix task | ZOKUL-RATE-001 | master | - | Fix rate limit blocking auth endpoints. State: Ready for Execution.
+| 2026-07-19 | Auditor | Accepted ZOKUL-RATE-001 | ZOKUL-RATE-001 | master | - | 75/75 tests pass, TypeScript clean, all AC met.

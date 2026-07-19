@@ -31,7 +31,7 @@ User likes the current sidebar design. Remaining concerns:
 
 - `docs/00_README_FOR_AGENTS.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/12_DEFINITION_OF_DONE.md`
+- `docs/DEFINITION_OF_DONE.md`
 - `docs/gates/frontend-ui.md`
 - `client/src/components/HomePage.tsx`
 - `client/src/contexts/ThemeContext.tsx`
@@ -77,10 +77,10 @@ Out of scope:
 
 - `client/src/components/HomePage.tsx`
 - `client/src/contexts/ThemeContext.tsx` only if the current toggle logic is broken
-- `docs/10_AI_WORKLOG.md`
+- `docs/AI_WORKLOG.md`
 - `docs/tasks/active/NEXT_AGENT_TASK.md`
 - `docs/CONTROL_PLANE.md`
-- `docs/03_PRODUCT_BACKLOG.md`
+- `docs/BACKLOG.md`
 
 ## Forbidden Files
 
@@ -156,7 +156,7 @@ Manual QA:
 
 ## Definition Of Done
 
-- Follow `docs/12_DEFINITION_OF_DONE.md`.
+- Follow `docs/DEFINITION_OF_DONE.md`.
 - Apply `docs/gates/frontend-ui.md`.
 - Governor review required before merge.
 

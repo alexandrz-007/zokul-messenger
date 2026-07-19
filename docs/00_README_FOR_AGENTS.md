@@ -9,7 +9,7 @@ This folder is the project memory for AI-assisted work on Zokul. Use it to under
 
 1. Read this file.
 2. Read `CONTROL_PLANE.md`.
-3. Read `11_PROJECT_HEALTH.md`.
+3. Read `PROJECT_HEALTH.md`.
 4. Continue with your role-specific reading list.
 
 ## Source Of Truth
@@ -21,8 +21,6 @@ This folder is the project memory for AI-assisted work on Zokul. Use it to under
 5. External diagrams such as FigJam
 
 If docs conflict with code, trust code and update docs.
-
-## Roles
 
 ## Protocol Mode Barrier
 
@@ -41,20 +39,16 @@ If the task is an urgent narrow hotfix, the agent must explicitly label it as a 
 
 ### Governor
 
-Use this role for architecture, planning, backlog, task writing, and review.
+Purpose: architecture, planning, backlog, task handoff, and review.
 
 Read:
 
-1. `00_PROJECT_OVERVIEW.md`
-2. `01_ARCHITECTURE_MAP.md`
-3. `02_CODE_STRUCTURE.md`
-4. `03_PRODUCT_BACKLOG.md`
-5. `04_ENGINEERING_BACKLOG.md`
-6. `09_DECISIONS.md`
-7. latest entries in `10_AI_WORKLOG.md`
-8. `11_PROJECT_HEALTH.md`
-9. `CONTROL_PLANE.md`
-10. `13_RISK_MATRIX.md`
+1. `PROJECT_BRIEF.md`
+2. `ARCHITECTURE.md`
+3. `BACKLOG.md`
+4. `AUDIT_LOG.md` (latest entries)
+5. `PROJECT_HEALTH.md`
+6. `CONTROL_PLANE.md`
 
 Output:
 
@@ -63,22 +57,34 @@ Output:
 - `tasks/active/NEXT_AGENT_TASK.md`;
 - review result.
 
+May edit:
+
+- all `docs` project memory;
+- active task handoff;
+- review result;
+- backlog status;
+- control plane.
+
+Must not:
+
+- change product code unless explicitly asked;
+- mark planned features as implemented;
+- delete useful historical docs without approval.
+
 Hard stop:
 
 - after creating an executor handoff, stop unless the user explicitly authorizes this same agent to implement it.
 
 ### Executor
 
-Use this role for implementation.
+Purpose: scoped implementation.
 
 Read:
 
 1. `tasks/active/NEXT_AGENT_TASK.md`
 2. files listed in that task's Required Reading
-3. `05_DEVELOPMENT_PROCESS.md`
-4. `06_QA_CHECKLIST.md`
-5. `12_DEFINITION_OF_DONE.md`
-6. `CONTROL_PLANE.md`
+3. `DEFINITION_OF_DONE.md`
+4. `CONTROL_PLANE.md`
 
 Required precondition:
 
@@ -86,6 +92,20 @@ Required precondition:
 - active task has `Execution owner: current agent` or the user explicitly asked this agent to implement.
 
 Do not read archives unless the task asks for them.
+
+May edit:
+
+- allowed source/test files;
+- `AI_WORKLOG.md`;
+- active task execution result;
+- backlog status if task requires;
+- `CHANGE_REQUESTS.md`.
+
+Must not:
+
+- expand scope;
+- edit decisions/architecture/process unless explicitly allowed;
+- push/deploy without explicit request.
 
 Output:
 
@@ -97,14 +117,21 @@ Output:
 
 ### Reviewer
 
-Use this role after executor work.
+Purpose: verify executor work.
 
 Read:
 
 1. `tasks/active/NEXT_AGENT_TASK.md`
-2. latest `10_AI_WORKLOG.md` entry
+2. latest `AI_WORKLOG.md` entry
 3. git diff and commit(s)
 4. relevant source files
+
+May edit:
+
+- review result (`reviews/active/NEXT_REVIEW.md`);
+- backlog status;
+- follow-up task;
+- health status.
 
 Output:
 
@@ -114,34 +141,67 @@ Output:
 
 ### Designer
 
-Use this role for UI/UX planning or redesign.
+Purpose: UI/UX planning and design review.
 
 Read:
 
-1. `00_PROJECT_OVERVIEW.md`
-2. `01_ARCHITECTURE_MAP.md`
+1. `PROJECT_BRIEF.md`
+2. `ARCHITECTURE.md`
 3. UI-related backlog entries
 4. screenshots or design files if provided
 5. relevant frontend components
 
 Rule:
 
-- Do not design controls for unavailable features.
+- never add controls for unavailable features.
 
-### Release Agent
+### QA Agent
 
-Use this role only when preparing merge, push, or deploy.
+Purpose: test strategy and verification.
 
 Read:
 
-1. `14_RELEASE_PROTOCOL.md`
+1. `tasks/active/NEXT_AGENT_TASK.md`
+2. affected source files
+3. existing test suite
+
+Output:
+
+- test gaps;
+- manual scenarios;
+- verification evidence.
+
+### Security Agent
+
+Purpose: threat review and security checks.
+
+Output:
+
+- risk matrix updates;
+- security follow-up tasks.
+
+### Release Agent
+
+Purpose: release readiness, merge/push/deploy preparation.
+
+Read:
+
+1. `DEPLOYMENT.md`
 2. `CONTROL_PLANE.md`
-3. `11_PROJECT_HEALTH.md`
+3. `PROJECT_HEALTH.md`
 4. latest accepted task archive or worklog entry
 
-Rule:
+Must not:
 
-- Do not push or deploy without explicit user approval.
+- push or deploy without explicit user approval.
+
+### Documentation Agent
+
+Purpose: keep docs concise, current, and navigable.
+
+Must not:
+
+- rewrite historical worklog or archived tasks except to fix links or add review metadata.
 
 ## Task Files
 
@@ -176,3 +236,216 @@ Reviewer may update review result, worklog, backlog status, and follow-up tasks.
 Release Agent may prepare release notes and checks, but must not push/deploy without explicit user approval.
 
 If unsure whether a document may be changed, ask Governor or the user.
+
+## Development Process
+
+### Branch Policy
+
+- `master`: integration branch with full code and documentation.
+- `production`: deploy branch; do not touch without explicit user approval.
+- `codex/*`: preferred AI feature/fix branches.
+
+Current exception:
+
+- hardening commits `7609f40` and `96d5818` were committed directly on local `master`.
+- before pushing, verify working tree and user intent.
+
+### Before Work
+
+Run:
+
+```powershell
+git status --short --branch
+git branch --all --verbose
+git log --oneline --decorate -5
+```
+
+Then:
+
+- read this file;
+- read `CONTROL_PLANE.md`;
+- identify current role;
+- read active task if executing;
+- do not overwrite unrelated changes.
+
+### During Work
+
+- Keep changes scoped to the active task.
+- Use existing project patterns.
+- Add/update tests for behavior changes.
+- Do not mix UI, security, docs, and infra changes unless task explicitly says so.
+- Create `CHANGE_REQUESTS.md` entry if scope must change.
+
+### Handoff Barrier
+
+If the user asks to work `по протоколу`, `по скиллу`, or asks to prepare work for another agent, the current agent must default to Governor mode:
+
+1. create/update `docs/tasks/active/NEXT_AGENT_TASK.md`;
+2. set `CONTROL_PLANE.md` to `Ready for Execution`;
+3. update backlog/worklog/audit if needed;
+4. stop and ask for execution approval.
+
+Do not edit product code in Governor mode.
+
+The same agent may implement only when one of these is true:
+
+- user explicitly says `реализуй сам`, `можешь кодить`, `вноси изменения в код`, or equivalent;
+- active task says `Execution owner: current agent`;
+- the agent explicitly declares a narrow hotfix exception before code edits.
+
+If the area is ambiguous, especially UI wording such as "нижние кнопки", "панель", "меню", or "зона", map it to exact component/file names before editing. Ask a clarification question if the mapping is not obvious.
+
+### Before Final
+
+Run task-specific checks and, when applicable:
+
+```powershell
+npm.cmd run build
+npm.cmd test
+git diff --check
+git status --short
+```
+
+### Commit Rules
+
+- Stage only intentional files.
+- Do not stage `.env`, secrets, uploads, `node_modules`, `dist`, generated build cache, or unrelated docs.
+- Use concise conventional commits:
+  - `fix: ...`
+  - `feat: ...`
+  - `docs: ...`
+  - `test: ...`
+  - `style: ...`
+  - `refactor: ...`
+
+### Push / Deploy Rules
+
+- Do not push without explicit user approval.
+- Do not push to `production` without explicit user approval.
+- Do not deploy without explicit user approval.
+
+### Generated Files Policy
+
+Known files to review before staging:
+
+- `client/tsconfig.node.tsbuildinfo`
+- `client/tsconfig.tsbuildinfo`
+- `client/vite.config.js`
+
+If these are generated by build, either ignore/remove from tracking in a dedicated task or keep them intentionally with a documented reason.
+
+## Memory Policy
+
+### Active Memory
+
+Keep active docs concise and current.
+
+Active docs include:
+
+- this file
+- `CONTROL_PLANE.md`
+- `PROJECT_HEALTH.md`
+- current backlogs
+- active task
+
+### Archive Memory
+
+Archive completed reviewed tasks in:
+
+```text
+docs/tasks/archive/
+```
+
+Do not read archives by default.
+
+### Documentation Layout
+
+Use one canonical documentation tree:
+
+```text
+docs/
+```
+
+Do not recreate a nested `docs/ai` folder. Agent protocol files, gates, prompts, active tasks, and archived tasks all live directly under `docs/`.
+
+### Staleness
+
+Important docs include:
+
+```text
+Last reviewed:
+Source commit:
+```
+
+If `Source commit` is far behind current `HEAD`, Governor should check for drift.
+
+### Architecture Drift
+
+Governor should periodically verify:
+
+- documented services exist;
+- diagrams match actual data flows;
+- planned features are marked `Planned`;
+- deleted files are not referenced as active source;
+- generated files are not treated as canonical source.
+
+### Superseded Content
+
+Do not rewrite history. Mark old decisions as `Superseded` and add a new decision.
+
+## Agent Compatibility
+
+### ChatGPT / Codex Governor
+
+Best for:
+
+- architecture;
+- planning;
+- project docs;
+- task handoff;
+- code review;
+- risk analysis.
+
+Expected output:
+
+- updated `docs`;
+- active executor task;
+- review result.
+
+Hard rule:
+
+- when the owner asks to work by protocol, this role prepares the handoff and stops;
+- it does not implement the handoff unless the owner explicitly assigns execution to the current agent.
+
+### OpenCode / Executor Agent
+
+Best for:
+
+- scoped code edits;
+- tests;
+- build/test verification;
+- commits.
+
+Expected input:
+
+```text
+docs/tasks/active/NEXT_AGENT_TASK.md
+```
+
+Rules:
+
+- do not expand scope;
+- update worklog;
+- create change request if blocked.
+- do not execute if the active task is missing `Execution owner: current agent` and the user did not explicitly assign this agent to implement.
+
+### Human Owner
+
+Approves:
+
+- push;
+- production;
+- deployment;
+- destructive actions;
+- major architecture direction;
+- paid/external service adoption.

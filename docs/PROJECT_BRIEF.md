@@ -82,22 +82,17 @@ Current local state at migration time:
 
 ## Legacy Documentation
 
-Existing project docs remain in `docs/` and are source material:
+Historical project docs have been consolidated into the current `docs/` layout. Content from legacy files was merged into the following canonical documents:
 
-- `docs/00_PROJECT_PLAN.md`
-- `docs/01_STRUCTURE.md`
-- `docs/02_ARCHITECTURE.md`
-- `docs/03_TASKS_BACKLOG.md`
-- `docs/04_QA_STRATEGY.md`
-- `docs/05_IMPROVEMENT_OVERVIEW.md`
-- `docs/06_IMPROVEMENT_TASKS.md`
-- `docs/07_AGENT_IMPLEMENTATION_GUIDE.md`
-- `docs/08_DATABASE_MIGRATION_POLICY.md`
-- `docs/08_IMPROVEMENT_QA_SECURITY.md`
-- `docs/09_UI_REDESIGN_IMPLEMENTATION_GUIDE.md`
-- `docs/10_ARCHITECTURE_MAP_SOURCE.md`
-- `docs/FUTURE_PLAN.md`
-- `docs/PROCESS.md`
-- `docs/PROGRESS.md`
+| Legacy | Consolidated Into |
+|---|---|
+| `00_PROJECT_PLAN.md`, `05_IMPROVEMENT_OVERVIEW.md` | `PROJECT_BRIEF.md` |
+| `01_STRUCTURE.md`, `02_ARCHITECTURE.md`, `10_ARCHITECTURE_MAP_SOURCE.md` | `ARCHITECTURE.md` |
+| `03_TASKS_BACKLOG.md`, `06_IMPROVEMENT_TASKS.md` | `BACKLOG.md` |
+| `04_QA_STRATEGY.md`, `08_IMPROVEMENT_QA_SECURITY.md` | `DEFINITION_OF_DONE.md` |
+| `07_AGENT_IMPLEMENTATION_GUIDE.md` | `00_README_FOR_AGENTS.md` |
+| `08_DATABASE_MIGRATION_POLICY.md` | `BACKLOG.md`, `DEPLOYMENT.md` |
+| `09_UI_REDESIGN_IMPLEMENTATION_GUIDE.md` | `BACKLOG.md` |
+| `FUTURE_PLAN.md`, `PROCESS.md`, `PROGRESS.md` | Various current docs |
 
-Prefer `docs` for new AI workflow state.
+Prefer `docs` for all AI workflow state.

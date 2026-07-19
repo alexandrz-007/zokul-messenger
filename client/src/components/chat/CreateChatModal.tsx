@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchUsers, useCreateChat } from '../../hooks/useChat';
 import Avatar from '../common/Avatar';
 import { Chat, User } from '../../types';
+import { Socket } from 'socket.io-client';
 
 interface CreateChatModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (chat: Chat) => void;
+  socket?: Socket | null;
 }
 
-export default function CreateChatModal({ open, onClose, onCreated }: CreateChatModalProps) {
+export default function CreateChatModal({ open, onClose, onCreated, socket }: CreateChatModalProps) {
   const [query, setQuery] = useState('');
   const { results, loading: searching, search } = useSearchUsers();
   const { create, loading: creating } = useCreateChat();

@@ -84,8 +84,33 @@ Source commit: 96d5818
   - Goal: A chat row opens on the first tap, an opened dialog starts at newest messages, and deletion moves from the list row to a confirmed action menu in the open chat header.
   - Scope: `ChatList`, `ChatView`, `HomePage`, `useChat`, and focused client tests only.
 
+- [x] ZOKUL-CHAT-UX-002 Fix scroll race condition on chat switch
+  - Status: Implemented
+  - Priority: P1
+  - Goal: Add loading guard to scroll effect so stale messages from previous chat don't trigger premature scroll.
+  - Files: `client/src/components/chat/ChatView.tsx`
+
+- [x] ZOKUL-CHAT-UX-003 Fix scroll-to-bottom on returning to previously opened chat
+  - Status: Accepted
+  - Priority: P1
+  - Goal: Reset scrolledChatRef when chatId changes so returning to a chat scrolls to bottom like the first visit.
+  - Files: `client/src/components/chat/ChatView.tsx`
+
+- [x] ZOKUL-UX-007 Instant scroll + real-time new chat for 1-on-1
+  - Status: Accepted
+  - Priority: P1
+  - Goal: Eliminate scroll jump (useLayoutEffect) and add real-time 1-on-1 chat notification (socket.emit chat:created).
+
+## P1: Chat UX Fixes
+
+- [x] ZOKUL-UX-008 First message creates the chat for other participant
+  - Status: Accepted
+  - Priority: P1
+  - Goal: Only show a 1-on-1 chat to the other participant after the first message is sent, not when the chat is created.
+  - Files: `client/src/components/chat/CreateChatModal.tsx`, `server/src/socket/index.ts`
+
 - [ ] ZOKUL-PUSH-001 Push subscription recovery hardening
-  - Status: Planned - notifications currently arrive, but recovery after database subscription loss is not reliable
+  - Status: Planned
   - Priority: P1
   - Goal: Re-register existing browser subscriptions, refresh stale keys, and retain transiently failing subscriptions.
 
@@ -110,7 +135,7 @@ Source commit: 96d5818
     - no controls for unavailable features;
     - desktop and mobile layouts checked;
     - build/tests pass.
-  - Source: `docs/09_UI_REDESIGN_IMPLEMENTATION_GUIDE.md`
+  - Source: legacy `docs/09_UI_REDESIGN_IMPLEMENTATION_GUIDE.md` (archived)
 
 - [ ] ZOKUL-UI-001 Sidebar visual polish
   - Status: Accepted
@@ -263,3 +288,67 @@ Source commit: 96d5818
     - enforce admin access on the backend, not only in UI;
     - log every admin action;
     - avoid destructive actions without confirmation and audit trail.
+
+## Engineering Backlog
+
+### P0: Production Reliability
+
+- [x] ZOKUL-TEST-001 Stabilize test suite
+  - Status: Done
+  - Priority: P1
+  - Commits: `7609f40`, `96d5818`
+  - Verification:
+    - last known `npm.cmd test`: 71/71 passed.
+
+### P1: Test Quality
+
+- [ ] ZOKUL-TEST-002 Add real Socket.IO integration tests
+  - Status: Todo
+  - Priority: P1
+  - Goal: Test actual socket handlers with client/server instead of only duplicated access-control logic.
+  - Files:
+    - `server/__tests__/socket.test.ts`
+    - possible test utilities
+  - Acceptance criteria:
+    - participant/non-participant join/leave/typing scenarios are tested through Socket.IO behavior;
+    - no unused dependencies are added.
+
+### P1: Build Hygiene
+
+- [ ] ZOKUL-DX-001 Resolve generated build file changes
+  - Status: Todo
+  - Priority: P1
+  - Files:
+    - `client/tsconfig.node.tsbuildinfo`
+    - `client/tsconfig.tsbuildinfo`
+    - `client/vite.config.js`
+    - `.gitignore`
+  - Goal: Decide whether generated TypeScript/Vite artifacts should be tracked.
+  - Acceptance criteria:
+    - after `npm.cmd run build`, `git status --short` has no unexpected generated changes;
+    - generated files are ignored or intentionally tracked.
+
+### P2: Database Governance
+
+- [ ] ZOKUL-DB-001 Improve migration governance
+  - Status: Todo
+  - Priority: P2
+  - Source: legacy `docs/08_DATABASE_MIGRATION_POLICY.md` (archived)
+  - Goal: Move from runtime `migrate()` toward versioned migrations when project grows.
+  - Out of scope: do not introduce a migration framework in a mixed security/UI task.
+
+### P2: Observability
+
+- [ ] ZOKUL-INC-001 Production runtime identity and push recovery
+  - Status: Ready for Executor
+  - Priority: P0
+  - Evidence: public bundle is older than `origin/production`; existing browser push subscriptions are not re-posted after database data is cleared.
+  - Goal: add deploy/runtime verification and reliable subscription reconciliation without exposing secrets.
+
+- [ ] ZOKUL-OPS-001 Add runtime observability plan
+  - Status: Todo
+  - Priority: P2
+  - Goal: Define metrics/logging/alerting for production readiness.
+  - Acceptance criteria:
+    - request/socket/upload/push failure signals identified;
+    - production monitoring candidate selected.
