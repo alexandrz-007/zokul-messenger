@@ -2,15 +2,16 @@
 
 Protocol version: 1.0
 Mode: standard
-State: Accepted
-Active task: ZOKUL-SCROLL-001
-Active review: ZOKUL-SCROLL-001 - Accepted
+State: Ready for Audit
+Active task: ZOKUL-SCROLL-002
+Active review: None (prior: ZOKUL-SCROLL-001 - Accepted)
 Owner: project-executor
 Last updated: 2026-07-19
 
 ## Current Focus
 
-ZOKUL-SCROLL-001 Accepted (auto-scroll fix). Branch `feature/scroll-fix` ready to merge to master then production (killer PWA retained). Pending production deploy + manual Safari/iPhone check.
+ZOKUL-SCROLL-002: ResizeObserver-driven auto-scroll implemented on `feature/scroll-fix`. 26/26 client tests,
+build clean. Pending auditor review, then merge to master + production deploy (killer PWA retained).
 
 ## Recently Completed
 
