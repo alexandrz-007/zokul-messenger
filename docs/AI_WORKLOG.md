@@ -2043,3 +2043,30 @@ Verified: `CN = zokul.zhichkin.space`, notAfter Oct 10 2026.
 - No repository code change required; the cert/ssl layout is correct.
 - Future redeploys are safe: `ssl/` is outside git and preserved by release script.
 - Only risk: manually re-running a script that regenerates a self-signed cert into `~/zokul/ssl/`.
+
+## 2026-07-19 - ZOKUL-NET-001 - Cloudflare Tunnel as primary ingress
+
+Role: Governor / Executor
+Task ID: ZOKUL-NET-001
+Branch: master
+
+### Problem
+Provider blocks outbound TLS to public IP `151.243.169.150:443` (curl without VPN: `Connection was reset` on domain, `Timed out` on raw IP). With VPN the site works. DNS resolves correctly. Direct 443 therefore unusable without VPN.
+
+### Decision
+Add Cloudflare Tunnel as the primary ingress so clients reach the site via Cloudflare (not the blocked public IP). Keep direct 443 as VPN fallback.
+
+### Changed
+- `docker-compose.prod.yml`: added `tunnel` service using `cloudflare/cloudflared:latest`, command `tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}`, `depends_on: client`.
+- `docs/DEPLOY_GUIDE.md`: added Cloudflare Tunnel section (UI steps, server run, verification).
+- `docs/CONTROL_PLANE.md`: state `Ready for Execution`, active task ZOKUL-NET-001.
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `docker compose -f docker-compose.prod.yml config` | Pending | User runs after token added |
+| `curl https://zokul.zhichkin.space` without VPN | Pending | User verifies 200 |
+
+### Follow-ups
+- User creates tunnel in Cloudflare UI, adds `CF_TUNNEL_TOKEN` to server `.env`, runs `docker compose up -d tunnel`.
+- Verify site loads without VPN; direct 443 still works with VPN.

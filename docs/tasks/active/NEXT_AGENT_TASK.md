@@ -1,115 +1,90 @@
-# Next Agent Task: PWA-EMERGENCY-001-REMEDIATION - Fix SW no-response on API requests
+# Next Agent Task: ZOKUL-NET-001 - Cloudflare Tunnel as primary ingress (bypass provider block)
 
 Protocol version: 1.0
-Task type: remediation
+Task type: implementation
 Execution owner: current agent
 Created by: project-governor
 State required before execution: Ready for Execution
 
 ## Goal
 
-Fix the emergency Service Worker so it stops intercepting API/navigation requests with a workbox precache handler that rejects with "no-response". The site must work as a plain web app after deploy.
+Make `https://zokul.zhichkin.space` reachable WITHOUT VPN via Cloudflare Tunnel, bypassing the provider's block of the public IP `151.243.169.150:443`. Keep the direct 443 ingress as a fallback (works with VPN).
 
 ## Current State
 
-- `client/sw.ts` (commit d70775f / production b70d25d) was replaced with an emergency self-destruct SW.
-- It calls `precacheAndRoute(self.__WB_MANIFEST)` from `workbox-precaching`. This registers a `fetch` event listener.
-- In `activate`, the handler deletes ALL caches, then `clientsClaim()`, then `unregister()`.
-- Between `clientsClaim()` and `unregister()` the SW controls pages and workbox intercepts `/api/*` requests. Because the precache is already empty, workbox rejects the fetch with `Error: no-response`.
-- Confirmed in production: browser console shows
-  `Failed to load 'https://zokul.zhichkin.space/api/auth/me'. ServiceWorker passed a promise to FetchEvent.respondWith() which rejected with error 'Error: no-response'`.
-- Confirmed server API works: `POST /api/auth/login` and `POST /api/auth/register` return 200 and create users. The bug is purely client-side SW behavior.
+- Provider blocks outbound TLS to `151.243.169.150:443` (curl from client without VPN: `Connection was reset` on domain, `Timed out` on raw IP). With VPN the site works. DNS resolves correctly to `151.243.169.150`.
+- Let's Encrypt cert is valid (CN=zokul.zhichkin.space, expires 2026-10-10) and served by nginx via `./ssl:/etc/nginx/ssl:ro` mount in the `client` service.
+- `cloudflared` is already installed on the server.
+- `docker-compose.prod.yml` exists; `client` exposes `80:80`, `443:443`, `8080:8080`.
 
 ## Allowed Files
 
-- `client/sw.ts`
+- `docker-compose.prod.yml`
+- `docs/DEPLOY_GUIDE.md`
+- `docs/CONTROL_PLANE.md`
+- `docs/AI_WORKLOG.md`
 
 ## Forbidden Files
 
-- `.env`
-- `node_modules/`
-- `dist/`
-- `server/`
-- `client/vite.config.ts`
+- `client/sw.ts`
 - `client/src/**`
+- `server/**`
+- `ssl/`
+- `.env`
 
 ## Must Do
 
-- [ ] Remove `import { precacheAndRoute } from 'workbox-precaching'` from `client/sw.ts`.
-- [ ] Remove the `precacheAndRoute(self.__WB_MANIFEST)` call.
-- [ ] Keep a reference to `self.__WB_MANIFEST` (required by vite-plugin-pwa injectManifest build) — e.g. `self.__WB_MANIFEST;` — so the build still injects the manifest without importing workbox runtime.
-- [ ] Add a `fetch` event handler that does `event.respondWith(fetch(event.request))` (network-only, no cache). This guarantees API/navigation requests go straight to the network and never reject.
-- [ ] Keep the emergency behavior: `install` -> `skipWaiting()`; `activate` -> delete all caches, `clientsClaim()`, `unregister()`, navigate all windows.
+- [ ] Add a `tunnel` service to `docker-compose.prod.yml` using `cloudflare/cloudflared:latest` and the command `tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}`.
+- [ ] The tunnel service must `depends_on: client`.
+- [ ] Add a Cloudflare Tunnel section to `docs/DEPLOY_GUIDE.md` with exact UI steps (Zero Trust -> Tunnels -> Create, copy token, add Public Hostname `zokul.zhichkin.space` -> `https://localhost:443`, DNS auto-CNAME).
+- [ ] Document that the tunnel token is stored in server `.env` as `CF_TUNNEL_TOKEN` (already preserved, never committed).
+- [ ] Update `CONTROL_PLANE.md` and `AI_WORKLOG.md`.
 
 ## Must Not Do
 
-- [ ] Do not reintroduce any workbox runtime import or `precacheAndRoute`.
-- [ ] Do not change `vite.config.ts`, the SW registration code, or any other file.
-- [ ] Do not implement a proper PWA strategy (that is Phase 2).
+- [ ] Do not change application code, `sw.ts`, server, or SSL files.
+- [ ] Do not remove the direct `443` ingress (keep as VPN fallback).
+- [ ] Do not commit `.env` or any tunnel token.
 
 ## Acceptance Criteria
 
-- [ ] Built `dist/sw.js` exists and contains `skipWaiting`, `clientsClaim`, `unregister`, `caches.delete`, and a `respondWith(fetch(` network-only handler.
-- [ ] Built `dist/sw.js` contains NO `precacheAndRoute` and NO `workbox-precaching` import.
-- [ ] `npm run build` passes (client + server).
-- [ ] `npm test` passes.
-- [ ] Docker build passes.
-- [ ] After deploy: opening the site in a fresh tab without `?v=clean3` no longer logs `no-response` for `/api/auth/me`; the app loads and auth works.
+- [ ] `docker-compose.prod.yml` contains a `tunnel` service referencing `${CF_TUNNEL_TOKEN}`.
+- [ ] After user creates the tunnel in Cloudflare UI and runs `docker compose up -d tunnel` with the token in `.env`, `curl https://zokul.zhichkin.space` from a client WITHOUT VPN returns HTTP 200.
+- [ ] Direct `443` ingress still works WITH VPN.
+- [ ] `npm run build` and `npm test` are unaffected (no source changes).
 
 ## Test Requirements
 
 | Type | Required | Scope |
 | --- | --- | --- |
-| Build | yes | `npm run build` must compile SW without workbox-precaching |
-| Grep | yes | `dist/sw.js` must not contain `precacheAndRoute` or `workbox-precaching` |
-| Manual | yes | After deploy, test on PC/iPhone/Safari without VPN |
+| Manual | yes | User creates tunnel in CF UI, starts service, verifies `curl https://zokul.zhichkin.space` without VPN returns 200 |
+| Build | no | No source code changed |
+| Unit | no | No source code changed |
 
 ## Verification Commands
 
 | Command | Required | Expected |
 | --- | --- | --- |
-| `cd client && npm run build` | yes | `dist/sw.js` built, no workbox-precaching import |
-| `cd .. && npm test` | yes | All tests pass |
-| `docker compose -f docker-compose.prod.yml build` | yes | Images build |
-| `grep -c precacheAndRoute client/dist/sw.js` | yes | 0 |
+| `docker compose -f docker-compose.prod.yml config` | yes | Valid compose file, `tunnel` service present |
+| `curl -s -o /dev/null -w "%{http_code}" https://zokul.zhichkin.space` (user, no VPN) | yes | 200 |
 
 ## Documentation Updates Required
 
-- [ ] `docs/AI_WORKLOG.md`
+- [ ] `docs/DEPLOY_GUIDE.md`
 - [ ] `docs/CONTROL_PLANE.md`
-- [ ] `docs/AUDIT_LOG.md`
+- [ ] `docs/AI_WORKLOG.md`
+- [ ] Update this task with Execution Result
 
 ## Stop Conditions
 
-- Stop if SW build fails.
-- Stop if tests fail.
-- Stop if changes required outside `client/sw.ts`.
+- Stop if `cloudflared` docker image cannot be pulled in the server network (fallback: systemd `cloudflared service install`).
+- Stop if Cloudflare account/domain is unavailable (user must provide).
 
 ## Notes
 
-- Phase 1 only. Phase 2 (proper PWA) is a separate task after user confirms the emergency fix works.
-- Emergency SW has NO push notification support. Push will be restored in Phase 2.
+- Tunnel target is `https://localhost:443` on the server (nginx with valid certbot cert). If Cloudflare rejects the cert, add `originRequest: noTLSVerify: true` (local hop only, safe).
+- Keep direct 443 open as VPN fallback.
 
 ## Execution Result
 
-Status: Ready for Audit
-Implemented by: project-executor
-Date: 2026-07-19
-Commit: 136ff16 (master), 7764031 (production)
-
-### Changed files
-- `client/sw.ts`: removed workbox-precaching import + precacheAndRoute; added network-only `respondWith(fetch)`; kept self.__WB_MANIFEST reference for build; kept emergency self-destruct behavior.
-
-### Verification
-| Command | Result | Evidence |
-| --- | --- | --- |
-| `npm run build` | Passed | SW 0.58 kB, precache 7 entries injected, no workbox |
-| `npm test` | Passed | 94/94 (19 client + 75 server) |
-| `docker compose build` | Passed | Both images built |
-| Built SW grep | Passed | `respondWith(fetch(` present; `precacheAndRoute`/`workbox-precaching` absent |
-| Push to production | Done | `b70d25d..7764031 master -> production` |
-
-### QA
-- Server redeploy pending (user runs on server). After redeploy: confirm no `no-response` on `/api/auth/me` and app loads without `?v=clean3`.
-- Push notifications still disabled (Phase 2).
-- Phase 2 (proper PWA) after user confirms emergency fix works.
+Status: Not started
