@@ -82,7 +82,8 @@ export function useUnread(selectedChatId: string | null) {
       next.delete(chatId);
       return next;
     });
-  }, []);
+    socket?.emit('chat:read', { chatId });
+  }, [socket]);
 
   const count = useCallback((chatId: string) => unread.get(chatId) || 0, [unread]);
 
@@ -128,13 +129,27 @@ export function useMessages(chatId: string | null) {
         setMessages((prev) => prev.filter((m) => m.id !== data.messageId));
       }
     };
+    const onRead = (data: { chatId: string; userId: string; messageIds: string[] }) => {
+      if (data.chatId !== chatId) return;
+      const ids = new Set(data.messageIds);
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (!ids.has(m.id) || m.senderId === data.userId) return m;
+          const readBy = m.readBy || [];
+          if (readBy.includes(data.userId)) return m;
+          return { ...m, readBy: [...readBy, data.userId] };
+        })
+      );
+    };
     socket.on('message:new', onNew);
     socket.on('message:edited', onEdited);
     socket.on('message:deleted', onDeleted);
+    socket.on('message:read', onRead);
     return () => {
       socket.off('message:new', onNew);
       socket.off('message:edited', onEdited);
       socket.off('message:deleted', onDeleted);
+      socket.off('message:read', onRead);
     };
   }, [socket, chatId]);
 

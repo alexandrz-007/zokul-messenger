@@ -1,4 +1,4 @@
-# Next Agent Task: ZOKUL-READ-001 - Read Receipts (Stage 1: backend + migration + tests)
+# Next Agent Task: ZOKUL-READ-002 - Read Receipts (Stage 2: frontend)
 
 Protocol version: 1.0
 Task type: implementation
@@ -8,87 +8,67 @@ State required before execution: Ready for Execution
 
 ## Goal
 
-Add read receipts backend. When a user opens a chat, all unread messages from OTHER
-participants in that chat are marked as read. Other participants get a `message:read`
-socket event. (Frontend is Stage 2 — NOT in scope here.)
-
-Data model: per-message `message_reads(message_id, user_id, read_at)` table.
-Trigger: opening a chat -> client emits `chat:read {chatId}`.
-Groups: handled via the same table (no separate logic).
+Frontend for read receipts. Depends on Stage 1 backend (`chat:read` socket event + `message:read` broadcast + `message_reads` table). When user opens a chat, emit `chat:read` so backend marks others' messages read and broadcasts `message:read`. Other participants' clients update read ticks on sender's messages. Chat list unread count resets on open (already client-side; reinforced by server marking).
 
 ## Current State
 
-- No read-state exists anywhere (messages, chats, chat_participants). Unread is client-only in-memory.
-- `server/src/config/db.ts` `migrate()` uses inline `CREATE TABLE IF NOT EXISTS` + `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` (no ORM/migration tool). `server/migrations/` is empty.
-- `server/src/models/Message.ts` has the query layer; `server/src/services/messageService.ts` has business logic.
-- `server/src/socket/index.ts` already has `ensureChatParticipant(chatId, userId)` helper.
-- Existing backend tests mock models (see `server/__tests__/messageService.test.ts`).
+- Backend Stage 1 done & accepted: `socket.on('chat:read')` marks others' messages read, emits `message:read {chatId, userId, messageIds}` to room (not sender).
+- Frontend `useChat.ts`: `useUnread` (in-memory Map, +1 on `message:new` in inactive chat, `markRead` deletes entry), `useMessages` (fetch + socket message:new/edited/deleted).
+- `ChatView.tsx` renders messages; mine vs others; shows single check + edited + time. No read state.
+- `HomePage.tsx`: `handleSelectChat` calls `markRead(chat.id)`.
+- `ChatList.tsx`: badge from `unreadCount(chat.id)`.
 
 ## Allowed Files
 
-- `server/src/config/db.ts` (add `message_reads` table)
-- `server/src/models/Message.ts` (add read functions)
-- `server/src/types/index.ts` (add `ReadReceipt` type)
-- `server/src/services/messageService.ts` (add `markChatRead`, `getReadReceipts`)
-- `server/src/socket/index.ts` (add `chat:read` listener)
-- `server/__tests__/messageService.test.ts` (extend with read-marking tests)
+- `client/src/types/index.ts`
+- `client/src/hooks/useChat.ts`
+- `client/src/components/chat/ChatView.tsx`
+- `client/__tests__/` (new test for read-receipt logic)
 - `docs/CONTROL_PLANE.md`, `docs/AI_WORKLOG.md`, `docs/tasks/active/NEXT_AGENT_TASK.md`
 
 ## Forbidden Files
 
-- `client/**` (frontend is Stage 2, do NOT touch)
-- deploy scripts, `docker-compose.prod.yml`, SSL, PWA (`sw.*`, `vite.config.ts`, `nginx.conf`)
-- Cloudflare / VPN / IPv6 related code
+- `server/**` (Stage 1 complete; do NOT change backend)
+- `client/src/services/api.ts` (no REST read endpoint in scope)
+- deploy/PWA/SSL/Cloudflare
 
 ## Must Do
 
-- [ ] `db.ts`: add `CREATE TABLE IF NOT EXISTS message_reads (message_id, user_id, read_at, PK(message_id,user_id), FKs + ON DELETE CASCADE)` + index on user_id.
-- [ ] `types/index.ts`: add `ReadReceipt { messageId: string; userId: string; readAt: string }`.
-- [ ] `Message.ts`:
-  - `markChatRead(chatId, userId)`: first verify `userId` is a participant of `chatId` (query `chat_participants`); if not, throw/return false. Then:
-    `INSERT INTO message_reads (message_id, user_id) SELECT id, $userId FROM messages WHERE chat_id=$chatId AND sender_id <> $userId AND deleted_at IS NULL ON CONFLICT (message_id, user_id) DO NOTHING RETURNING message_id`
-    return array of marked message_ids.
-  - `getReadReceipts(messageIds: string[], viewerUserId: string)`: return rows `{messageId, userId, readAt}` for those message_ids where reader <> sender (so a sender sees who read their message). Used later by frontend; include now.
-- [ ] `messageService.ts`:
-  - `markChatRead(chatId, userId)`: call `Message.markChatRead`, return marked ids.
-  - `getReadReceipts(messageIds, viewerUserId)`: delegate to model.
-- [ ] `socket/index.ts`: add listener `socket.on('chat:read', async ({chatId}) => { ... })`:
-  - verify participant via `ensureChatParticipant(chatId, userId)`; if false `socket.emit('error', {message:'Forbidden'})` and return.
-  - call `messageService.markChatRead(chatId, userId)` -> `ids`.
-  - if ids.length: `socket.to('chat:'+chatId).emit('message:read', { chatId, userId, messageIds: ids })` (NOT to current socket).
-- [ ] Tests in `messageService.test.ts`: mock `Message` model; verify `markChatRead`:
-  - marks only messages from OTHER senders (not own),
-  - does not duplicate (idempotent),
-  - `getReadReceipts` returns reader list excluding sender.
+- [ ] `types/index.ts`: add `ReadReceipt { messageId; userId; readAt }`; add `Message.readBy?: string[]`; add `Chat.unreadCount?: number`.
+- [ ] `useChat.ts` `useUnread.markRead(chatId)`: also `socket?.emit('chat:read', { chatId })` so backend marks read + broadcasts `message:read` to others. Keep local map reset.
+- [ ] `useChat.ts` `useMessages`: add `socket.on('message:read', ({chatId, userId, messageIds}) => ...)` handler that, for each id in `messageIds`, marks the local message (if it belongs to current user as sender) by adding `userId` to `readBy`. Remove on cleanup.
+- [ ] `ChatView.tsx`: for `isMine` messages, render read indicator:
+  - no `readBy` (or empty) -> single check (sent)
+  - `readBy.length > 0` -> "Read" / double-check (for 1-on-1); for groups show `Read ${readBy.length}` or "Read".
+  - Do NOT show read state on others' messages.
+- [ ] Tests: add `client/__tests__/readReceipts.test.ts(x)` mocking socket via `SocketContext` to assert: (a) opening chat emits `chat:read`; (b) `message:read` handler adds reader to `readBy` of own message. Keep minimal.
 
 ## Must Not Do
 
-- [ ] Do NOT modify frontend (`client/**`).
-- [ ] Do NOT touch PWA/SSL/deploy/Cloudflare.
-- [ ] Do NOT emit `message:read` to the current socket (only `socket.to(room)`).
-- [ ] Do NOT mark own messages as read.
+- [ ] Do NOT modify backend.
+- [ ] Do NOT add REST read endpoint (socket-only per plan).
+- [ ] Do NOT change PWA/SSL/deploy/Cloudflare.
 
 ## Acceptance Criteria
 
-- [ ] `npm test` (server) passes; new read-marking tests green.
-- [ ] `npm run build` (server) succeeds (tsc).
-- [ ] Migration `message_reads` applies idempotently (CREATE TABLE IF NOT EXISTS).
-- [ ] `chat:read` only works for chat participants; marks only others' messages; emits `message:read` to room excluding sender.
+- [ ] Opening a chat emits `chat:read {chatId}` (verified by test/socket log).
+- [ ] When another participant reads, sender's message shows read state (readBy updated via `message:read`).
+- [ ] Chat list unread badge resets on open (existing behavior preserved).
+- [ ] `npm run build` (client) succeeds; `npm test` (client) green.
 
 ## Test Requirements
 
 | Type | Required | Scope |
 | --- | --- | --- |
-| Unit (mock model) | yes | `markChatRead` logic, `getReadReceipts` filtering |
-| Build | yes | server `tsc`/vite build passes |
-| Manual socket | no (Stage 2) | deferred |
+| Unit (mock socket) | yes | chat:read emitted on open; message:read updates readBy |
+| Build | yes | client tsc/vite build |
 
 ## Verification Commands
 
 | Command | Required | Expected |
 | --- | --- | --- |
-| `cd server && npm test` | yes | pass, incl. new read tests |
-| `cd server && npm run build` | yes | exit 0 |
+| `cd client && npm test` | yes | green, incl. new read test |
+| `cd client && npm run build` | yes | exit 0 |
 
 ## Documentation Updates Required
 
@@ -98,14 +78,13 @@ Groups: handled via the same table (no separate logic).
 
 ## Stop Conditions
 
-- Stop if `message_reads` FK to `messages`/`users` breaks existing data (should not; cascade).
-- Stop if tests cannot mock model cleanly.
+- Stop if `SocketContext` mock cannot be provided in test without heavy refactor (then test via service-level logic only).
 
 ## Notes
 
-- `chat:read` returns nothing to sender; sender learns of reads via inbound `message:read` from others.
-- Frontend Stage 2 will: emit `chat:read` on open, consume `message:read` for ticks, show backend `unreadCount`.
+- Local `useUnread` count stays as quick UI indicator; server marking is source of truth for cross-device.
+- No backend round-trip needed for the badge; `chat:read` emit is enough.
 
 ## Execution Result
 
-Status: In progress
+Status: Completed — frontend implemented; tests green (22/22 client, 78/78 server). Pending merge to master + production deploy + manual Safari/iPhone verification.

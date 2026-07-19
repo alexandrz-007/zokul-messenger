@@ -271,7 +271,18 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
                     )}
                   </div>
                   <span className="text-[10px] text-gray-400 mt-0.5 px-1 flex items-center gap-1">
-                    {isMine && <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg>}
+                    {isMine && (
+                      msg.readBy && msg.readBy.length > 0 ? (
+                        <span className="flex items-center gap-0.5 text-primary">
+                          <svg viewBox="0 0 20 16" className="w-3.5 h-3 fill-current"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/><path d="M18.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L7.22 9.78a.75.75 0 1 1 1.06-1.06l3.25 3.25 6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg>
+                          <span className="italic">
+                            {participants.length > 2 ? `Read ${msg.readBy.length}` : 'Read'}
+                          </span>
+                        </span>
+                      ) : (
+                        <svg viewBox="0 0 16 16" className="w-3 h-3 fill-current"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z"/></svg>
+                      )
+                    )}
                     {msg.isEdited && <span className="italic">edited</span>}
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>

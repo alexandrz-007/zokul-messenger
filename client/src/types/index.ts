@@ -22,6 +22,7 @@ export interface Message {
   voiceDuration?: number;
   replyTo?: ReplyPreview;
   isEdited?: boolean;
+  readBy?: string[];
   createdAt: string;
 }
 
@@ -33,6 +34,12 @@ export interface ReplyPreview {
   imageUrl?: string;
 }
 
+export interface ReadReceipt {
+  messageId: string;
+  userId: string;
+  readAt: string;
+}
+
 export interface Chat {
   id: string;
   name?: string;
@@ -40,6 +47,7 @@ export interface Chat {
   participantIds: string[];
   participants: User[];
   lastMessage?: Message;
+  unreadCount?: number;
   createdAt: string;
 }
 

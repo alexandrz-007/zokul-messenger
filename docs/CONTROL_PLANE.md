@@ -2,11 +2,15 @@
 
 Protocol version: 1.0
 Mode: standard
-State: Accepted
-Active task: ZOKUL-READ-001
+State: In Execution
+Active task: ZOKUL-READ-002
 Active review: ZOKUL-READ-001 (Stage 1) - Accepted
 Owner: project-executor
 Last updated: 2026-07-19
+
+## Current Focus
+
+ZOKUL-READ-002 (Stage 2): Read receipts frontend. `chat:read` emitted on chat open; `message:read` updates `readBy` on own messages; ChatView shows Read ticks. Stage 1 backend accepted. Production stays on killer PWA.
 
 ## Current Focus
 

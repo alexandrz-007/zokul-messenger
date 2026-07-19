@@ -2107,3 +2107,30 @@ pm run build (server) | Passed | tsc exit 0 |
 ### Follow-ups
 - Stage 2 (frontend): emit chat:read on chat open, consume message:read for ticks, show backend unreadCount in chat list. Not started.
 - Manual socket verification after deploy (deferred).
+
+## 2026-07-19 - ZOKUL-READ-002 (Stage 2) - Read receipts frontend
+
+Role: Governor / Executor
+Task ID: ZOKUL-READ-002
+Branch: feature/read-receipts (NOT merged to production)
+
+### Goal
+Frontend read receipts on top of accepted Stage 1 backend. Open chat -> emit chat:read; consume message:read to show read ticks on own messages.
+
+### Changed
+- client/src/types/index.ts: added ReadReceipt; Message.readBy?: string[]; Chat.unreadCount?.
+- client/src/hooks/useChat.ts: useUnread.markRead now emits socket.emit('chat:read', {chatId}); useMessages listens to message:read and adds reader userId to eadBy of matching own messages.
+- client/src/components/chat/ChatView.tsx: for own messages, single check (sent) vs double-check + "Read" (or "Read N" in groups) when eadBy non-empty.
+- client/__tests__/readReceipts.test.tsx: 3 tests (emit chat:read on open; readBy updated on message:read; ignore other chat).
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| 
+pm test (client) | Passed | 22/22, incl. 3 new read tests |
+| 
+pm run build (client) | Passed | tsc+vite exit 0, sw.js = killer (master inheritance) |
+
+### Follow-ups
+- Deploy: merge feature/read-receipts into master, then production deploy (killer PWA retained).
+- Manual Safari/iPhone verification of read ticks (deferred to deploy step).
