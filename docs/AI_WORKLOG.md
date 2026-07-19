@@ -2009,3 +2009,37 @@ Server API was confirmed working (POST /api/auth/login and /register return 200)
 ### Follow-ups
 - User redeploy on server, then confirm no no-response on /api/auth/me
 - Phase 2 (proper PWA) after confirmation
+
+## 2026-07-19 - SSL certificate mismatch incident (secondary)
+
+Role: Governor / Auditor
+Task ID: (incident, not a planned task)
+Branch: production server
+
+### Symptom
+After redeploy, Firefox showed "potential security risk" / HSTS screen; without VPN the browser hung on loading forever. With VPN the site worked.
+
+### Investigation
+- `nslookup zokul.zhichkin.space` resolved to `151.243.169.150` both with and without VPN (DNS fine).
+- `Test-NetConnection 151.243.169.150 -Port 443` without VPN returned `TcpTestSucceeded: True` (port not blocked by provider).
+- `openssl s_client -connect localhost:443` on server returned `CN = localhost`, notAfter Jul 20 — a self-signed test cert in `~/zokul/ssl/fullchain.pem`.
+- Let's Encrypt cert lives in `/etc/letsencrypt/live/zokul.zhichkin.space/`, valid until Oct 10 2026.
+- `scripts/setup-ssl.sh` is correct (calls certbot, copies live cert) and is not auto-invoked.
+- `prepare-release.ps1` only preserves `ssl/`; `ssl/` is not git-tracked. So `git reset --hard` / release packaging do NOT overwrite it.
+
+### Root cause
+`~/zokul/ssl/fullchain.pem` held a stray self-signed `CN=localhost` certificate (likely placed during tunnel/test setup), overriding the valid Let's Encrypt cert that nginx serves via the `./ssl:/etc/nginx/ssl:ro` mount.
+
+### Resolution
+On server:
+```
+cp /etc/letsencrypt/live/zokul.zhichkin.space/fullchain.pem ~/zokul/ssl/fullchain.pem
+cp /etc/letsencrypt/live/zokul.zhichkin.space/privkey.pem   ~/zokul/ssl/privkey.pem
+docker compose -f ~/zokul/docker-compose.prod.yml restart client
+```
+Verified: `CN = zokul.zhichkin.space`, notAfter Oct 10 2026.
+
+### Decisions / Notes
+- No repository code change required; the cert/ssl layout is correct.
+- Future redeploys are safe: `ssl/` is outside git and preserved by release script.
+- Only risk: manually re-running a script that regenerates a self-signed cert into `~/zokul/ssl/`.
