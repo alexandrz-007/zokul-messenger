@@ -140,31 +140,96 @@ docker compose -f docker-compose.local.yml down
 
 ## Production Deployment
 
-Production deployment is prepared through the dedicated production branch and compose file.
+Production deployment uses the dedicated compose file. Build and run on your server:
 
 ```bash
-git checkout production
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-For a clean production start, use the release script only when you intentionally want to remove runtime data:
+Secrets, certificates, and runtime `.env` files are not stored in the repository
+(see [Deploy on your own server](#deploy-on-your-own-server) for the required `.env` setup).
+
+## Deploy on your own server
+
+This project is a Dockerized full-stack app (Node API/Socket.IO + React/Vite static client behind nginx).
+To run it on your own host you need: a Linux server with Docker, a domain pointing at it, and TLS certificates.
+
+### 1. Prerequisites
+
+- Docker + Docker Compose v2 installed on the server.
+- A domain (e.g. `chat.example.com`) with an A/AAAA record pointing to the server.
+- TLS certificate + private key for that domain, placed in `./ssl/` as:
+  - `ssl/fullchain.pem`
+  - `ssl/privkey.pem`
+
+> The compose file mounts `./ssl:/etc/nginx/ssl:ro`. Certbot example:
+> `certbot certonly --webroot -w /var/www/certbot -d chat.example.com`
+> then copy `/etc/letsencrypt/live/chat.example.com/fullchain.pem` and `privkey.pem` into `./ssl/`.
+
+### 2. Create `.env`
+
+Copy the example and fill in real values (this file is git-ignored and must NOT be committed):
 
 ```bash
-powershell -ExecutionPolicy Bypass -File scripts/prepare-release.ps1 -FreshServerData
+cp .env.example .env
 ```
 
-Secrets, certificates, and runtime `.env` files are not stored in the repository.
+Edit `.env`:
+
+```ini
+JWT_SECRET=replace-with-a-long-random-string
+VAPID_PUBLIC_KEY=your-vapid-public-key
+VAPID_PRIVATE_KEY=your-vapid-private-key
+# optional overrides:
+# DATABASE_URL=postgresql://zokul:zokul@postgres:5432/zokul
+# REDIS_URL=redis://redis:6379
+# CORS_ORIGIN=https://chat.example.com
+# UPLOAD_DIR=/app/uploads
+```
+
+Generate VAPID keys (for web push) with:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+### 3. Point the app at your domain
+
+Two files hardcode the public domain. Replace `zokul.zhichkin.space` with your own in both:
+
+- `docker-compose.prod.yml` → `CORS_ORIGIN` and the `nginx` `server_name`.
+- `client/nginx.conf` → `server_name`.
+
+(When `CORS_ORIGIN` is empty the container defaults to `https://zokul.zhichkin.space`, so set it explicitly.)
+
+### 4. Build and run
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Then verify:
+
+```bash
+curl -s https://chat.example.com/api/health
+# -> {"status":"ok", ...}
+```
+
+### 5. Notes
+
+- Postgres and Redis data persist in the `pgdata` / `redisdata` volumes.
+- Uploads live in the `uploads` volume (git-ignored).
+- For a clean start that wipes runtime data, remove the volumes:
+  `docker compose -f docker-compose.prod.yml down -v` (then re-run step 4).
 
 ## Documentation
 
-The repository includes a project documentation protocol in [`docs/`](docs/). It is used to keep architecture, decisions, task handoffs, project state, and AI-agent work logs consistent.
+This public repository ships the runnable application only. The internal project
+documentation, agent prompts, and task/audit logs are kept in a separate
+development workspace and are intentionally not included here.
 
-Useful entry points:
-
-- [`docs/00_README_FOR_AGENTS.md`](docs/00_README_FOR_AGENTS.md) - how agents should navigate and maintain the project documentation.
-- [`docs/CONTROL_PLANE.md`](docs/CONTROL_PLANE.md) - current project state and operational control panel.
-- [`docs/PROJECT_MAP.md`](docs/PROJECT_MAP.md) - architecture and module map.
-- [`docs/tasks/active/NEXT_AGENT_TASK.md`](docs/tasks/active/NEXT_AGENT_TASK.md) - current implementation handoff, when active.
+For architecture and the tech stack, see [Architecture](#architecture) and
+[Tech Stack](#tech-stack) above.
 
 ## Repository Model
 
