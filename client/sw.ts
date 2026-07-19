@@ -1,10 +1,17 @@
 /// <reference lib="webworker" />
 declare const self: ServiceWorkerGlobalScope;
 
-import { precacheAndRoute } from 'workbox-precaching';
+// Required by vite-plugin-pwa injectManifest build (manifest is injected at build time).
+// Referenced only so the build does not fail; no workbox runtime is imported.
+// console.log keeps the self.__WB_MANIFEST literal from being tree-shaken.
+console.log("WB_MANIFEST", self.__WB_MANIFEST);
 
-// Required by vite-plugin-pwa injectManifest build
-precacheAndRoute(self.__WB_MANIFEST);
+// Network-only: every request goes straight to the network.
+// Prevents the workbox precache handler from rejecting API/navigation requests
+// with "no-response" after caches are deleted during activation.
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
+});
 
 // Emergency: activate immediately
 self.addEventListener('install', () => {

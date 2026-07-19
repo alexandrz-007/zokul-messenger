@@ -1962,5 +1962,24 @@ State: Ready for Execution -> Ready for Audit
 | `npx tsc --noEmit` | Passed | No errors |
 
 ### Follow-ups
-- Deploy to production (`git pull + docker compose up -d --build`)
+- Deploy to production
 - Manual verification: refresh page 10+ times without VPN
+
+## 2026-07-19 - PWA-EMERGENCY-001 - Executor
+
+State: Ready for Execution -> Ready for Audit
+
+### Changed
+- `client/sw.ts`: emergency self-destruct SW (skipWaiting, deleteAllCaches, clientsClaim, unregister, reload windows)
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| `npm run build` | Passed | SW 43.6 kB, precache 7 entries |
+| `npm test` | Passed | 94/94 |
+| `docker compose build` | Passed | Both images |
+| Built SW analyzed | Passed | All 5 emergency behaviors confirmed in dist/sw.js |
+
+### Follow-ups
+- User to test on iPhone/Safari/PC after server deploy
+- Phase 2 (proper PWA) after confirmation

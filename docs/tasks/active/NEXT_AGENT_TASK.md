@@ -1,20 +1,24 @@
-# Next Agent Task: PWA-EMERGENCY-001 - Emergency SW self-destruct to fix stale cache
+# Next Agent Task: PWA-EMERGENCY-001-REMEDIATION - Fix SW no-response on API requests
 
 Protocol version: 1.0
-Task type: hotfix
+Task type: remediation
 Execution owner: current agent
 Created by: project-governor
 State required before execution: Ready for Execution
 
 ## Goal
 
-Emergency-fix: make the Service Worker self-destruct (delete all caches, skip waiting, claim clients, unregister, reload windows) so the site works as a plain web app after deploy, until a proper PWA strategy is implemented in Phase 2.
+Fix the emergency Service Worker so it stops intercepting API/navigation requests with a workbox precache handler that rejects with "no-response". The site must work as a plain web app after deploy.
 
 ## Current State
 
-- `client/sw.ts` uses `precacheAndRoute()`, caches `/api/*` via `NetworkFirst`, has no `skipWaiting`/`clientsClaim`.
-- After deploy, old SW serves stale precached `index.html` and stale API cache → app broken on refresh.
-- User must append `?v=clean3` to bypass cache.
+- `client/sw.ts` (commit d70775f / production b70d25d) was replaced with an emergency self-destruct SW.
+- It calls `precacheAndRoute(self.__WB_MANIFEST)` from `workbox-precaching`. This registers a `fetch` event listener.
+- In `activate`, the handler deletes ALL caches, then `clientsClaim()`, then `unregister()`.
+- Between `clientsClaim()` and `unregister()` the SW controls pages and workbox intercepts `/api/*` requests. Because the precache is already empty, workbox rejects the fetch with `Error: no-response`.
+- Confirmed in production: browser console shows
+  `Failed to load 'https://zokul.zhichkin.space/api/auth/me'. ServiceWorker passed a promise to FetchEvent.respondWith() which rejected with error 'Error: no-response'`.
+- Confirmed server API works: `POST /api/auth/login` and `POST /api/auth/register` return 200 and create users. The bug is purely client-side SW behavior.
 
 ## Allowed Files
 
@@ -27,71 +31,53 @@ Emergency-fix: make the Service Worker self-destruct (delete all caches, skip wa
 - `dist/`
 - `server/`
 - `client/vite.config.ts`
-- `client/vite.config.js`
-- `client/vite.config.d.ts`
+- `client/src/**`
 
 ## Must Do
 
-- [ ] Replace entire `client/sw.ts` with emergency self-destruct SW:
-  ```typescript
-  /// <reference lib="webworker" />
-  declare const self: ServiceWorkerGlobalScope;
-
-  self.addEventListener('install', () => { self.skipWaiting(); });
-
-  self.addEventListener('activate', (event) => {
-    event.waitUntil(
-      caches.keys()
-        .then((names) => Promise.all(names.map((n) => caches.delete(n))))
-        .then(() => self.clientsClaim())
-        .then(() => self.registration.unregister())
-        .then(() => {
-          // Reload all open windows/tabs
-          self.clients.matchAll({ type: 'window' }).then((clients) => {
-            clients.forEach((client) => client.navigate(client.url));
-          });
-        })
-    );
-  });
-  ```
-- [ ] Run `npm.cmd run build` to confirm SW compiles.
-- [ ] Run `npm.cmd test` to confirm no regressions.
-- [ ] **Do NOT change** `vite.config.ts` or any other file.
+- [ ] Remove `import { precacheAndRoute } from 'workbox-precaching'` from `client/sw.ts`.
+- [ ] Remove the `precacheAndRoute(self.__WB_MANIFEST)` call.
+- [ ] Keep a reference to `self.__WB_MANIFEST` (required by vite-plugin-pwa injectManifest build) — e.g. `self.__WB_MANIFEST;` — so the build still injects the manifest without importing workbox runtime.
+- [ ] Add a `fetch` event handler that does `event.respondWith(fetch(event.request))` (network-only, no cache). This guarantees API/navigation requests go straight to the network and never reject.
+- [ ] Keep the emergency behavior: `install` -> `skipWaiting()`; `activate` -> delete all caches, `clientsClaim()`, `unregister()`, navigate all windows.
 
 ## Must Not Do
 
-- [ ] Do not implement any proper PWA strategy in this task (reserved for Phase 2).
-- [ ] Do not change `vite.config.ts`, `sw.ts` registration in main app, or any server/client code.
+- [ ] Do not reintroduce any workbox runtime import or `precacheAndRoute`.
+- [ ] Do not change `vite.config.ts`, the SW registration code, or any other file.
+- [ ] Do not implement a proper PWA strategy (that is Phase 2).
 
 ## Acceptance Criteria
 
-- [ ] Built `dist/sw.js` exists and contains `skipWaiting`, `clientsClaim`, `unregister`, `caches.delete`.
-- [ ] `npm.cmd run build` passes (client + server).
-- [ ] `npm.cmd test` passes.
+- [ ] Built `dist/sw.js` exists and contains `skipWaiting`, `clientsClaim`, `unregister`, `caches.delete`, and a `respondWith(fetch(` network-only handler.
+- [ ] Built `dist/sw.js` contains NO `precacheAndRoute` and NO `workbox-precaching` import.
+- [ ] `npm run build` passes (client + server).
+- [ ] `npm test` passes.
 - [ ] Docker build passes.
-- [ ] After deploy: open site in fresh tab → no stale cache, works without `?v=clean3`.
+- [ ] After deploy: opening the site in a fresh tab without `?v=clean3` no longer logs `no-response` for `/api/auth/me`; the app loads and auth works.
 
 ## Test Requirements
 
 | Type | Required | Scope |
 | --- | --- | --- |
-| Build | yes | `npm.cmd run build` must compile SW |
-| Manual | yes | After deploy, test on iPhone/Safari/PC without VPN |
+| Build | yes | `npm run build` must compile SW without workbox-precaching |
+| Grep | yes | `dist/sw.js` must not contain `precacheAndRoute` or `workbox-precaching` |
+| Manual | yes | After deploy, test on PC/iPhone/Safari without VPN |
 
 ## Verification Commands
 
 | Command | Required | Expected |
 | --- | --- | --- |
-| `cd client && npx tsc --noEmit` | yes | No type errors |
-| `cd client && npm run build` | yes | `dist/sw.js` built |
+| `cd client && npm run build` | yes | `dist/sw.js` built, no workbox-precaching import |
 | `cd .. && npm test` | yes | All tests pass |
 | `docker compose -f docker-compose.prod.yml build` | yes | Images build |
+| `grep -c precacheAndRoute client/dist/sw.js` | yes | 0 |
 
 ## Documentation Updates Required
 
 - [ ] `docs/AI_WORKLOG.md`
 - [ ] `docs/CONTROL_PLANE.md`
-- [ ] `docs/DEPLOY_GUIDE.md` — add PWA emergency steps
+- [ ] `docs/AUDIT_LOG.md`
 
 ## Stop Conditions
 
@@ -101,9 +87,8 @@ Emergency-fix: make the Service Worker self-destruct (delete all caches, skip wa
 
 ## Notes
 
-- Phase 1 only — Phase 2 (proper PWA) will be a separate task after user confirms emergency fix works.
+- Phase 1 only. Phase 2 (proper PWA) is a separate task after user confirms the emergency fix works.
 - Emergency SW has NO push notification support. Push will be restored in Phase 2.
-- After unregister + navigate, all windows reload with fresh server content.
 
 ## Execution Result
 

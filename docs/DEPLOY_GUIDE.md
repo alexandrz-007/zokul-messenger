@@ -47,3 +47,16 @@ docker compose -f docker-compose.prod.yml up -d --build
 curl -k https://zokul.zhichkin.space/api/health
 curl -k -i https://zokul.zhichkin.space/api/auth/me  # ожидается 401 (не 429)
 ```
+
+## Проверка Service Worker / PWA после деплоя
+
+Открыть https://zokul.zhichkin.space в обычной вкладке (без `?v=...`):
+- Сайт должен загрузиться и работать
+- DevTools → Application → Service Workers → статус `activated and is running` (или `deactivated` после unregister)
+
+На iPhone/Safari:
+- Открыть https://zokul.zhichkin.space — должно работать без `?v=clean3`
+- Закрыть Safari, открыть снова — должно работать
+- Если сбросить кэш: Safari → Settings → Safari → Advanced → Website Data → Remove All
+
+**Если сайт не грузится:** открыть `https://zokul.zhichkin.space/login?v=clean` — bypass SW.
