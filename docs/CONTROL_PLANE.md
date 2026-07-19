@@ -3,15 +3,16 @@
 Protocol version: 1.0
 Mode: standard
 State: Accepted
-Active task: ZOKUL-SCROLL-002
-Active review: ZOKUL-SCROLL-002 - Accepted
+Active task: ZOKUL-SCROLL-001 (reaffirmed)
+Active review: ZOKUL-SCROLL-002 - Reverted (ResizeObserver experiment made scroll worse)
 Owner: project-executor
 Last updated: 2026-07-19
 
 ## Current Focus
 
-ZOKUL-SCROLL-002 Accepted (ResizeObserver-driven stick-to-bottom). Branch `feature/scroll-fix` ready to merge
-to master then production (killer PWA retained). Pending production deploy + manual Safari/iPhone check.
+Reverted ZOKUL-SCROLL-002 (ResizeObserver) — it regressed scroll to "middle/start" more often. Branch
+`feature/scroll-fix` is back to the ZOKUL-SCROLL-001 rAF implementation (commit 9222807). 24/24 client tests,
+build clean. Awaiting user re-verification in browser before merge/deploy.
 
 ## Recently Completed
 
