@@ -93,16 +93,19 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
 
   useLayoutEffect(() => {
     if (messages.length === 0) return;
-    // Activate auto-scroll mode for this chat BEFORE scrolling, so the observer
-    // (and subsequent message renders) keep us pinned to the bottom.
+    // On chat switch: enter auto-scroll mode and pin to bottom. We do NOT react to
+    // every new message here (that would yank the user down while reading older
+    // messages). The ResizeObserver keeps us pinned as the new chat's content grows.
     scrolledChatRef.current = chatId;
     stickToBottom();
-  }, [messages, chatId, stickToBottom]);
+  }, [chatId, stickToBottom]);
 
   const handleScroll = useCallback(() => {
-    // If the user scrolls up away from the bottom, exit auto-scroll mode so we
-    // stop forcing the bottom on them.
-    if (scrolledChatRef.current === chatId && !isNearBottom()) {
+    // Exit auto-scroll mode when the user scrolls up away from the bottom so we
+    // stop forcing the bottom on them. Re-enter when they return near the bottom.
+    if (isNearBottom()) {
+      scrolledChatRef.current = chatId;
+    } else {
       scrolledChatRef.current = null;
     }
   }, [chatId, isNearBottom]);

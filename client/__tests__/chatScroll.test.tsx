@@ -12,13 +12,16 @@ vi.mock('../src/contexts/SocketContext', () => ({
 }));
 
 // ResizeObserver polyfill: fires callback immediately on observe so we can
-// drive the "container grew after mount" path that real RO covers.
+// drive the "container grew after mount" path that real RO covers. Keeps the
+// last instance so tests can trigger a resize after mount.
+let lastRO: MockResizeObserver | null = null;
 class MockResizeObserver {
   cb: ResizeObserverCallback;
-  constructor(cb: ResizeObserverCallback) { this.cb = cb; }
+  constructor(cb: ResizeObserverCallback) { this.cb = cb; lastRO = this; }
   observe(el: Element) { this.cb([] as any, this as any); }
   unobserve() {}
   disconnect() {}
+  trigger() { this.cb([] as any, this as any); }
 }
 (globalThis as any).ResizeObserver = MockResizeObserver;
 
@@ -102,7 +105,7 @@ describe('ChatView auto-scroll', () => {
   });
 
   it('sticks to bottom when container height grows after mount', () => {
-    const { container, rerender } = render(
+    const { container } = render(
       <ChatProvider>
         <ChatView
           messages={[makeMsg('m1', 'c1')]}
@@ -118,22 +121,11 @@ describe('ChatView auto-scroll', () => {
     const scrollEl = container.querySelector('.overflow-y-auto') as HTMLElement;
     expect(scrollEl.scrollTop).toBe(1000);
 
-    // Simulate the list growing taller after first paint (async messages/reflow).
+    // Simulate the list growing taller after first paint (async messages/reflow):
+    // the ResizeObserver must re-pin us to the new bottom.
     scrollHeightValue = 2000;
     act(() => {
-      rerender(
-        <ChatProvider>
-          <ChatView
-            messages={[makeMsg('m1', 'c1'), makeMsg('m2', 'c1'), makeMsg('m3', 'c1')]}
-            currentUserId="u1"
-            currentUserName="Me"
-            participants={[]}
-            chatId="c1"
-            loading={false}
-            error=""
-          />
-        </ChatProvider>
-      );
+      lastRO?.trigger();
     });
     expect(scrollEl.scrollTop).toBe(2000);
   });
