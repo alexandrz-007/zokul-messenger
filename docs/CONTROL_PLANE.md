@@ -2,15 +2,15 @@
 
 Protocol version: 1.0
 Mode: standard
-State: Accepted (Read Receipts done; pending production deploy)
-Active task: None (last: ZOKUL-READ-002, Accepted)
-Active review: None (last: ZOKUL-READ-002, Accepted)
+State: In Execution
+Active task: ZOKUL-SCROLL-001
+Active review: None
 Owner: project-executor
 Last updated: 2026-07-19
 
 ## Current Focus
 
-Read Receipts COMPLETE and merged to master (Stage 1 backend + Stage 2 frontend, both auditor-Accepted). Next: deploy to production (killer PWA retained), then manual Safari/iPhone verification of read ticks.
+ZOKUL-SCROLL-001: Fix auto-scroll on chat switch in `ChatView.tsx`. Add `scrollContainerRef` + `key={chatId}` to remount scroll container; use `requestAnimationFrame` + `scrollTop = scrollHeight`; near-bottom (<=120px) gating for new messages. Read Receipts already merged to master (pending prod deploy). Production PWA stays killer.
 
 ## Recently Completed
 

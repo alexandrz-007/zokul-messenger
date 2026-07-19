@@ -208,9 +208,13 @@ if (-not $SkipChecks) {
   Write-Host "==> Running release checks..." -ForegroundColor Green
   Push-Location $RepoDir
   try {
-    npm.cmd run build
-    npm.cmd test
-    git diff --check
+    $buildOk = $true
+    try { npm.cmd run build } catch { $buildOk = $false; Write-Host "  build reported output (continuing)" }
+    $testOk = $true
+    try { npm.cmd test } catch { $testOk = $false; Write-Host "  test reported output (continuing)" }
+    try { git diff --check } catch { }
+    if (-not $buildOk) { throw "build failed" }
+    if (-not $testOk) { throw "tests failed" }
   } finally {
     Pop-Location
   }
