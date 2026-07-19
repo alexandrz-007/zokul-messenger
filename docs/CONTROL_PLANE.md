@@ -2,15 +2,15 @@
 
 Protocol version: 1.0
 Mode: standard
-State: In Execution
+State: Accepted
 Active task: ZOKUL-SCROLL-001
-Active review: None
+Active review: ZOKUL-SCROLL-001 - Accepted
 Owner: project-executor
 Last updated: 2026-07-19
 
 ## Current Focus
 
-ZOKUL-SCROLL-001: Fix auto-scroll on chat switch in `ChatView.tsx`. Add `scrollContainerRef` + `key={chatId}` to remount scroll container; use `requestAnimationFrame` + `scrollTop = scrollHeight`; near-bottom (<=120px) gating for new messages. Read Receipts already merged to master (pending prod deploy). Production PWA stays killer.
+ZOKUL-SCROLL-001 Accepted (auto-scroll fix). Branch `feature/scroll-fix` ready to merge to master then production (killer PWA retained). Pending production deploy + manual Safari/iPhone check.
 
 ## Recently Completed
 
