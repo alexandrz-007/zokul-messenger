@@ -62,12 +62,6 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
     return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
   }, []);
 
-  const stickToBottom = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, []);
-
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -78,37 +72,23 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
     }
   }, []);
 
-  // ResizeObserver keeps us pinned to the bottom while in auto-scroll mode for this
-  // chat. It catches ANY height growth (async messages, text reflow, fonts, emojis,
-  // images) that happens after the first scroll attempt.
   useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => {
-      if (scrolledChatRef.current === chatId) stickToBottom();
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [chatId, stickToBottom]);
+    scrolledChatRef.current = null;
+  }, [chatId]);
 
   useLayoutEffect(() => {
     if (messages.length === 0) return;
-    // On chat switch: enter auto-scroll mode and pin to bottom. We do NOT react to
-    // every new message here (that would yank the user down while reading older
-    // messages). The ResizeObserver keeps us pinned as the new chat's content grows.
-    scrolledChatRef.current = chatId;
-    stickToBottom();
-  }, [chatId, stickToBottom]);
-
-  const handleScroll = useCallback(() => {
-    // Exit auto-scroll mode when the user scrolls up away from the bottom so we
-    // stop forcing the bottom on them. Re-enter when they return near the bottom.
-    if (isNearBottom()) {
+    if (scrolledChatRef.current !== chatId) {
       scrolledChatRef.current = chatId;
-    } else {
-      scrolledChatRef.current = null;
+      const el = scrollContainerRef.current;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        });
+      }
     }
-  }, [chatId, isNearBottom]);
+  }, [messages, chatId]);
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -241,7 +221,7 @@ export default function ChatView({ messages, currentUserId, currentUserName, par
   }
 
   return (
-    <div ref={scrollContainerRef} key={chatId} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 py-3">
+    <div ref={scrollContainerRef} key={chatId} className="flex-1 overflow-y-auto px-4 py-3">
       <div className="px-1 sm:px-2">
         <div ref={sentinelRef} />
         {loadingMore && (
