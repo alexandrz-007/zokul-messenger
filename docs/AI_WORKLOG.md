@@ -2197,3 +2197,39 @@ pm run build (client) | Passed | tsc+vite exit 0; sw.js = killer |
 
 ### Follow-ups
 - Re-audit (project-auditor); merge to master + production deploy (killer PWA); manual Safari/iPhone verify.
+
+## 2026-07-19 - ZOKUL-DOCS-001 - Sync docs to production reality
+
+Role: Governor (handoff) / Executor (impl) / Auditor (pending)
+Task ID: ZOKUL-DOCS-001
+Branch: master
+
+### Reality captured
+- master HEAD 9f54824 (merge feature/scroll-fix). production 9897dd5 (scroll-fix); e52812f (read receipts).
+- Client 26/26; server 78/78. Deploy pipeline: prepare-release.ps1 -SkipChecks -> D:\zokul-deploy
+  (preserves ssl/, .env) -> git push master:production -> server git reset --hard origin/production
+  && docker compose -f docker-compose.prod.yml up -d --build.
+- PWA: killer sw.ts = production default. eature/pwa-proper (sw.kill.ts/sw.pwa.ts + select-sw.mjs)
+  NOT merged. Cloudflare tunnel OFF per user.
+
+### Changed
+- Archived eviews/active/NEXT_REVIEW.md -> eviews/archive/2026-07-19-005-zokul-scroll-002-review.md
+  and 	asks/active/NEXT_AGENT_TASK.md -> 	asks/archive/2026-07-19-005-zokul-scroll-002.md.
+- 	asks/active/NEXT_AGENT_TASK.md replaced with no-task stub.
+- CONTROL_PLANE.md: State Ready for Planning (Idle), no active task; removed stale deploy language;
+  Recently Completed + scroll-002 revert note.
+- PROJECT_HEALTH.md: dates/commit, test counts 26/26 + 78/78, active task None, removed stale Next Action.
+- BACKLOG.md: added ZOKUL-READ-001/002, ZOKUL-SCROLL-001 (+002 revert note); test counts updated.
+- DEPLOYMENT.md: added Production Release Pipeline + PWA Strategy (killer vs pwa-proper, Cloudflare OFF).
+- PROJECT_BRIEF.md / ARCHITECTURE.md: date+commit; BRIEF lists read receipts.
+- ROADMAP.md: already 2026-07-19; left as-is.
+
+### Verification
+| Check | Result | Evidence |
+| --- | --- | --- |
+| git status --short | Passed | only docs/ modified (no product code) |
+| cross-check vs git log | Passed | master=9f54824; production deployed 9897dd5 (prior e52812f) |
+
+### Follow-ups
+- Auditor review of this docs sync; then commit "docs: sync to production reality".
+- Deferred: manual Safari/iPhone read-receipts verification; optional merge feature/pwa-proper.

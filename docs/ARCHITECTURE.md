@@ -1,7 +1,7 @@
 # Architecture Map
 
-Last reviewed: 2026-07-17
-Source commit: 96d5818
+Last reviewed: 2026-07-19
+Source commit: 9f54824
 
 FigJam overview board:
 

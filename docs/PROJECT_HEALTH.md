@@ -1,57 +1,50 @@
 ﻿# Project Health
 
-Last reviewed: 2026-07-17
-Source commit: d61adcf
+Last reviewed: 2026-07-19
+Source commit: 9f54824
 Reviewed by: Governor
 
 ## Current Branch State
 
-- Main branch: `master`
-- Production branch: `production`
-- Active work branch: `master`
-- Local status: cleanup in progress, not pushed
-- Dirty working tree: Yes, limited to repository hygiene and documentation path consolidation before commit
-
-Known dirty/untracked items at migration time:
-
-- removing generated `client/vite.config.js` and `client/vite.config.d.ts`
-- removing `reports/`, `server/test-uploads/`, and `fixer-brain.md`
-- moving protocol documentation from `docs/ai/*` into `docs/*`
-- removing duplicate legacy documentation files in `docs/00...10...`, `docs/PROCESS.md`, `docs/PROGRESS.md`, and `docs/FUTURE_PLAN.md`
+- Main branch: `master` (HEAD 9f54824, merge of feature/scroll-fix)
+- Production branch: `production` (9897dd5 — auto-scroll fix; prior e52812f — read receipts)
+- Active work branch: none (idle)
+- Local status: clean on master, ahead of origin/master by local commits; deploy via zokul-deploy
+- Dirty working tree: No (docs-only changes pending for ZOKUL-DOCS-001)
 
 ## Verification Status
 
 | Check | Status | Last run | Notes |
-|---|---|---|---|
-| Build | Passed | 2026-07-18 | `npm.cmd run build` passed (ZOKUL-CHAT-UX-001) |
-| Tests | Passed | 2026-07-18 | `npm.cmd test` passed, 19/19 |
-| Release package | Pending | 2026-07-18 | Will run `prepare-release.ps1` after commit |
-| Docker build | Passed | 2026-07-18 | `docker compose -f docker-compose.local.yml build` passed |
-| Lint | Unknown |  | Not run during chat UX fixes |
+| --- | --- | --- | --- |
+| Build (client) | Passed | 2026-07-19 | `npm run build` passed; sw.js = killer |
+| Build (server) | Passed | 2026-07-19 | tsc + build passed |
+| Tests (client) | Passed | 2026-07-19 | 26/26 (incl. scroll + read receipts) |
+| Tests (server) | Passed | 2026-07-19 | 78/78 |
+| Release package | Passed | 2026-07-19 | `prepare-release.ps1 -SkipChecks` -> zokul-deploy |
+| Docker build | Passed | 2026-07-19 | local + prod `docker compose build` passed |
+| Lint | Unknown |  | Not run this cycle |
 | Security review | Partial | 2026-07-17 | Realtime/upload/auth hardening reviewed |
-| Docs freshness | Current | 2026-07-18 | Protocol docs updated; chat UX task accepted |
+| Docs freshness | Current | 2026-07-19 | ZOKUL-DOCS-001 synced to production reality |
 
 ## Active Task
 
-- Task: ZOKUL-UX-007 Fix instant scroll and real-time new chat for 1-on-1
-- Status: Ready for Planning
-- Owner role: Governor/Executor
-- Risk: Low
-- Confidence: High
+- Task: None (idle)
+- Last completed: ZOKUL-SCROLL-001 (in production 9897dd5), ZOKUL-DOCS-001.
 
 ## Known Risks
 
-- Full Socket.IO integration tests are still missing.
-- Build may continue to modify tracked/generated client files.
+- Full Socket.IO integration tests are still missing (ZOKUL-TEST-002 open).
+- Build may continue to modify tracked/generated client files (ZOKUL-DX-001 open).
 - Runtime DB migration approach is acceptable for MVP but should move toward versioned migrations later.
 - Uploads are local-disk based; object storage/CDN is future scaling work.
-- Push notifications currently arrive, but subscription recovery after a DB reset and delivery-error observability remain hardening gaps.
+- Push notifications arrive, but subscription recovery after a DB reset and delivery-error observability remain hardening gaps.
+- Residual "sometimes mid-list" on very slow networks for chat switch (ZOKUL-SCROLL-001 rAF); accepted by user as less severe than the ResizeObserver regression.
 
 ## Next Recommended Action
 
-1. Fix scroll jump by using useLayoutEffect instead of useEffect + setTimeout.
-2. Fix 1-on-1 chat real-time notification by adding socket.emit('chat:created') in CreateChatModal.
-3. Push hardening — ZOKUL-PUSH-001 after UX fixes.
+1. (Deferred, manual) Verify read receipts on real Safari/iPhone.
+2. (Optional, future) Merge `feature/pwa-proper` only after manual Safari stability confirmed.
+3. Push hardening — ZOKUL-PUSH-001 when prioritized.
 
 ## Risk Matrix
 

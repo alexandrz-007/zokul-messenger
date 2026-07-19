@@ -1,27 +1,63 @@
-# Next Review: ZOKUL-SCROLL-002 - Reverted
+# Next Review: ZOKUL-DOCS-001 - Sync docs to production reality
 
 Protocol version: 1.0
-Review type: implementation (reverted)
+Review type: documentation
 Reviewer: project-auditor
-Verdict: Reverted
+Verdict: Accepted
 Reviewed at: 2026-07-19
 
-## Summary
-ZOKUL-SCROLL-002 introduced a `ResizeObserver`-driven stick-to-bottom that REGRESSED scroll behavior:
-chats opened in the middle or at the start more often than before. The root cause was the layout effect
-depending only on `[chatId]` (not `messages`), so it scrolled before the new chat's messages arrived,
-and `handleScroll` reset the auto-scroll ref on the programmatic scroll event from the `key={chatId}`
-remount. Per user decision, the change was rolled back to the ZOKUL-SCROLL-001 rAF implementation.
+## Scope Reviewed
+- Task: `docs/tasks/active/NEXT_AGENT_TASK.md` (ZOKUL-DOCS-001)
+- Changed files (git status --short, all docs/):
+  - `docs/AI_WORKLOG.md`, `docs/ARCHITECTURE.md`, `docs/BACKLOG.md`, `docs/CONTROL_PLANE.md`,
+    `docs/DEPLOYMENT.md`, `docs/PROJECT_BRIEF.md`, `docs/PROJECT_HEALTH.md`,
+    `docs/tasks/active/NEXT_AGENT_TASK.md` (stub)
+  - Deleted: `docs/reviews/active/NEXT_REVIEW.md`
+  - Added: `docs/reviews/archive/2026-07-19-005-zokul-scroll-002-review.md`,
+    `docs/tasks/archive/2026-07-19-005-zokul-scroll-002.md`
+- Forbidden files (product code, PWA source, deploy scripts, secrets): NOT touched.
 
-## Revert
-- `git revert`-style checkout of `ChatView.tsx` + `chatScroll.test.tsx` from faaa45d (ZOKUL-SCROLL-001).
-- Commit: 9222807 "Revert ZOKUL-SCROLL-002: roll back to ZOKUL-SCROLL-001 rAF scroll".
-- Verification: `npx vitest run` 24/24; `npm run build` exit 0 (killer PWA).
+## Scope Audit
+- Only docs/ modified. `git status` filtered to non-docs → empty. ✅
+- All Must Do items executed: archives created, stub written, CONTROL_PLANE/HEALTH/BACKLOG/DEPLOYMENT/
+  BRIEF/ARCHITECTURE updated, AI_WORKLOG appended. ✅
 
-## Acceptance
-- Branch `feature/scroll-fix` now equals the ZOKUL-SCROLL-001 scroll behavior (pre-ResizeObserver).
-- Pending: user browser re-verification; then merge to master + production deploy.
+## Technical Audit (factual cross-check)
+| Claim in docs | Verification | Result |
+| --- | --- | --- |
+| master HEAD 9f54824 (scroll-fix merge) | `git rev-parse --short HEAD` | Passed (9f54824) |
+| production = 9897dd5 (scroll-fix) | `git ls-remote origin production` | Passed (9897dd5) |
+| read receipts in production (e52812f) | zokul-deploy log + ChatView `readBy` present | Passed |
+| killer PWA production default | zokul-deploy sw.ts / prepare-release; user confirmed | Passed (Assumed for runtime, documented) |
+| `feature/pwa-proper` NOT merged | `git branch -a` lists it separate | Passed |
+| Cloudflare OFF per user | prior task records; not contradicted | Passed (Assumed) |
+| Tests 26/26 client + 78/78 server | executor ran suite earlier this session | Passed (Assumed from executor evidence) |
+| No product-code changes | git status filter | Passed |
 
-## Notes
-- The residual "sometimes mid-list" bug from ZOKUL-SCROLL-001 remains known but is less severe than the
-  ZOKUL-SCROLL-002 regression. No further scroll changes unless user requests a new, properly-scoped attempt.
+## Notes / Non-findings
+- I-1 (informational): `origin/production` on GitHub is the history of the SEPARATE `zokul-deploy`
+  repo, not `zokul`. Therefore `9cbede6`/`9f54824` (zokul commits) are NOT ancestors of
+  `origin/production` — this is expected, not a doc error. The deploy flow pushes `master` from
+  `zokul-deploy` to GitHub `production`. Docs correctly describe the `prepare-release.ps1` ->
+  `zokul-deploy` -> `master:production` pipeline. No action needed.
+- I-2 (informational): DEPLOYMENT "production branch" line still says `production: deploy/fresh
+  production branch` (PROJECT_BRIEF) — consistent with two-repo model. No change required.
+
+## Findings
+
+### Critical
+- None
+
+### Important
+- None
+
+### Improvements
+- I-3: Consider adding a one-line note in DEPLOYMENT that `origin/production` lives in the
+  `zokul-deploy` repo (separate history) to prevent future auditor confusion. Optional, not blocking.
+
+## Required Remediation
+- None
+
+## Verdict: Accepted
+Docs now accurately reflect production reality as of 2026-07-19. Safe to commit and (per
+user) leave unpushed until next deploy cycle or explicit push request.

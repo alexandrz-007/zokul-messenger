@@ -1,7 +1,7 @@
 # Deployment
 
-Last reviewed: 2026-07-17
-Source commit: 96d5818
+Last reviewed: 2026-07-19
+Source commit: 9f54824
 
 ## Local Development
 
@@ -98,3 +98,57 @@ Current stack can support growth with tuning, but future production scale should
 - Redis cluster or alternative event bus;
 - background workers for push/media;
 - observability stack.
+
+## Production Release Pipeline
+
+The real, currently-used flow (replaces the generic `npm run build && push` sketch above):
+
+1. On `master` (clean, with the accepted task merged), run the release packer:
+
+   ```powershell
+   cd D:\zokul
+   powershell -ExecutionPolicy Bypass -File scripts/prepare-release.ps1 -SkipChecks
+   ```
+
+   - Copies the tree into `D:\zokul-deploy`, preserving `ssl/` and `.env`.
+   - `-SkipChecks` is used because `npm.cmd` emits benign stderr that would otherwise
+     abort the script's check phase.
+
+2. In the deploy repo, commit and push `master` to the GitHub `production` branch:
+
+   ```powershell
+   cd D:\zokul-deploy
+   git add -A
+   git commit -m "Deploy: <short summary>"
+   git push origin master:production
+   ```
+
+3. On the server (`~/zokul`), apply and rebuild (safe because `ssl/` and `.env` are
+   git-ignored / preserved):
+
+   ```bash
+   cd ~/zokul
+   git fetch origin
+   git reset --hard origin/production
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+   - Before `reset --hard`, confirm `ssl`/`.env` are untracked-safe:
+     `git check-ignore ssl .env` (both must print).
+   - After up: `curl -s https://zokul.zhichkin.space/api/health`.
+
+Approval gates (from Release Protocol above) still apply: pushing to GitHub, changing
+`production`, and deployment all require explicit user approval.
+
+## PWA Strategy
+
+- Production default is the **killer** service worker: `client/sw.ts` is `sw.kill.ts`
+  (network-only fetch, deletes caches, unregisters). This was deployed as the emergency
+  fix for Safari PWA cache/drift issues.
+- A proper PWA lives on branch **`feature/pwa-proper`**: `sw.kill.ts` / `sw.pwa.ts`
+  split + `scripts/select-sw.mjs` + npm scripts `sw:kill` / `sw:proper` /
+  `build:kill` / `build:proper`. It is **NOT merged** to master/production.
+- Do **NOT** merge `feature/pwa-proper` until manual Safari/iPhone stability is confirmed.
+- Cloudflare tunnel (ZOKUL-NET-001) is **OFF** per user; production uses direct 443
+  + killer PWA only.
+

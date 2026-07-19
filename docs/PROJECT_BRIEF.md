@@ -1,7 +1,7 @@
 ﻿# Zokul Project Overview
 
-Last reviewed: 2026-07-17
-Source commit: 96d5818
+Last reviewed: 2026-07-19
+Source commit: 9f54824
 
 ## Purpose
 
@@ -30,6 +30,7 @@ Zokul is a web messenger/PWA with direct chats, group chats, realtime messaging,
 - Reply/edit/delete UI context.
 - Online/offline presence.
 - Typing indicator.
+- Read receipts (per-chat "read" status since 2026-07-19).
 - Push subscription support.
 - Profile editor and avatar upload.
 - Dark/light theme infrastructure.

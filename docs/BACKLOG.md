@@ -1,7 +1,7 @@
 # Product Backlog
 
-Last reviewed: 2026-07-17
-Source commit: 96d5818
+Last reviewed: 2026-07-19
+Source commit: 9f54824
 
 ## P1: Messaging Features
 
@@ -100,6 +100,25 @@ Source commit: 96d5818
   - Status: Accepted
   - Priority: P1
   - Goal: Eliminate scroll jump (useLayoutEffect) and add real-time 1-on-1 chat notification (socket.emit chat:created).
+
+- [x] ZOKUL-READ-001 Read receipts — backend (Stage 1)
+  - Status: Accepted, in production (e52812f)
+  - Priority: P1
+  - Goal: `message_reads` table, `markChatRead` (participant-checked, `ON CONFLICT DO NOTHING`), `getReadReceipts`, `chat:read` socket -> `message:read`.
+  - Files: `server/src/models/Message.ts`, `server/src/socket/index.ts`
+
+- [x] ZOKUL-READ-002 Read receipts — frontend (Stage 2)
+  - Status: Accepted, in production (e52812f)
+  - Priority: P1
+  - Goal: emit `chat:read` on chat open; `message:read` updates `readBy`; ChatView read ticks (single/double + "Read"/"Read N"); types + tests.
+  - Files: `client/src/hooks/useChat.ts`, `client/src/components/chat/ChatView.tsx`
+
+- [x] ZOKUL-SCROLL-001 Auto-scroll fix on chat switch
+  - Status: Accepted, in production (9897dd5)
+  - Priority: P1
+  - Goal: always open a chat at the bottom; new message scrolls down only if near-bottom (<=120px). `scrollContainerRef` + `key={chatId}` + rAF + near-bottom gating.
+  - Files: `client/src/components/chat/ChatView.tsx`, `client/__tests__/chatScroll.test.tsx`
+  - Note: ZOKUL-SCROLL-002 (ResizeObserver) was attempted then reverted — it regressed scroll ("middle/start" more often). Rolled back to this rAF implementation per user.
 
 ## P1: Chat UX Fixes
 
@@ -298,7 +317,8 @@ Source commit: 96d5818
   - Priority: P1
   - Commits: `7609f40`, `96d5818`
   - Verification:
-    - last known `npm.cmd test`: 71/71 passed.
+    - client `npm test`: 26/26 passed (2026-07-19).
+    - server `npm test`: 78/78 passed (2026-07-19).
 
 ### P1: Test Quality
 
